@@ -10,7 +10,7 @@ User=ubuntu
 WorkingDirectory=${APP}/web/.next/standalone/apps/web
 Environment=PORT=3000
 Environment=HOSTNAME=0.0.0.0
-Environment=NEXT_PUBLIC_API_URL=http://49.234.112.108:4000
+Environment=NEXT_PUBLIC_API_URL=http://49.234.112.108
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5

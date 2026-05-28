@@ -67,7 +67,7 @@ JWT_SECRET=${jwt1}
 JWT_REFRESH_SECRET=${jwt2}
 PORT=4000
 CORS_ORIGIN=http://${HOST}
-NEXT_PUBLIC_API_URL=http://${HOST}:4000
+NEXT_PUBLIC_API_URL=http://${HOST}
 SMTP_MODE=console
 NODE_ENV=production
 HOSTNAME=0.0.0.0
@@ -96,12 +96,12 @@ HOSTNAME=0.0.0.0
     const srcTar = path.join(__dirname, 'web-src.tar.gz');
     execSync(`tar -czf "${srcTar}" --exclude=node_modules --exclude=.next -C "${path.join(ROOT, 'apps/web')}" .`, { shell: true });
     await upload(sftp, srcTar, '/tmp/web-src.tar.gz');
-    await exec(conn, `cd ${APP_DIR}/web && tar -xzf /tmp/web-src.tar.gz && npm install && NEXT_PUBLIC_API_URL=http://${HOST}:4000 npm run build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/`);
+    await exec(conn, `cd ${APP_DIR}/web && tar -xzf /tmp/web-src.tar.gz && npm install && NEXT_PUBLIC_API_URL=http://${HOST} npm run build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/`);
     fs.unlinkSync(srcTar);
   }
 
   await exec(conn, `cat > ${APP_DIR}/api/.env << 'EOF'\n${envContent}EOF`);
-  await exec(conn, `cat > ${APP_DIR}/web/.env << 'EOF'\nNEXT_PUBLIC_API_URL=http://${HOST}:4000\nPORT=3000\nHOSTNAME=0.0.0.0\nEOF`);
+  await exec(conn, `cat > ${APP_DIR}/web/.env << 'EOF'\nNEXT_PUBLIC_API_URL=http://${HOST}\nPORT=3000\nHOSTNAME=0.0.0.0\nEOF`);
 
   // Systemd services
   const apiService = `[Unit]
@@ -131,7 +131,7 @@ User=ubuntu
 WorkingDirectory=${APP_DIR}/web/.next/standalone/apps/web
 Environment=PORT=3000
 Environment=HOSTNAME=0.0.0.0
-Environment=NEXT_PUBLIC_API_URL=http://${HOST}:4000
+Environment=NEXT_PUBLIC_API_URL=http://${HOST}
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5
@@ -145,14 +145,7 @@ WantedBy=multi-user.target
   await sudo(conn, 'mv /tmp/pulsewatch-api.service /etc/systemd/system/pulsewatch-api.service');
   await sudo(conn, 'mv /tmp/pulsewatch-web.service /etc/systemd/system/pulsewatch-web.service');
 
-  const nginxConf = `server {
-    listen 80;
-    server_name _;
-    location / { proxy_pass http://127.0.0.1:3000; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; }
-    location /api/ { proxy_pass http://127.0.0.1:4000; proxy_set_header Host $host; }
-    location /health { proxy_pass http://127.0.0.1:4000/health; }
-}
-`;
+  const nginxConf = fs.readFileSync(path.join(__dirname, 'nginx', 'pulsewatch.conf'), 'utf8');
   await exec(conn, `cat > /tmp/pulsewatch-nginx << 'EOF'\n${nginxConf}EOF`);
   await sudo(conn, 'mv /tmp/pulsewatch-nginx /etc/nginx/sites-available/pulsewatch');
   await sudo(conn, 'ln -sf /etc/nginx/sites-available/pulsewatch /etc/nginx/sites-enabled/pulsewatch');
