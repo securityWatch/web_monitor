@@ -89,6 +89,7 @@ HOSTNAME=0.0.0.0
     execSync(`tar -czf "${webTar}" -C "${path.join(ROOT, 'apps/web')}" .next/standalone .next/static public`, { shell: true, stdio: 'inherit' });
     await upload(sftp, webTar, '/tmp/web-bundle.tar.gz');
     await exec(conn, `cd ${APP_DIR}/web && tar -xzf /tmp/web-bundle.tar.gz && rm /tmp/web-bundle.tar.gz`);
+    await exec(conn, `cp -r ${APP_DIR}/web/.next/static ${APP_DIR}/web/.next/standalone/apps/web/.next/ && cp -r ${APP_DIR}/web/public ${APP_DIR}/web/.next/standalone/apps/web/`);
     fs.unlinkSync(webTar);
   } else {
     console.warn('Standalone build not found, uploading source for server build...');
@@ -127,7 +128,7 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=${APP_DIR}/web/.next/standalone
+WorkingDirectory=${APP_DIR}/web/.next/standalone/apps/web
 Environment=PORT=3000
 Environment=HOSTNAME=0.0.0.0
 Environment=NEXT_PUBLIC_API_URL=http://${HOST}:4000
@@ -166,7 +167,7 @@ WantedBy=multi-user.target
   await exec(conn, 'systemctl is-active pulsewatch-api pulsewatch-web nginx');
 
   conn.end();
-  console.log(`\n✅ Deploy complete: http://${HOST}/en`);
+  console.log(`\n? Deploy complete: http://${HOST}/en`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
