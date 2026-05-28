@@ -1,0 +1,41 @@
+# Secrets & env
+.env
+.env.*
+!.env.example
+环境信息
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker
+docker-data/
+
+# Deploy
+deploy/node_modules/
+
+# Binaries
+*.exe
+

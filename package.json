@@ -1,0 +1,21 @@
+{
+  "name": "pulsewatch",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd apps/api && go run ./cmd/server",
+    "dev:web": "npm run dev -w @pulsewatch/web",
+    "build": "cd apps/api && go build -o pulsewatch-api ./cmd/server && npm run build -w @pulsewatch/web",
+    "test": "cd apps/api && go test ./... && bash tests/e2e-test.sh",
+    "test:unit": "cd apps/api && go test ./internal/services/...",
+    "test:integration": "cd apps/api && go test ./internal/handlers/...",
+    "start:web": "npm run start -w @pulsewatch/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

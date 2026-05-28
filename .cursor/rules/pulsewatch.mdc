@@ -1,0 +1,45 @@
+---
+description: PulseWatch project conventions — Go API, Next.js web, PostgreSQL, i18n, deployment
+alwaysApply: true
+---
+
+# PulseWatch Project Conventions
+
+## Stack
+
+- **Backend**: Go (`apps/api/`) — Gin router, pgx, JWT auth, in-process monitor scheduler
+- **Frontend**: Next.js 15 (`apps/web/`) — Tailwind 4, next-intl, App Router with `[locale]`
+- **Database**: PostgreSQL only — **never use ClickHouse**; time-series in partitioned `check_results`
+- **Monorepo**: `apps/api`, `apps/web`, `packages/shared`, `deploy/`, `tests/`
+
+## i18n
+
+- Locales: `en` and `zh` (zh-CN content in `messages/zh.json`)
+- Use `next-intl`; all UI strings in `messages/en.json` and `messages/zh.json`
+- Browser `Accept-Language` auto-detect via middleware; manual toggle persists `PULSEWATCH_LOCALE` cookie
+- User DB field: `users.locale` synced on profile update
+
+## Security
+
+- **Never commit** `环境信息`, `.env`, secrets, or real passwords
+- Reference `.env.example` and `DEPLOYMENT.md` for config shape
+- Credentials live only in server `.env` and local `环境信息`
+
+## Deployment
+
+- Production server: `49.234.112.108` — see `DEPLOYMENT.md`
+- Deploy via `deploy/deploy.sh` and `deploy/docker-compose.prod.yml`
+- PostgreSQL on port **6541** (existing server instance)
+
+## Workflow
+
+- Run `npm run test:unit` and `npm run test:integration` before commits
+- Run `tests/e2e-test.sh` after deploy or full stack start
+- After major milestones: commit with descriptive message and push to `origin`
+- Match existing code patterns; minimal scope per change
+
+## Product UI
+
+- Premium dark-mode SaaS (Stripe/Linear style)
+- Founding Member pricing ($1/$4/$10) on landing and billing stub
+- English code/UI keys; translations via next-intl only

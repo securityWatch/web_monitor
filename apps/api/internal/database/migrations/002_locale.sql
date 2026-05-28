@@ -1,0 +1,2 @@
+-- Add user locale preference for UI and email
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locale VARCHAR(10) NOT NULL DEFAULT 'en';
