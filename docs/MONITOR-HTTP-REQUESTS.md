@@ -102,6 +102,21 @@
 - 响应体读取上限 1MB（与原有 HTTP 检查一致）
 - 不支持 GraphQL 专用语法（可用 POST body 自行构造）
 
+## 检测耗时分解（metadata.timings）
+
+每次 HTTP 检测在 `check_results.metadata` 中记录：
+
+| 字段 | 含义 |
+|------|------|
+| `dnsMs` | DNS 解析 |
+| `tcpMs` | TCP 连接 |
+| `tlsMs` | TLS 握手（HTTPS） |
+| `ttfbMs` | 服务器响应（首字节时间 TTFB） |
+| `downloadMs` | 响应体下载 |
+| `totalMs` | 总耗时 |
+
+请求链时在 `chainStepDetails[]` 中按步骤分别记录。失败时 `error_message` 与 metadata 一并展示于监控详情页。
+
 ## 验收
 
 1. 创建 POST 监控，请求体被正确发送，状态码匹配则 UP

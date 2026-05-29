@@ -172,7 +172,18 @@
     "addExtract": "添加提取规则",
     "addStep": "添加步骤",
     "removeStep": "删除",
-    "keywordLabel": "匹配关键词"
+    "keywordLabel": "匹配关键词",
+    "timingBreakdown": "请求耗时分解",
+    "timingBreakdownDesc": "最近一次检测的 DNS、TCP 连接、TLS、服务器响应（TTFB）与下载耗时。",
+    "chainStepTimings": "请求链各步骤耗时",
+    "lastError": "最近一次检测错误",
+    "errorDetail": "错误信息",
+    "timingDns": "DNS 解析",
+    "timingTcp": "TCP 连接",
+    "timingTls": "TLS 握手",
+    "timingTtfb": "服务器响应",
+    "timingDownload": "下载",
+    "timingTotal": "总耗时"
   },
   "incidents": {
     "title": "故障",

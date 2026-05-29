@@ -113,6 +113,20 @@ func TestRunHTTPRequestChain(t *testing.T) {
 	assert.Equal(t, "secret-token-123", token)
 }
 
+func TestHTTPTimingsMetadata(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	}))
+	defer srv.Close()
+
+	outcome := services.RunCheck(context.Background(), "http", srv.URL, json.RawMessage(`{}`))
+	assert.True(t, outcome.IsUp)
+	timings, ok := outcome.Metadata["timings"].(map[string]interface{})
+	require.True(t, ok, "expected timings in metadata")
+	assert.NotNil(t, timings["totalMs"])
+}
+
 func TestRunCheckTimeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second)

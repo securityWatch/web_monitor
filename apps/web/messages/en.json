@@ -172,7 +172,18 @@
     "addExtract": "Add extract rule",
     "addStep": "Add step",
     "removeStep": "Remove",
-    "keywordLabel": "Keyword to match"
+    "keywordLabel": "Keyword to match",
+    "timingBreakdown": "Request timing breakdown",
+    "timingBreakdownDesc": "DNS, TCP connect, TLS, server response (TTFB), and download time for the latest check.",
+    "chainStepTimings": "Per-step timings (request chain)",
+    "lastError": "Latest check error",
+    "errorDetail": "Error",
+    "timingDns": "DNS",
+    "timingTcp": "TCP connect",
+    "timingTls": "TLS",
+    "timingTtfb": "Server (TTFB)",
+    "timingDownload": "Download",
+    "timingTotal": "Total"
   },
   "incidents": {
     "title": "Incidents",

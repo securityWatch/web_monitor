@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptrace"
 	"regexp"
 	"strings"
 	"time"
@@ -14,9 +15,12 @@ import (
 
 type stepResult struct {
 	name       string
+	method     string
+	url        string
 	statusCode int
 	body       []byte
 	headers    http.Header
+	timings    HTTPTimings
 }
 
 func executeHTTPMonitor(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, monitorType string, start time.Time) CheckOutcome {
@@ -58,7 +62,7 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 			if i == 0 {
 				url = targetURL
 			} else {
-				return failOutcome(start, fmt.Sprintf("step %d: url is required", i+1))
+				return failOutcomeWithMeta(start, fmt.Sprintf("step %d: url is required", i+1), metadata)
 			}
 		}
 		url = substituteVars(url, vars)
@@ -77,9 +81,18 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 		}
 
 		res, err := doHTTPRequest(ctx, client, method, url, body, headers)
+		res.name = stepLabel(step, i)
+		res.method = strings.ToUpper(method)
+		res.url = url
+
+		stepMeta := chainStepMeta{Name: res.name, URL: url, Method: res.method, Timings: res.timings}
 		if err != nil {
-			return CheckOutcome{IsUp: false, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("step %d (%s): %s", i+1, stepLabel(step, i), err.Error()), Metadata: metadata}
+			stepMeta.Error = err.Error()
+			appendChainStepMeta(metadata, stepMeta)
+			return failOutcomeWithMeta(start, fmt.Sprintf("step %d (%s): %s", i+1, stepLabel(step, i), err.Error()), metadata)
 		}
+		stepMeta.StatusCode = res.statusCode
+		appendChainStepMeta(metadata, stepMeta)
 		last = res
 
 		expected := step.ExpectedStatus
@@ -87,6 +100,7 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 			expected = 200
 		}
 		if res.statusCode != expected {
+			setPrimaryTimings(metadata, res.timings)
 			return CheckOutcome{
 				IsUp:         false,
 				StatusCode:   &res.statusCode,
@@ -99,17 +113,22 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 		for _, rule := range step.Extract {
 			val, err := applyExtractRule(rule, res)
 			if err != nil {
+				setPrimaryTimings(metadata, res.timings)
 				return CheckOutcome{IsUp: false, StatusCode: &res.statusCode, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("step %d extract %q: %s", i+1, rule.Var, err.Error()), Metadata: metadata}
 			}
 			vars[rule.Var] = val
 		}
 	}
 
-	elapsed := elapsedMs(start)
 	code := last.statusCode
-	outcome := evaluateHTTPBody(last.body, code, elapsed, cfg.Keyword, cfg.KeywordMustContain, monitorType, metadata)
+	setPrimaryTimings(metadata, last.timings)
+	outcome := evaluateHTTPBody(last.body, code, elapsedMs(start), cfg.Keyword, cfg.KeywordMustContain, monitorType, metadata)
 	if monitorType == "ssl" {
-		// SSL metadata requires TLS info from transport; chain checks skip cert parsing for now
+		if tlsMeta := sslMetaFromTimingsRequest(ctx, last.url, timeout); tlsMeta != nil {
+			for k, v := range tlsMeta {
+				outcome.Metadata[k] = v
+			}
+		}
 	}
 	return outcome
 }
@@ -120,15 +139,18 @@ func runSingleHTTP(ctx context.Context, url, method, body string, headers map[st
 
 	client := newHTTPClient(timeout)
 	res, err := doHTTPRequest(ctx, client, method, url, body, headers)
+	metadata := map[string]interface{}{}
+	setPrimaryTimings(metadata, res.timings)
+
 	if err != nil {
-		return failOutcome(start, err.Error())
+		return failOutcomeWithMeta(start, err.Error(), metadata)
 	}
 
-	metadata := map[string]interface{}{}
 	if monitorType == "ssl" {
-		// Re-run with TLS-aware client for SSL monitors when using simple GET
-		if tlsMeta := fetchSSLMetadata(ctx, url, timeout); tlsMeta != nil {
-			metadata = tlsMeta
+		if tlsMeta := sslMetaFromTimingsRequest(ctx, url, timeout); tlsMeta != nil {
+			for k, v := range tlsMeta {
+				metadata[k] = v
+			}
 		}
 	}
 
@@ -164,9 +186,13 @@ func doHTTPRequest(ctx context.Context, client *http.Client, method, url, body s
 		bodyReader = strings.NewReader(body)
 	}
 
+	collector := &timingCollector{}
+	ctx = httptrace.WithClientTrace(ctx, collector.trace())
+	reqStart := time.Now()
+
 	req, err := http.NewRequestWithContext(ctx, strings.ToUpper(method), url, bodyReader)
 	if err != nil {
-		return stepResult{}, err
+		return stepResult{timings: collector.result(reqStart, reqStart)}, err
 	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -180,12 +206,18 @@ func doHTTPRequest(ctx context.Context, client *http.Client, method, url, body s
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return stepResult{}, err
+		return stepResult{timings: collector.result(reqStart, time.Now())}, err
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
-	return stepResult{statusCode: resp.StatusCode, body: respBody, headers: resp.Header}, nil
+	bodyEnd := time.Now()
+	return stepResult{
+		statusCode: resp.StatusCode,
+		body:       respBody,
+		headers:    resp.Header,
+		timings:    collector.result(reqStart, bodyEnd),
+	}, nil
 }
 
 func evaluateHTTPBody(body []byte, code, elapsed int, keyword string, keywordMustContain bool, monitorType string, metadata map[string]interface{}) CheckOutcome {
@@ -267,8 +299,12 @@ func extractJSONPath(data []byte, path string) (string, error) {
 	}
 }
 
-func fetchSSLMetadata(ctx context.Context, url string, timeout time.Duration) map[string]interface{} {
+func sslMetaFromTimingsRequest(ctx context.Context, url string, timeout time.Duration) map[string]interface{} {
 	client := newHTTPClient(timeout)
+	collector := &timingCollector{}
+	ctx = httptrace.WithClientTrace(ctx, collector.trace())
+	reqStart := time.Now()
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil
@@ -291,6 +327,7 @@ func fetchSSLMetadata(ctx context.Context, url string, timeout time.Duration) ma
 	if daysLeft < 30 {
 		meta["sslWarning"] = true
 	}
+	_ = collector.result(reqStart, time.Now())
 	return meta
 }
 
