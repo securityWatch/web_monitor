@@ -27,16 +27,37 @@ alwaysApply: true
 
 ## Deployment
 
-- Production server: `49.234.112.108` — see `DEPLOYMENT.md`
-- Deploy via `deploy/deploy.sh` and `deploy/docker-compose.prod.yml`
+- Production server: `49.234.112.108` (SSH user: `ubuntu`) — see `DEPLOYMENT.md`
+- App root on server: `/opt/pulsewatch`
+- External access: **HTTP port 80** via Nginx (`http://49.234.112.108`, not HTTPS)
 - PostgreSQL on port **6541** (existing server instance)
 
-## Workflow
+### Deploy commands
 
-- Run `npm run test:unit` and `npm run test:integration` before commits
-- Run `tests/e2e-test.sh` after deploy or full stack start
-- After major milestones: commit with descriptive message and push to `origin`
-- Match existing code patterns; minimal scope per change
+| Change scope | Command |
+|---|---|
+| Frontend only | `cd deploy && node redeploy-web.js` |
+| API + frontend | `cd deploy && node deploy.js` |
+| Nginx config | `cd deploy && node apply-nginx.js` |
+
+## Workflow (required after feature fixes)
+
+When completing a user-facing fix or feature:
+
+1. Run `npm run test:unit` (and `npm run test:integration` if API changed)
+2. **Commit** with a descriptive message (why, not just what)
+3. **Push** to GitHub: `git push origin main`
+4. **Deploy** to production using the table above
+5. Verify: `http://49.234.112.108/en` returns 200
+
+Do not skip push or deploy unless the user explicitly asks to hold off.
+
+## Monitors CRUD
+
+- Create: `/monitors/new` → POST
+- Edit: `/monitors/[id]/edit` → PATCH (name, targetUrl, intervalSeconds; type is read-only)
+- Detail: `/monitors/[id]` (read-only + Edit button)
+- List actions: edit, pause/resume, delete
 
 ## Product UI
 

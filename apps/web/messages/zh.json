@@ -130,6 +130,8 @@
     "searchPlaceholder": "按名称或 URL 搜索...",
     "createTitle": "添加监控",
     "editTitle": "编辑监控",
+    "saveChanges": "保存修改",
+    "typeReadonly": "创建后监控类型不可修改",
     "friendlyName": "显示名称",
     "targetUrl": "目标 URL",
     "monitorType": "监控类型",

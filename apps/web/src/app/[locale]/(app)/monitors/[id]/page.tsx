@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { Pencil } from 'lucide-react';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 import { formatUptime, formatMs } from '@/lib/utils';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
@@ -46,7 +48,12 @@ export default function MonitorDetailPage() {
           <h1 className="text-2xl font-bold">{monitor.name}</h1>
           <p className="font-mono text-sm text-zinc-500">{monitor.targetUrl}</p>
         </div>
-        <span className={`badge-${monitor.status === 'up' ? 'up' : monitor.status === 'down' ? 'down' : 'pending'}`}>{monitor.status}</span>
+        <div className="flex items-center gap-3">
+          <Link href={`/monitors/${id}/edit`} className="btn-secondary flex items-center gap-2 text-sm">
+            <Pencil className="h-4 w-4" /> {tc('edit')}
+          </Link>
+          <span className={`badge-${monitor.status === 'up' ? 'up' : monitor.status === 'down' ? 'down' : 'pending'}`}>{monitor.status}</span>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

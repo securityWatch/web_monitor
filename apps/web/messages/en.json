@@ -130,6 +130,8 @@
     "searchPlaceholder": "Search by name or URL...",
     "createTitle": "Add monitor",
     "editTitle": "Edit monitor",
+    "saveChanges": "Save changes",
+    "typeReadonly": "Monitor type cannot be changed after creation",
     "friendlyName": "Friendly name",
     "targetUrl": "Target URL",
     "monitorType": "Monitor type",

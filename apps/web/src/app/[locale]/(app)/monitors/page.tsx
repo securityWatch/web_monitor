@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 import { formatUptime, formatMs } from '@/lib/utils';
-import { Plus, Trash2, Pause, Play } from 'lucide-react';
+import { Plus, Trash2, Pause, Play, Pencil } from 'lucide-react';
 
 interface Monitor {
   id: string;
@@ -109,6 +109,7 @@ export default function MonitorsPage() {
                   <td className="p-4 text-zinc-500">{m.lastCheckedAt ? new Date(m.lastCheckedAt).toLocaleString() : '—'} {m.lastResponseMs != null && `(${formatMs(m.lastResponseMs)})`}</td>
                   <td className="p-4">
                     <div className="flex gap-2">
+                      <Link href={`/monitors/${m.id}/edit`} className="text-zinc-400 hover:text-white" title={tc('edit')}><Pencil className="h-4 w-4" /></Link>
                       <button onClick={() => togglePause(m)} className="text-zinc-400 hover:text-white">{m.status === 'paused' ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}</button>
                       <button onClick={() => remove(m.id)} className="text-zinc-400 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
                     </div>
