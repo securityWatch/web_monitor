@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { Pencil } from 'lucide-react';
 import { apiFetch, getStoredAuth } from '@/lib/api';
-import { formatUptime, formatMs } from '@/lib/utils';
+import { formatMs } from '@/lib/utils';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface Monitor {
@@ -27,19 +27,37 @@ export default function MonitorDetailPage() {
 
   useEffect(() => {
     if (!orgId || !id) return;
-    apiFetch<Monitor>(`/api/v1/orgs/${orgId}/monitors/${id}`).then(setMonitor).catch(console.error);
-    apiFetch<{ checks: Check[] }>(`/api/v1/orgs/${orgId}/monitors/${id}/checks`).then((d) => setChecks(d.checks)).catch(console.error);
-    apiFetch<{ trend: { time: string; avgMs: number }[] }>(`/api/v1/orgs/${orgId}/monitors/${id}/stats`).then((d) => setTrend(d.trend || [])).catch(console.error);
-    const iv = setInterval(() => {
-      apiFetch<Monitor>(`/api/v1/orgs/${orgId}/monitors/${id}`).then(setMonitor).catch(() => {});
-      apiFetch<{ checks: Check[] }>(`/api/v1/orgs/${orgId}/monitors/${id}/checks`).then((d) => setChecks(d.checks)).catch(() => {});
-    }, 15000);
+
+    const load = () => {
+      apiFetch<Monitor>(`/api/v1/orgs/${orgId}/monitors/${id}`).then(setMonitor).catch(console.error);
+      apiFetch<{ checks: Check[] }>(`/api/v1/orgs/${orgId}/monitors/${id}/checks`)
+        .then((d) => setChecks(d.checks))
+        .catch(console.error);
+      apiFetch<{ trend: { time: string; avgMs: number }[] }>(`/api/v1/orgs/${orgId}/monitors/${id}/stats`)
+        .then((d) => setTrend(d.trend || []))
+        .catch(console.error);
+    };
+
+    load();
+    const iv = setInterval(load, 15000);
     return () => clearInterval(iv);
   }, [orgId, id]);
 
   if (!monitor) return <div className="text-zinc-500">{tc('loading')}</div>;
 
-  const chartData = trend.map((p) => ({ time: new Date(p.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ms: p.avgMs }));
+  const latestResponseMs = monitor.lastResponseMs ?? checks.find((c) => c.responseMs != null)?.responseMs;
+  const chartFromChecks = [...checks]
+    .filter((c) => c.responseMs != null)
+    .reverse()
+    .map((c) => ({
+      time: new Date(c.checkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      ms: c.responseMs!,
+    }));
+  const chartFromStats = trend.map((p) => ({
+    time: new Date(p.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    ms: p.avgMs,
+  }));
+  const chartData = chartFromChecks.length > 0 ? chartFromChecks : chartFromStats;
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6">
@@ -59,7 +77,7 @@ export default function MonitorDetailPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="card"><p className="text-sm text-zinc-500">{tc('type')}</p><p className="mt-1 uppercase">{monitor.type}</p></div>
         <div className="card"><p className="text-sm text-zinc-500">{tc('interval')}</p><p className="mt-1 font-mono">{monitor.intervalSeconds}s</p></div>
-        <div className="card"><p className="text-sm text-zinc-500">{t('responseTime')}</p><p className="mt-1 font-mono">{formatMs(monitor.lastResponseMs)}</p></div>
+        <div className="card"><p className="text-sm text-zinc-500">{t('responseTime')}</p><p className="mt-1 font-mono">{formatMs(latestResponseMs)}</p></div>
       </div>
 
       <div className="card">

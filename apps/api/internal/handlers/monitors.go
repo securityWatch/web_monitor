@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -322,12 +323,15 @@ func (h *MonitorHandler) GetStats(c *gin.Context) {
 	var trend []models.ResponseTimePoint
 	for rows.Next() {
 		var p models.ResponseTimePoint
-		var t interface{}
-		if err := rows.Scan(&t, &p.AvgMs, &p.P95Ms); err != nil {
+		var bucket time.Time
+		if err := rows.Scan(&bucket, &p.AvgMs, &p.P95Ms); err != nil {
 			continue
 		}
-		p.Time = t.(string)
+		p.Time = bucket.Format(time.RFC3339)
 		trend = append(trend, p)
+	}
+	if trend == nil {
+		trend = []models.ResponseTimePoint{}
 	}
 	c.JSON(http.StatusOK, gin.H{"trend": trend})
 }

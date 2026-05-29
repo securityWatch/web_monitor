@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pulsewatch/api/internal/config"
 	"github.com/pulsewatch/api/internal/database"
@@ -133,6 +134,45 @@ func TestMonitorCRUD(t *testing.T) {
 	w4 := httptest.NewRecorder()
 	testRouter.ServeHTTP(w4, req4)
 	assert.Equal(t, http.StatusOK, w4.Code)
+}
+
+func TestMonitorStats(t *testing.T) {
+	resp := registerUser(t, uniqueEmail("stats"), "password123")
+	token := resp["accessToken"].(string)
+	orgID := resp["organization"].(map[string]interface{})["id"].(string)
+
+	createBody, _ := json.Marshal(map[string]interface{}{
+		"name": "Stats Site", "type": "http", "targetUrl": "https://example.com", "intervalSeconds": 300,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/orgs/"+orgID+"/monitors", bytes.NewReader(createBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	testRouter.ServeHTTP(w, req)
+	require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+
+	var monitor map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &monitor))
+	id := monitor["id"].(string)
+
+	ctx := context.Background()
+	_, err := testDB.Exec(ctx, `
+		INSERT INTO check_results (id, org_id, monitor_id, checked_at, region, status_code, response_ms, is_up, metadata)
+		VALUES ($1, $2, $3, now(), 'us-east', 200, 120, true, '{}')
+	`, uuid.New().String(), orgID, id)
+	require.NoError(t, err)
+
+	req2 := httptest.NewRequest(http.MethodGet, "/api/v1/orgs/"+orgID+"/monitors/"+id+"/stats", nil)
+	req2.Header.Set("Authorization", "Bearer "+token)
+	w2 := httptest.NewRecorder()
+	testRouter.ServeHTTP(w2, req2)
+	assert.Equal(t, http.StatusOK, w2.Code, w2.Body.String())
+
+	var body map[string]interface{}
+	require.NoError(t, json.Unmarshal(w2.Body.Bytes(), &body))
+	trend, ok := body["trend"].([]interface{})
+	require.True(t, ok)
+	assert.NotEmpty(t, trend)
 }
 
 func TestPasswordChange(t *testing.T) {
