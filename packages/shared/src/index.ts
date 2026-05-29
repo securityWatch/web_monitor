@@ -71,9 +71,29 @@ export interface DashboardStats {
   downCount: number;
   pausedCount: number;
   uptime24h: number;
+  errorRate24h: number;
+  failedChecks24h: number;
+  totalChecks24h: number;
   openIncidents: number;
   responseTimeTrend: { time: string; avgMs: number; p95Ms: number }[];
   recentIncidents: Incident[];
+  recentFailures: RecentFailure[];
+  topMonitors: Monitor[];
+}
+
+export interface RecentFailure {
+  monitorId: string;
+  monitorName: string;
+  checkedAt: string;
+  errorMessage: string | null;
+  statusCode: number | null;
+}
+
+export interface CheckPagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
 
 export interface AuthTokens {

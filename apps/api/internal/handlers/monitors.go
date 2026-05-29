@@ -273,11 +273,46 @@ func (h *MonitorHandler) GetChecks(c *gin.Context) {
 		return
 	}
 
-	rows, err := h.db.Query(c.Request.Context(), `
+	tr := parseTimeRange(c)
+	page, limit, offset := parsePagination(c)
+	search := strings.TrimSpace(c.Query("search"))
+	isUpFilter := c.Query("isUp")
+
+	where := `monitor_id = $1 AND org_id = $2 AND checked_at >= $3 AND checked_at <= $4`
+	args := []interface{}{id, orgID, tr.From, tr.To}
+	argIdx := 5
+
+	if search != "" {
+		where += ` AND (COALESCE(error_message, '') ILIKE $` + strconv.Itoa(argIdx) +
+			` OR CAST(COALESCE(status_code, 0) AS TEXT) LIKE $` + strconv.Itoa(argIdx) + `)`
+		args = append(args, "%"+search+"%")
+		argIdx++
+	}
+	if isUpFilter == "true" || isUpFilter == "false" {
+		where += ` AND is_up = $` + strconv.Itoa(argIdx)
+		args = append(args, isUpFilter == "true")
+		argIdx++
+	}
+
+	var total int
+	countQuery := `SELECT COUNT(*) FROM check_results WHERE ` + where
+	if err := h.db.QueryRow(c.Request.Context(), countQuery, args...).Scan(&total); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	totalPages := (total + limit - 1) / limit
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	dataQuery := `
 		SELECT id, monitor_id, checked_at, region, status_code, response_ms, is_up, error_message, metadata
-		FROM check_results WHERE monitor_id = $1 AND org_id = $2
-		ORDER BY checked_at DESC LIMIT 100
-	`, id, orgID)
+		FROM check_results WHERE ` + where + `
+		ORDER BY checked_at DESC LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+	dataArgs := append(args, limit, offset)
+
+	rows, err := h.db.Query(c.Request.Context(), dataQuery, dataArgs...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -295,7 +330,16 @@ func (h *MonitorHandler) GetChecks(c *gin.Context) {
 	if results == nil {
 		results = []models.CheckResult{}
 	}
-	c.JSON(http.StatusOK, gin.H{"checks": results})
+
+	c.JSON(http.StatusOK, gin.H{
+		"checks": results,
+		"pagination": models.CheckPagination{
+			Page:       page,
+			PageSize:   limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	})
 }
 
 func (h *MonitorHandler) GetStats(c *gin.Context) {
@@ -306,14 +350,30 @@ func (h *MonitorHandler) GetStats(c *gin.Context) {
 		return
 	}
 
-	rows, err := h.db.Query(c.Request.Context(), `
-		SELECT date_trunc('hour', checked_at) as bucket,
+	tr := parseTimeRange(c)
+	ctx := c.Request.Context()
+	bucketExpr := bucketTruncExpr(tr.Bucket)
+
+	var summary models.MonitorStatsSummary
+	_ = h.db.QueryRow(ctx, `
+		SELECT
+		  COUNT(*),
+		  COUNT(*) FILTER (WHERE NOT is_up),
+		  COALESCE(ROUND(100.0 * COUNT(*) FILTER (WHERE is_up) / NULLIF(COUNT(*), 0), 2), 100),
+		  COALESCE(ROUND(100.0 * COUNT(*) FILTER (WHERE NOT is_up) / NULLIF(COUNT(*), 0), 2), 0)
+		FROM check_results
+		WHERE monitor_id = $1 AND org_id = $2 AND checked_at >= $3 AND checked_at <= $4
+	`, id, orgID, tr.From, tr.To).Scan(&summary.TotalChecks, &summary.DownChecks, &summary.UptimePct, &summary.ErrorRate)
+
+	trendQuery := `
+		SELECT ` + bucketExpr + ` as bucket,
 		       AVG(response_ms)::float as avg_ms,
 		       PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_ms)::float as p95_ms
 		FROM check_results
-		WHERE monitor_id = $1 AND org_id = $2 AND checked_at > now() - interval '24 hours' AND is_up = true
-		GROUP BY 1 ORDER BY 1
-	`, id, orgID)
+		WHERE monitor_id = $1 AND org_id = $2 AND checked_at >= $3 AND checked_at <= $4 AND is_up = true
+		GROUP BY 1 ORDER BY 1`
+
+	rows, err := h.db.Query(ctx, trendQuery, id, orgID, tr.From, tr.To)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -333,7 +393,7 @@ func (h *MonitorHandler) GetStats(c *gin.Context) {
 	if trend == nil {
 		trend = []models.ResponseTimePoint{}
 	}
-	c.JSON(http.StatusOK, gin.H{"trend": trend})
+	c.JSON(http.StatusOK, gin.H{"trend": trend, "summary": summary})
 }
 
 func (h *MonitorHandler) fetchMonitor(c *gin.Context, orgID, id string) (*models.Monitor, error) {

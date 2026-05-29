@@ -84,10 +84,36 @@ type DashboardStats struct {
 	DownCount         int                    `json:"downCount"`
 	PausedCount       int                    `json:"pausedCount"`
 	Uptime24h         float64                `json:"uptime24h"`
+	ErrorRate24h      float64                `json:"errorRate24h"`
+	FailedChecks24h   int                    `json:"failedChecks24h"`
+	TotalChecks24h    int                    `json:"totalChecks24h"`
 	OpenIncidents     int                    `json:"openIncidents"`
 	ResponseTimeTrend []ResponseTimePoint    `json:"responseTimeTrend"`
 	RecentIncidents   []Incident             `json:"recentIncidents"`
+	RecentFailures    []RecentFailure        `json:"recentFailures"`
 	TopMonitors       []Monitor              `json:"topMonitors"`
+}
+
+type RecentFailure struct {
+	MonitorID    string     `json:"monitorId"`
+	MonitorName  string     `json:"monitorName"`
+	CheckedAt    time.Time  `json:"checkedAt"`
+	ErrorMessage *string    `json:"errorMessage"`
+	StatusCode   *int       `json:"statusCode"`
+}
+
+type CheckPagination struct {
+	Page       int `json:"page"`
+	PageSize   int `json:"pageSize"`
+	Total      int `json:"total"`
+	TotalPages int `json:"totalPages"`
+}
+
+type MonitorStatsSummary struct {
+	UptimePct   float64 `json:"uptimePct"`
+	TotalChecks int     `json:"totalChecks"`
+	DownChecks  int     `json:"downChecks"`
+	ErrorRate   float64 `json:"errorRate"`
 }
 
 type ResponseTimePoint struct {

@@ -5,16 +5,28 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 import { formatUptime, greetingKey } from '@/lib/utils';
+import { RecentFailuresTicker } from '@/components/recent-failures-ticker';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface DashboardStats {
   totalMonitors: number;
   upCount: number;
   downCount: number;
+  pausedCount: number;
   uptime24h: number;
+  errorRate24h: number;
+  failedChecks24h: number;
+  totalChecks24h: number;
   openIncidents: number;
   responseTimeTrend: { time: string; avgMs: number; p95Ms: number }[];
   recentIncidents: { id: string; monitorName: string; startedAt: string; status: string }[];
+  recentFailures: {
+    monitorId: string;
+    monitorName: string;
+    checkedAt: string;
+    errorMessage?: string | null;
+    statusCode?: number | null;
+  }[];
   topMonitors: { id: string; name: string; status: string; lastResponseMs?: number; uptime24h?: number }[];
 }
 
@@ -27,9 +39,14 @@ export default function DashboardPage() {
   useEffect(() => {
     const orgId = auth?.organization.id;
     if (!orgId) return;
-    apiFetch<DashboardStats>(`/api/v1/orgs/${orgId}/dashboard`)
-      .then(setStats)
-      .catch(console.error);
+    const load = () => {
+      apiFetch<DashboardStats>(`/api/v1/orgs/${orgId}/dashboard`)
+        .then(setStats)
+        .catch(console.error);
+    };
+    load();
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
   }, [auth?.organization.id]);
 
   const hour = new Date().getHours();
@@ -44,6 +61,39 @@ export default function DashboardPage() {
     ms: p.avgMs,
   }));
 
+  const kpiCards = [
+    {
+      label: t('totalMonitors'),
+      value: stats.totalMonitors,
+      sub: `${stats.upCount} ${tc('up')} · ${stats.pausedCount} ${t('pausedLabel')}`,
+    },
+    {
+      label: t('downMonitors'),
+      value: stats.downCount,
+      sub: stats.downCount ? tc('down') : t('allOperational'),
+      danger: stats.downCount > 0,
+    },
+    {
+      label: t('openIncidents'),
+      value: stats.openIncidents,
+      sub: t('incidentSub'),
+      danger: stats.openIncidents > 0,
+    },
+    {
+      label: t('errorRate24h'),
+      value: formatUptime(stats.errorRate24h),
+      sub: t('failedChecksSub', { count: stats.failedChecks24h, total: stats.totalChecks24h }),
+      mono: true,
+      danger: stats.errorRate24h > 0,
+    },
+    {
+      label: t('uptime24h'),
+      value: formatUptime(stats.uptime24h),
+      sub: t('checks24hSub', { count: stats.totalChecks24h }),
+      mono: true,
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-[1600px] space-y-6">
       <h1 className="text-2xl font-bold">{t(greetingKey(hour), { name })}</h1>
@@ -55,13 +105,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: t('totalMonitors'), value: stats.totalMonitors, sub: `${stats.upCount} ${tc('up')}` },
-          { label: t('downMonitors'), value: stats.downCount, sub: stats.downCount ? tc('down') : t('allOperational'), danger: stats.downCount > 0 },
-          { label: t('uptime24h'), value: formatUptime(stats.uptime24h), mono: true },
-          { label: t('openIncidents'), value: stats.openIncidents },
-        ].map((c) => (
+      <div>
+        <p className="mb-2 text-sm font-medium text-zinc-400">{t('recentFailuresTicker')}</p>
+        <RecentFailuresTicker items={stats.recentFailures} emptyLabel={t('noRecentFailures')} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {kpiCards.map((c) => (
           <div key={c.label} className="card">
             <p className="text-sm text-zinc-500">{c.label}</p>
             <p className={`mt-2 text-3xl font-bold tabular-nums ${c.danger ? 'text-red-400' : ''} ${c.mono ? 'font-mono' : ''}`}>{c.value}</p>

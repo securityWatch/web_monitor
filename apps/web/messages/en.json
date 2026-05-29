@@ -117,7 +117,14 @@
     "activeIncidents": "Active incidents",
     "monitorsGlance": "Monitors at a glance",
     "allOperational": "All systems operational",
-    "incidentBanner": "{count} monitor(s) down — View incidents"
+    "incidentBanner": "{count} monitor(s) down — View incidents",
+    "errorRate24h": "24h error rate",
+    "failedChecksSub": "{count}/{total} checks failed",
+    "checks24hSub": "{count} checks in 24h",
+    "pausedLabel": "paused",
+    "incidentSub": "open incident events",
+    "recentFailuresTicker": "Recent failures",
+    "noRecentFailures": "No failed checks recently"
   },
   "monitors": {
     "title": "Monitors",
@@ -187,7 +194,19 @@
     "timingTls": "TLS",
     "timingTtfb": "Server (TTFB)",
     "timingDownload": "Download",
-    "timingTotal": "Total"
+    "timingTotal": "Total",
+    "timeRange": "Time range",
+    "range1h": "1 hour",
+    "range24h": "24 hours",
+    "range7d": "7 days",
+    "range30d": "30 days",
+    "rangeUptime": "Period uptime",
+    "rangeErrorRate": "Period error rate",
+    "checkSearchPlaceholder": "Search error message or status code...",
+    "checkLogMeta": "{total} records · page {page}/{totalPages}",
+    "pageInfo": "Page {page} of {totalPages}",
+    "prevPage": "Previous",
+    "nextPage": "Next"
   },
   "incidents": {
     "title": "Incidents",

@@ -40,14 +40,25 @@ func (h *DashboardHandler) Get(c *gin.Context) {
 	`, orgID).Scan(&stats.TotalMonitors, &stats.UpCount, &stats.DownCount, &stats.PausedCount)
 
 	var uptime *float64
+	var errorRate *float64
+	var failedChecks, totalChecks int
 	_ = h.db.QueryRow(ctx, `
-		SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE is_up) / NULLIF(COUNT(*), 0), 2)
+		SELECT
+		  COUNT(*),
+		  COUNT(*) FILTER (WHERE NOT is_up),
+		  ROUND(100.0 * COUNT(*) FILTER (WHERE is_up) / NULLIF(COUNT(*), 0), 2),
+		  ROUND(100.0 * COUNT(*) FILTER (WHERE NOT is_up) / NULLIF(COUNT(*), 0), 2)
 		FROM check_results WHERE org_id = $1 AND checked_at > now() - interval '24 hours'
-	`, orgID).Scan(&uptime)
+	`, orgID).Scan(&totalChecks, &failedChecks, &uptime, &errorRate)
+	stats.TotalChecks24h = totalChecks
+	stats.FailedChecks24h = failedChecks
 	if uptime != nil {
 		stats.Uptime24h = *uptime
 	} else {
 		stats.Uptime24h = 100
+	}
+	if errorRate != nil {
+		stats.ErrorRate24h = *errorRate
 	}
 
 	_ = h.db.QueryRow(ctx, `
@@ -101,10 +112,36 @@ func (h *DashboardHandler) Get(c *gin.Context) {
 		stats.RecentIncidents = []models.Incident{}
 	}
 
+	failRows, _ := h.db.Query(ctx, `
+		SELECT cr.monitor_id, m.name, cr.checked_at, cr.error_message, cr.status_code
+		FROM check_results cr
+		JOIN monitors m ON m.id = cr.monitor_id
+		WHERE cr.org_id = $1 AND cr.is_up = false
+		ORDER BY cr.checked_at DESC
+		LIMIT 20
+	`, orgID)
+	if failRows != nil {
+		defer failRows.Close()
+		for failRows.Next() {
+			var f models.RecentFailure
+			if err := failRows.Scan(&f.MonitorID, &f.MonitorName, &f.CheckedAt, &f.ErrorMessage, &f.StatusCode); err != nil {
+				continue
+			}
+			stats.RecentFailures = append(stats.RecentFailures, f)
+		}
+	}
+	if stats.RecentFailures == nil {
+		stats.RecentFailures = []models.RecentFailure{}
+	}
+
 	// Top monitors
 	monRows, _ := h.db.Query(ctx, `
 		SELECT m.id, m.org_id, m.name, m.type, m.target_url, m.interval_seconds, m.status,
-		       m.config, m.regions, m.last_checked_at, m.last_response_ms, m.created_at, m.updated_at
+		       m.config, m.regions, m.last_checked_at, m.last_response_ms, m.created_at, m.updated_at,
+		       COALESCE((
+		         SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE is_up) / NULLIF(COUNT(*), 0), 2)
+		         FROM check_results WHERE monitor_id = m.id AND checked_at > now() - interval '24 hours'
+		       ), 100) as uptime_24h
 		FROM monitors m WHERE m.org_id = $1
 		ORDER BY CASE m.status WHEN 'down' THEN 0 ELSE 1 END, m.last_checked_at DESC NULLS LAST
 		LIMIT 5
@@ -114,7 +151,7 @@ func (h *DashboardHandler) Get(c *gin.Context) {
 		for monRows.Next() {
 			var m models.Monitor
 			if err := monRows.Scan(&m.ID, &m.OrgID, &m.Name, &m.Type, &m.TargetURL, &m.IntervalSeconds, &m.Status,
-				&m.Config, &m.Regions, &m.LastCheckedAt, &m.LastResponseMs, &m.CreatedAt, &m.UpdatedAt); err != nil {
+				&m.Config, &m.Regions, &m.LastCheckedAt, &m.LastResponseMs, &m.CreatedAt, &m.UpdatedAt, &m.Uptime24h); err != nil {
 				continue
 			}
 			stats.TopMonitors = append(stats.TopMonitors, m)

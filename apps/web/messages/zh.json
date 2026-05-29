@@ -117,7 +117,14 @@
     "activeIncidents": "活跃故障",
     "monitorsGlance": "监控概览",
     "allOperational": "所有系统运行正常",
-    "incidentBanner": "{count} 个监控故障 — 查看故障"
+    "incidentBanner": "{count} 个监控故障 — 查看故障",
+    "errorRate24h": "24小时异常率",
+    "failedChecksSub": "{count}/{total} 次检测失败",
+    "checks24hSub": "共 {count} 次检测",
+    "pausedLabel": "暂停",
+    "incidentSub": "进行中故障事件",
+    "recentFailuresTicker": "最近故障",
+    "noRecentFailures": "最近无检测失败记录"
   },
   "monitors": {
     "title": "监控",
@@ -187,7 +194,19 @@
     "timingTls": "TLS 握手",
     "timingTtfb": "服务器响应",
     "timingDownload": "下载",
-    "timingTotal": "总耗时"
+    "timingTotal": "总耗时",
+    "timeRange": "时间范围",
+    "range1h": "1 小时",
+    "range24h": "24 小时",
+    "range7d": "7 天",
+    "range30d": "30 天",
+    "rangeUptime": "时段可用率",
+    "rangeErrorRate": "时段异常率",
+    "checkSearchPlaceholder": "搜索错误信息或状态码...",
+    "checkLogMeta": "共 {total} 条 · 第 {page}/{totalPages} 页",
+    "pageInfo": "第 {page} / {totalPages} 页",
+    "prevPage": "上一页",
+    "nextPage": "下一页"
   },
   "incidents": {
     "title": "故障",
