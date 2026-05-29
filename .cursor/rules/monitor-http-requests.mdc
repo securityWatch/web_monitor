@@ -1,0 +1,53 @@
+---
+description: HTTP monitor request method, body, and multi-step request chain
+globs: apps/api/internal/services/**,apps/web/src/**/monitors/**,apps/web/src/components/monitor-http-config.tsx,apps/web/src/lib/monitor-config.ts
+alwaysApply: false
+---
+
+# HTTP Monitor Request Configuration (MON-HTTP-01)
+
+Full spec: [docs/MONITOR-HTTP-REQUESTS.md](../../docs/MONITOR-HTTP-REQUESTS.md)
+
+## Config storage
+
+All HTTP/keyword/ssl advanced settings live in `monitors.config` (JSONB). Do not add new DB columns.
+
+## Single request mode
+
+When `config.steps` is empty, use top-level fields:
+
+- `method`, `body`, `headers`, `expectedStatus`, `keyword`, `timeout`
+
+## Request chain mode
+
+When `config.steps` is non-empty:
+
+- Execute steps sequentially (max 5)
+- Step 1 URL defaults to monitor `targetUrl` if blank
+- Substitute `{{varName}}` in url/body/headers from prior extracts
+- Extract via `json` (dot path), `regex` (capture group 1), or `header`
+- Fail fast on wrong status or extract error
+
+## Code locations
+
+| Layer | Path |
+|-------|------|
+| Executor | `apps/api/internal/services/http_chain.go` |
+| Config types | `apps/api/internal/services/http_config.go` |
+| Entry | `RunCheck()` in `checks.go` |
+| UI component | `apps/web/src/components/monitor-http-config.tsx` |
+| Shared TS types | `apps/web/src/lib/monitor-config.ts` |
+
+## UI rules
+
+- Show HTTP config for types: `http`, `keyword`, `ssl` only
+- Toggle "Enable request chain" switches single vs multi-step UI
+- Edit page must PATCH `config` alongside name/url/interval
+- All strings via next-intl (`monitors.*` keys)
+
+## After changes
+
+1. `go test ./internal/services/...` in `apps/api`
+2. Deploy API + web (`redeploy-api.js` + `redeploy-web.js`)
+3. Browser-verify create/edit on `/monitors/new` and `/monitors/[id]/edit`
+4. Commit, push, update PRD reference if scope changes

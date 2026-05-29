@@ -55,9 +55,10 @@ Do not skip push or deploy unless the user explicitly asks to hold off.
 ## Monitors CRUD
 
 - Create: `/monitors/new` → POST
-- Edit: `/monitors/[id]/edit` → PATCH (name, targetUrl, intervalSeconds; type is read-only)
+- Edit: `/monitors/[id]/edit` → PATCH (name, targetUrl, intervalSeconds, **config**; type is read-only)
 - Detail: `/monitors/[id]` (read-only + Edit button)
 - List actions: edit, pause/resume, delete
+- HTTP advanced config: see `.cursor/rules/monitor-http-requests.mdc` and `docs/MONITOR-HTTP-REQUESTS.md`
 
 ## Product UI
 

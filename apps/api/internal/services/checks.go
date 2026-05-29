@@ -2,12 +2,9 @@ package services
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"os/exec"
 	"regexp"
 	"runtime"
@@ -30,7 +27,8 @@ func RunCheck(ctx context.Context, monitorType, targetURL string, config json.Ra
 
 	switch monitorType {
 	case "http", "keyword", "ssl":
-		return runHTTPCheck(ctx, targetURL, cfg, monitorType, start)
+		httpCfg := ParseHTTPConfig(cfg)
+		return executeHTTPMonitor(ctx, targetURL, httpCfg, monitorType, start)
 	case "tcp":
 		return runTCPCheck(ctx, targetURL, start)
 	case "ping":
@@ -38,94 +36,6 @@ func RunCheck(ctx context.Context, monitorType, targetURL string, config json.Ra
 	default:
 		return CheckOutcome{IsUp: false, ResponseMs: int(time.Since(start).Milliseconds()), ErrorMessage: "unknown monitor type"}
 	}
-}
-
-func runHTTPCheck(ctx context.Context, targetURL string, cfg map[string]interface{}, monitorType string, start time.Time) CheckOutcome {
-	method := "GET"
-	if m, ok := cfg["method"].(string); ok && m != "" {
-		method = strings.ToUpper(m)
-	}
-	timeout := 30 * time.Second
-	if t, ok := cfg["timeout"].(float64); ok && t > 0 {
-		timeout = time.Duration(t) * time.Second
-	}
-
-	expectedStatus := 200
-	if s, ok := cfg["expectedStatus"].(float64); ok {
-		expectedStatus = int(s)
-	}
-
-	keyword := ""
-	if k, ok := cfg["keyword"].(string); ok {
-		keyword = k
-	}
-	keywordMustContain := true
-	if v, ok := cfg["keywordMustContain"].(bool); ok {
-		keywordMustContain = v
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, method, targetURL, nil)
-	if err != nil {
-		return failOutcome(start, err.Error())
-	}
-
-	client := &http.Client{
-		Timeout: timeout,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 5 {
-				return fmt.Errorf("too many redirects")
-			}
-			return nil
-		},
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
-		},
-	}
-
-	resp, err := client.Do(req)
-	elapsed := int(time.Since(start).Milliseconds())
-	if err != nil {
-		return failOutcome(start, err.Error())
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
-	code := resp.StatusCode
-	metadata := map[string]interface{}{}
-
-	if monitorType == "ssl" {
-		if resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
-			cert := resp.TLS.PeerCertificates[0]
-			daysLeft := int(time.Until(cert.NotAfter).Hours() / 24)
-			metadata["sslDaysLeft"] = daysLeft
-			metadata["sslExpiresAt"] = cert.NotAfter.Format(time.RFC3339)
-			if daysLeft < 30 {
-				metadata["sslWarning"] = true
-			}
-		}
-	}
-
-	checkKeyword := monitorType == "keyword" || keyword != ""
-	if checkKeyword && keyword != "" {
-		found := strings.Contains(string(body), keyword)
-		if keywordMustContain && !found {
-			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "keyword not found", Metadata: metadata}
-		}
-		if !keywordMustContain && found {
-			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "keyword found (should not contain)", Metadata: metadata}
-		}
-	}
-
-	isUp := code == expectedStatus
-	errMsg := ""
-	if !isUp {
-		errMsg = fmt.Sprintf("expected status %d, got %d", expectedStatus, code)
-	}
-
-	return CheckOutcome{IsUp: isUp, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: errMsg, Metadata: metadata}
 }
 
 func runTCPCheck(ctx context.Context, target string, start time.Time) CheckOutcome {

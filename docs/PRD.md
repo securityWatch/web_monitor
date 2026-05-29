@@ -135,6 +135,8 @@ quadrantChart
 
 **HTTP 高级选项**：自定义 Header/Cookie、Basic Auth、POST body、跟随重定向上限、期望状态码范围、响应体大小上限。
 
+> **已实现（MON-HTTP-01）**：HTTP 方法、POST 请求体、自定义 Header、多步请求链（变量提取 + `{{var}}` 模板）。详见 [MONITOR-HTTP-REQUESTS.md](MONITOR-HTTP-REQUESTS.md)。
+
 ### C.3 检测调度与多区域探针
 
 - **调度器**：每个监控按 `interval_seconds` 在全局队列中生成 tick；支持抖动 ±5% 防雷鸣群效应。

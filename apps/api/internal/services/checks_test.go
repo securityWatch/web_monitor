@@ -3,6 +3,8 @@ package services_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -65,6 +67,50 @@ func TestRunTCPCheck(t *testing.T) {
 	}()
 	outcome := services.RunCheck(context.Background(), "tcp", ln.Addr().String(), json.RawMessage(`{}`))
 	assert.True(t, outcome.IsUp)
+}
+
+func TestRunHTTPPostBody(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		body, _ := io.ReadAll(r.Body)
+		assert.JSONEq(t, `{"ping":true}`, string(body))
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+
+	cfg := json.RawMessage(`{"method":"POST","body":"{\"ping\":true}","expectedStatus":201}`)
+	outcome := services.RunCheck(context.Background(), "http", srv.URL, cfg)
+	assert.True(t, outcome.IsUp)
+	require.NotNil(t, outcome.StatusCode)
+	assert.Equal(t, 201, *outcome.StatusCode)
+}
+
+func TestRunHTTPRequestChain(t *testing.T) {
+	var token string
+	login := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"accessToken":"secret-token-123"}`))
+	}))
+	defer login.Close()
+
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token = r.URL.Query().Get("token")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	}))
+	defer api.Close()
+
+	cfg := json.RawMessage(fmt.Sprintf(`{
+		"steps": [
+			{"url":%q,"method":"GET","extract":[{"var":"token","from":"json","path":"accessToken"}]},
+			{"url":%q,"method":"GET","extract":[]}
+		]
+	}`, login.URL, api.URL+"?token={{token}}"))
+
+	outcome := services.RunCheck(context.Background(), "http", login.URL, cfg)
+	assert.True(t, outcome.IsUp, outcome.ErrorMessage)
+	assert.Equal(t, "secret-token-123", token)
 }
 
 func TestRunCheckTimeout(t *testing.T) {

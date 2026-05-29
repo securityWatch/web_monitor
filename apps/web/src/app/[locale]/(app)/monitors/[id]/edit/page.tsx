@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth } from '@/lib/api';
+import { MonitorHttpConfig } from '@/components/monitor-http-config';
+import { HttpMonitorConfig, buildHttpConfigPayload, defaultHttpConfig, parseHttpConfig } from '@/lib/monitor-config';
 
 interface Monitor {
   id: string;
@@ -12,6 +14,7 @@ interface Monitor {
   targetUrl: string;
   type: string;
   intervalSeconds: number;
+  config?: unknown;
 }
 
 export default function EditMonitorPage() {
@@ -23,6 +26,7 @@ export default function EditMonitorPage() {
   const orgId = auth?.organization.id;
   const [form, setForm] = useState({ name: '', targetUrl: '', intervalSeconds: 300 });
   const [type, setType] = useState('http');
+  const [httpConfig, setHttpConfig] = useState<HttpMonitorConfig>(defaultHttpConfig());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -33,6 +37,7 @@ export default function EditMonitorPage() {
       .then((m) => {
         setForm({ name: m.name, targetUrl: m.targetUrl, intervalSeconds: m.intervalSeconds });
         setType(m.type);
+        setHttpConfig(parseHttpConfig(m.config));
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Error'))
       .finally(() => setLoading(false));
@@ -44,9 +49,10 @@ export default function EditMonitorPage() {
     setSaving(true);
     setError('');
     try {
+      const config = buildHttpConfigPayload(httpConfig, type);
       await apiFetch(`/api/v1/orgs/${orgId}/monitors/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, config: config || {} }),
       });
       router.push(`/monitors/${id}`);
     } catch (err) {
@@ -59,7 +65,7 @@ export default function EditMonitorPage() {
   if (loading) return <div className="text-zinc-500">{tc('loading')}</div>;
 
   return (
-    <div className="mx-auto max-w-lg space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">{t('editTitle')}</h1>
         <Link href={`/monitors/${id}`} className="text-sm text-zinc-400 hover:text-white">{tc('back')}</Link>
@@ -72,12 +78,14 @@ export default function EditMonitorPage() {
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('targetUrl')}</label>
           <input required className="input font-mono" placeholder="https://example.com" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} />
+          <p className="mt-1 text-xs text-zinc-500">{t('targetUrlChainHint')}</p>
         </div>
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('monitorType')}</label>
           <input readOnly className="input uppercase opacity-60" value={type} />
           <p className="mt-1 text-xs text-zinc-500">{t('typeReadonly')}</p>
         </div>
+        <MonitorHttpConfig type={type} config={httpConfig} onChange={setHttpConfig} />
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
           <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>
