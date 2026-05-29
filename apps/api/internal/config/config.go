@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -11,6 +12,7 @@ type Config struct {
 	JWTRefreshSecret   string
 	Port               string
 	CorsOrigin         string
+	CorsOrigins        []string
 	SMTPMode           string
 	SMTPHost           string
 	SMTPPort           int
@@ -32,6 +34,7 @@ func Load() *Config {
 		JWTRefreshSecret:   getEnv("JWT_REFRESH_SECRET", "dev-refresh-secret-change-in-production"),
 		Port:               getEnv("PORT", "4000"),
 		CorsOrigin:         getEnv("CORS_ORIGIN", "http://localhost:3000"),
+		CorsOrigins:        parseCorsOrigins(),
 		SMTPMode:           getEnv("SMTP_MODE", "console"),
 		SMTPHost:           getEnv("SMTP_HOST", ""),
 		SMTPPort:           smtpPort,
@@ -48,4 +51,28 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func parseCorsOrigins() []string {
+	seen := map[string]bool{}
+	var out []string
+	add := func(origin string) {
+		origin = strings.TrimSpace(origin)
+		if origin == "" || seen[origin] {
+			return
+		}
+		seen[origin] = true
+		out = append(out, origin)
+	}
+	if v := os.Getenv("CORS_ORIGINS"); v != "" {
+		for _, part := range strings.Split(v, ",") {
+			add(part)
+		}
+	}
+	if v := os.Getenv("CORS_ORIGIN"); v != "" {
+		add(v)
+	}
+	add("http://localhost:3000")
+	add("http://localhost:4000")
+	return out
 }

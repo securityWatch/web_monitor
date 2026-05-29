@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+const { buildCorsOrigins } = require('./lib/cors-origins');
+
 const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
 const USER = process.env.DEPLOY_USER || 'ubuntu';
 const PASSWORD = process.env.DEPLOY_PASSWORD || 'prs@2018';
@@ -62,12 +64,12 @@ async function main() {
 
   const jwt1 = require('crypto').randomBytes(32).toString('hex');
   const jwt2 = require('crypto').randomBytes(32).toString('hex');
+  const corsOrigins = buildCorsOrigins(HOST, process.env.APP_DOMAINS || '');
   const envContent = `DATABASE_URL=postgresql://postgres:prs%402018@127.0.0.1:6541/pulsewatch
 JWT_SECRET=${jwt1}
 JWT_REFRESH_SECRET=${jwt2}
 PORT=4000
-CORS_ORIGIN=http://${HOST}
-NEXT_PUBLIC_API_URL=http://${HOST}
+CORS_ORIGINS=${corsOrigins}
 SMTP_MODE=console
 NODE_ENV=production
 HOSTNAME=0.0.0.0
@@ -101,7 +103,7 @@ HOSTNAME=0.0.0.0
   }
 
   await exec(conn, `cat > ${APP_DIR}/api/.env << 'EOF'\n${envContent}EOF`);
-  await exec(conn, `cat > ${APP_DIR}/web/.env << 'EOF'\nNEXT_PUBLIC_API_URL=http://${HOST}\nPORT=3000\nHOSTNAME=0.0.0.0\nEOF`);
+  await exec(conn, `cat > ${APP_DIR}/web/.env << 'EOF'\nINTERNAL_API_URL=http://127.0.0.1:4000\nPORT=3000\nHOSTNAME=0.0.0.0\nEOF`);
 
   // Systemd services
   const apiService = `[Unit]
@@ -131,7 +133,7 @@ User=ubuntu
 WorkingDirectory=${APP_DIR}/web/.next/standalone/apps/web
 Environment=PORT=3000
 Environment=HOSTNAME=0.0.0.0
-Environment=NEXT_PUBLIC_API_URL=http://${HOST}
+Environment=INTERNAL_API_URL=http://127.0.0.1:4000
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5

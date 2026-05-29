@@ -20,7 +20,17 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{cfg.CorsOrigin, "http://localhost:3000", "http://49.234.112.108:3000"},
+		AllowOriginFunc: func(origin string) bool {
+			if origin == "" {
+				return true
+			}
+			for _, allowed := range cfg.CorsOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			return false
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Org-Id"},
 		ExposeHeaders:    []string{"Content-Length"},

@@ -1,5 +1,13 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+/** Browser: same-origin via Nginx (/api). SSR: INTERNAL_API_URL or NEXT_PUBLIC_API_URL. */
+export function getApiUrl(): string {
+  if (typeof window !== 'undefined') {
+    return '';
+  }
+  return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:4000';
+}
+
 export interface AuthData {
   accessToken: string;
   refreshToken: string;
@@ -40,10 +48,11 @@ export async function apiFetch<T>(
     headers['Authorization'] = `Bearer ${auth.accessToken}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const base = getApiUrl();
+  const res = await fetch(`${base}${path}`, { ...options, headers });
 
   if (res.status === 401 && retry && auth?.refreshToken) {
-    const refreshed = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+    const refreshed = await fetch(`${base}/api/v1/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken: auth.refreshToken }),
