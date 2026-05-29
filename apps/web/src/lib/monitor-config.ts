@@ -16,6 +16,12 @@ export interface HttpStep {
   extract?: HttpExtractRule[];
 }
 
+export interface JSONAssertion {
+  path: string;
+  operator: 'eq' | 'ne' | 'contains' | 'exists';
+  value?: string;
+}
+
 export interface HttpMonitorConfig {
   method?: string;
   body?: string;
@@ -24,6 +30,7 @@ export interface HttpMonitorConfig {
   expectedStatuses?: number[];
   keyword?: string;
   keywordMustContain?: boolean;
+  jsonAssertions?: JSONAssertion[];
   timeout?: number;
   steps?: HttpStep[];
 }
@@ -45,6 +52,8 @@ export const emptyHttpStep = (): HttpStep => ({
   expectedStatuses: [200],
   extract: [],
 });
+
+export const emptyJsonAssertion = (): JSONAssertion => ({ path: '', operator: 'eq', value: '' });
 
 export const emptyExtractRule = (): HttpExtractRule => ({
   var: '',
@@ -87,6 +96,7 @@ export function parseHttpConfig(raw: unknown): HttpMonitorConfig {
     expectedStatuses: expectedStatuses?.length ? expectedStatuses : resolveExpectedStatusesList({ expectedStatus: obj.expectedStatus as number | undefined }),
     keyword: typeof obj.keyword === 'string' ? obj.keyword : undefined,
     keywordMustContain: typeof obj.keywordMustContain === 'boolean' ? obj.keywordMustContain : undefined,
+    jsonAssertions: Array.isArray(obj.jsonAssertions) ? (obj.jsonAssertions as JSONAssertion[]) : [],
     timeout: typeof obj.timeout === 'number' ? obj.timeout : undefined,
     steps: Array.isArray(obj.steps)
       ? (obj.steps as HttpStep[]).map((s) => ({
@@ -112,6 +122,9 @@ export function buildHttpConfigPayload(cfg: HttpMonitorConfig, type: string): Ht
   if (type === 'keyword' && cfg.keyword) {
     payload.keyword = cfg.keyword;
     payload.keywordMustContain = cfg.keywordMustContain ?? true;
+  }
+  if (cfg.jsonAssertions && cfg.jsonAssertions.length > 0) {
+    payload.jsonAssertions = cfg.jsonAssertions.filter((a) => a.path.trim());
   }
   if (cfg.steps && cfg.steps.length > 0) {
     payload.steps = cfg.steps.map((s) => {

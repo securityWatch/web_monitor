@@ -21,6 +21,15 @@ type Config struct {
 	SMTPFrom           string
 	AccessTokenTTLMin   int
 	RefreshTokenTTLDays int
+	WebURL              string
+	GoogleClientID      string
+	GoogleClientSecret  string
+	GitHubClientID      string
+	GitHubClientSecret  string
+	OAuthRedirectURL    string
+	StripeSecretKey     string
+	StripeProPriceID    string
+	StripeWebhookSecret string
 }
 
 func Load() *Config {
@@ -43,6 +52,15 @@ func Load() *Config {
 		SMTPFrom:           getEnv("SMTP_FROM", "noreply@pulsewatch.io"),
 		AccessTokenTTLMin:   accessTTL,
 		RefreshTokenTTLDays: refreshTTL,
+		WebURL:              getEnv("WEB_URL", "http://localhost:3000"),
+		GoogleClientID:      getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:  getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GitHubClientID:      getEnv("GITHUB_CLIENT_ID", ""),
+		GitHubClientSecret:  getEnv("GITHUB_CLIENT_SECRET", ""),
+		OAuthRedirectURL:    getEnv("OAUTH_REDIRECT_URL", ""),
+		StripeSecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
+		StripeProPriceID:    getEnv("STRIPE_PRO_PRICE_ID", ""),
+		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
 	}
 }
 

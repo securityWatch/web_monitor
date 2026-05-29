@@ -76,6 +76,7 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 		Type    string          `json:"type" binding:"required"`
 		Config  json.RawMessage `json:"config"`
 		Enabled *bool           `json:"enabled"`
+		DelayMinutes *int       `json:"delayMinutes"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -83,7 +84,7 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	}
 
 	chType := strings.ToLower(req.Type)
-	valid := map[string]bool{"email": true, "webhook": true, "slack": true, "discord": true}
+	valid := map[string]bool{"email": true, "webhook": true, "slack": true, "discord": true, "pagerduty": true}
 	if !valid[chType] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid channel type"})
 		return
@@ -94,6 +95,10 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	enabled := true
 	if req.Enabled != nil {
 		enabled = *req.Enabled
+	}
+	delayMinutes := 0
+	if req.DelayMinutes != nil && *req.DelayMinutes >= 0 {
+		delayMinutes = *req.DelayMinutes
 	}
 
 	id := uuid.New().String()
@@ -107,9 +112,9 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	}
 
 	_, _ = h.db.Exec(c.Request.Context(), `
-		INSERT INTO alert_rules (id, org_id, monitor_id, channel_id, event_type, enabled)
-		VALUES ($1, $2, NULL, $3, 'all', true)
-	`, uuid.New().String(), orgID, id)
+		INSERT INTO alert_rules (id, org_id, monitor_id, channel_id, event_type, enabled, delay_minutes)
+		VALUES ($1, $2, NULL, $3, 'all', true, $4)
+	`, uuid.New().String(), orgID, id, delayMinutes)
 
 	ch, _ := h.fetchChannel(c, orgID, id)
 	c.JSON(http.StatusCreated, ch)

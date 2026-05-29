@@ -27,6 +27,12 @@ type HTTPStep struct {
 	Extract            []HTTPExtractRule `json:"extract,omitempty"`
 }
 
+type JSONAssertion struct {
+	Path     string `json:"path"`
+	Operator string `json:"operator"` // eq, ne, contains, exists
+	Value    string `json:"value,omitempty"`
+}
+
 type HTTPMonitorConfig struct {
 	Method             string            `json:"method,omitempty"`
 	Body               string            `json:"body,omitempty"`
@@ -35,6 +41,7 @@ type HTTPMonitorConfig struct {
 	ExpectedStatuses   []int             `json:"expectedStatuses,omitempty"`
 	Keyword            string            `json:"keyword,omitempty"`
 	KeywordMustContain bool              `json:"keywordMustContain,omitempty"`
+	JSONAssertions     []JSONAssertion   `json:"jsonAssertions,omitempty"`
 	Timeout            float64           `json:"timeout,omitempty"`
 	Steps              []HTTPStep        `json:"steps,omitempty"`
 }

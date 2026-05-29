@@ -5,13 +5,16 @@ import { useTranslations, useLocale } from 'next-intl';
 import { apiFetch, getStoredAuth, setStoredAuth } from '@/lib/api';
 import { LanguageToggle } from '@/components/language-toggle';
 import { AlertIntegrations } from '@/components/alert-integrations';
+import { TeamSettings } from '@/components/team-settings';
+import { MaintenanceWindows } from '@/components/maintenance-windows';
+import { APIKeysSettings } from '@/components/api-keys-settings';
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
   const locale = useLocale();
   const auth = getStoredAuth();
-  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'billing'>('profile');
+  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'team' | 'maintenance' | 'apikeys' | 'billing'>('profile');
   const [displayName, setDisplayName] = useState(auth?.user.displayName || '');
   const [passwords, setPasswords] = useState({ current: '', newPass: '' });
   const [notify, setNotify] = useState({ incidents: true, weekly: true, product: false, ssl: true });
@@ -45,6 +48,9 @@ export default function SettingsPage() {
     { id: 'security' as const, label: t('security') },
     { id: 'notifications' as const, label: t('notifications') },
     { id: 'integrations' as const, label: t('integrationsTab') },
+    { id: 'team' as const, label: '团队' },
+    { id: 'maintenance' as const, label: '维护窗口' },
+    { id: 'apikeys' as const, label: 'API Keys' },
     { id: 'billing' as const, label: t('billing') },
   ];
 
@@ -101,16 +107,57 @@ export default function SettingsPage() {
 
       {tab === 'integrations' && <AlertIntegrations />}
 
+      {tab === 'team' && <TeamSettings />}
+
+      {tab === 'maintenance' && <MaintenanceWindows />}
+
+      {tab === 'apikeys' && <APIKeysSettings />}
+
       {tab === 'billing' && (
         <div className="card space-y-4">
           <h2 className="font-semibold">{t('billingTitle')}</h2>
+          {auth?.organization.planTier === 'pro' && (
+            <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-400">
+              {t('foundingMember')}
+            </span>
+          )}
           <p className="text-sm text-zinc-400">{t('billingDesc')}</p>
           <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
             <p className="text-sm text-zinc-500">{t('currentPlan')}</p>
             <p className="text-xl font-bold capitalize">{auth?.organization.planTier || 'free'}</p>
           </div>
-          <button className="btn-primary" disabled>{t('upgradePro')}</button>
-          <p className="text-xs text-zinc-500">Stripe integration coming soon</p>
+          <button
+            className="btn-primary"
+            onClick={async () => {
+              if (!auth?.organization.id) return;
+              try {
+                const res = await apiFetch<{ url: string }>(`/api/v1/orgs/${auth.organization.id}/billing/checkout`, { method: 'POST' });
+                window.location.href = res.url;
+              } catch {
+                setMsg('Stripe 未配置，请联系管理员');
+              }
+            }}
+          >
+            {t('upgradePro')}
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={async () => {
+              if (!auth?.organization.id) return;
+              const token = getStoredAuth()?.accessToken;
+              const res = await fetch(`/api/v1/orgs/${auth.organization.id}/reports/sla.csv`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              const blob = await res.blob();
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'sla-report.csv';
+              a.click();
+            }}
+          >
+            导出 SLA 报告 (CSV)
+          </button>
         </div>
       )}
     </div>

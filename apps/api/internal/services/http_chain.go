@@ -40,7 +40,7 @@ func executeHTTPMonitor(ctx context.Context, targetURL string, cfg HTTPMonitorCo
 	if method == "" {
 		method = "GET"
 	}
-	return runSingleHTTP(ctx, targetURL, method, cfg.Body, cfg.Headers, expectedStatusesForConfig(cfg), cfg.Keyword, cfg.KeywordMustContain, monitorType, start, timeout)
+	return runSingleHTTP(ctx, targetURL, method, cfg.Body, cfg.Headers, expectedStatusesForConfig(cfg), cfg.Keyword, cfg.KeywordMustContain, cfg.JSONAssertions, monitorType, start, timeout)
 }
 
 func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, monitorType string, start time.Time, timeout time.Duration) CheckOutcome {
@@ -115,7 +115,7 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 
 	code := last.statusCode
 	setPrimaryTimings(metadata, last.timings)
-	outcome := evaluateHTTPBody(last.body, code, elapsedMs(start), cfg.Keyword, cfg.KeywordMustContain, monitorType, metadata)
+	outcome := evaluateHTTPBody(last.body, code, elapsedMs(start), cfg.Keyword, cfg.KeywordMustContain, cfg.JSONAssertions, monitorType, metadata)
 	if monitorType == "ssl" {
 		if tlsMeta := sslMetaFromTimingsRequest(ctx, last.url, timeout); tlsMeta != nil {
 			for k, v := range tlsMeta {
@@ -126,7 +126,7 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 	return outcome
 }
 
-func runSingleHTTP(ctx context.Context, url, method, body string, headers map[string]string, allowedStatuses []int, keyword string, keywordMustContain bool, monitorType string, start time.Time, timeout time.Duration) CheckOutcome {
+func runSingleHTTP(ctx context.Context, url, method, body string, headers map[string]string, allowedStatuses []int, keyword string, keywordMustContain bool, jsonAssertions []JSONAssertion, monitorType string, start time.Time, timeout time.Duration) CheckOutcome {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -152,7 +152,7 @@ func runSingleHTTP(ctx context.Context, url, method, body string, headers map[st
 		return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("expected status one of [%s], got %d", formatExpectedStatuses(allowedStatuses), res.statusCode), Metadata: metadata}
 	}
 
-	return evaluateHTTPBody(res.body, res.statusCode, elapsedMs(start), keyword, keywordMustContain, monitorType, metadata)
+	return evaluateHTTPBody(res.body, res.statusCode, elapsedMs(start), keyword, keywordMustContain, jsonAssertions, monitorType, metadata)
 }
 
 func newHTTPClient(timeout time.Duration) *http.Client {
@@ -213,7 +213,7 @@ func doHTTPRequest(ctx context.Context, client *http.Client, method, url, body s
 	}, nil
 }
 
-func evaluateHTTPBody(body []byte, code, elapsed int, keyword string, keywordMustContain bool, monitorType string, metadata map[string]interface{}) CheckOutcome {
+func evaluateHTTPBody(body []byte, code, elapsed int, keyword string, keywordMustContain bool, jsonAssertions []JSONAssertion, monitorType string, metadata map[string]interface{}) CheckOutcome {
 	if metadata == nil {
 		metadata = map[string]interface{}{}
 	}
@@ -229,7 +229,50 @@ func evaluateHTTPBody(body []byte, code, elapsed int, keyword string, keywordMus
 		}
 	}
 
+	for _, assert := range jsonAssertions {
+		if err := evaluateJSONAssertion(body, assert); err != nil {
+			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: err.Error(), Metadata: metadata}
+		}
+	}
+
 	return CheckOutcome{IsUp: true, StatusCode: &code, ResponseMs: elapsed, Metadata: metadata}
+}
+
+func evaluateJSONAssertion(body []byte, assert JSONAssertion) error {
+	if assert.Path == "" {
+		return fmt.Errorf("json assertion path is required")
+	}
+	val, err := extractJSONPath(body, assert.Path)
+	op := strings.ToLower(assert.Operator)
+	if op == "" {
+		op = "eq"
+	}
+	if op == "exists" {
+		if err != nil {
+			return fmt.Errorf("json path %q not found", assert.Path)
+		}
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("json path %q: %v", assert.Path, err)
+	}
+	switch op {
+	case "eq", "equals":
+		if val != assert.Value {
+			return fmt.Errorf("json %q expected %q, got %q", assert.Path, assert.Value, val)
+		}
+	case "ne", "not_equals":
+		if val == assert.Value {
+			return fmt.Errorf("json %q should not equal %q", assert.Path, assert.Value)
+		}
+	case "contains":
+		if !strings.Contains(val, assert.Value) {
+			return fmt.Errorf("json %q expected to contain %q, got %q", assert.Path, assert.Value, val)
+		}
+	default:
+		return fmt.Errorf("unsupported json operator %q", assert.Operator)
+	}
+	return nil
 }
 
 func applyExtractRule(rule HTTPExtractRule, res stepResult) (string, error) {

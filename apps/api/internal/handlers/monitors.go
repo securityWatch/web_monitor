@@ -118,7 +118,7 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 	var req struct {
 		Name            string          `json:"name" binding:"required"`
 		Type            string          `json:"type" binding:"required"`
-		TargetURL       string          `json:"targetUrl" binding:"required"`
+		TargetURL       string          `json:"targetUrl"`
 		IntervalSeconds int             `json:"intervalSeconds"`
 		Config          json.RawMessage `json:"config"`
 		Regions         json.RawMessage `json:"regions"`
@@ -147,16 +147,25 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		req.IntervalSeconds = minInterval
 	}
 
-	target, err := services.NormalizeURL(req.TargetURL)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true}
+	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true}
 	if !validTypes[strings.ToLower(req.Type)] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid monitor type"})
 		return
+	}
+
+	target := req.TargetURL
+	if strings.ToLower(req.Type) == "heartbeat" {
+		target = "heartbeat://ping"
+	} else if strings.ToLower(req.Type) == "dns" {
+		target = strings.TrimPrefix(strings.TrimPrefix(req.TargetURL, "dns://"), "http://")
+		target = strings.Split(target, "/")[0]
+	} else {
+		var err error
+		target, err = services.NormalizeURL(req.TargetURL)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	if req.Config == nil {
@@ -167,10 +176,15 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 	}
 
 	id := uuid.New().String()
-	_, err = h.db.Exec(c.Request.Context(), `
-		INSERT INTO monitors (id, org_id, name, type, target_url, interval_seconds, status, config, regions, next_run_at)
-		VALUES ($1, $2, $3, $4::monitor_type, $5, $6, 'pending', $7, $8, now())
-	`, id, orgID, req.Name, req.Type, target, req.IntervalSeconds, req.Config, req.Regions)
+	hbToken := ""
+	if strings.ToLower(req.Type) == "heartbeat" {
+		hbToken = services.GenerateHeartbeatToken()
+	}
+
+	_, err := h.db.Exec(c.Request.Context(), `
+		INSERT INTO monitors (id, org_id, name, type, target_url, interval_seconds, status, config, regions, heartbeat_token, next_run_at)
+		VALUES ($1, $2, $3, $4::monitor_type, $5, $6, 'pending', $7, $8, NULLIF($9, ''), now())
+	`, id, orgID, req.Name, req.Type, target, req.IntervalSeconds, req.Config, req.Regions, hbToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -400,10 +414,10 @@ func (h *MonitorHandler) fetchMonitor(c *gin.Context, orgID, id string) (*models
 	var m models.Monitor
 	err := h.db.QueryRow(c.Request.Context(), `
 		SELECT id, org_id, name, type, target_url, interval_seconds, status,
-		       config, regions, last_checked_at, last_response_ms, created_at, updated_at
+		       config, regions, last_checked_at, last_response_ms, heartbeat_token, created_at, updated_at
 		FROM monitors WHERE id = $1 AND org_id = $2
 	`, id, orgID).Scan(&m.ID, &m.OrgID, &m.Name, &m.Type, &m.TargetURL, &m.IntervalSeconds, &m.Status,
-		&m.Config, &m.Regions, &m.LastCheckedAt, &m.LastResponseMs, &m.CreatedAt, &m.UpdatedAt)
+		&m.Config, &m.Regions, &m.LastCheckedAt, &m.LastResponseMs, &m.HeartbeatToken, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

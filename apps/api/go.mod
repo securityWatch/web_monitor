@@ -1,6 +1,6 @@
 module github.com/pulsewatch/api
 
-go 1.22
+go 1.25.0
 
 require (
 	github.com/gin-contrib/cors v1.7.3
@@ -10,9 +10,11 @@ require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.32.0
+	golang.org/x/oauth2 v0.23.0
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/bytedance/sonic v1.12.6 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect

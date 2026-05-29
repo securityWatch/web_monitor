@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AuthClaims struct {
@@ -18,7 +19,7 @@ type AuthClaims struct {
 	jwt.RegisteredClaims
 }
 
-func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
+func AuthMiddleware(jwtSecret string, db *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
@@ -26,6 +27,22 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 		tokenStr := strings.TrimPrefix(auth, "Bearer ")
+
+		if strings.HasPrefix(tokenStr, "pw_live_") {
+			keyAuth, err := AuthenticateAPIKey(c.Request.Context(), db, tokenStr)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid api key", "code": "UNAUTHORIZED"})
+				return
+			}
+			c.Set("userID", keyAuth.UserID)
+			c.Set("orgID", keyAuth.OrgID)
+			c.Set("role", keyAuth.Role)
+			c.Set("apiKeyScope", keyAuth.Scope)
+			c.Set("authVia", "api_key")
+			c.Next()
+			return
+		}
+
 		claims := &AuthClaims{}
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 			return []byte(jwtSecret), nil
@@ -38,6 +55,7 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 		c.Set("email", claims.Email)
 		c.Set("orgID", claims.OrgID)
 		c.Set("role", claims.Role)
+		c.Set("authVia", "jwt")
 		c.Next()
 	}
 }

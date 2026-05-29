@@ -26,10 +26,10 @@ func (h *MeHandler) GetMe(c *gin.Context) {
 	var user models.User
 	err := h.db.QueryRow(ctx, `
 		SELECT id, email, display_name, avatar_url, timezone, locale, email_verified_at,
-		       notify_incidents, notify_weekly, notify_product, notify_ssl, created_at
+		       notify_incidents, notify_weekly, notify_product, notify_ssl, onboarding_done, created_at
 		FROM users WHERE id = $1
 	`, userID).Scan(&user.ID, &user.Email, &user.DisplayName, &user.AvatarURL, &user.Timezone, &user.Locale,
-		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.CreatedAt)
+		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.OnboardingDone, &user.CreatedAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
@@ -212,4 +212,10 @@ func (h *MeHandler) FoundingCount(c *gin.Context) {
 	var count int
 	_ = h.db.QueryRow(c.Request.Context(), `SELECT count FROM founding_counter WHERE id = 1`).Scan(&count)
 	c.JSON(http.StatusOK, gin.H{"remaining": count, "total": 5000})
+}
+
+func (h *MeHandler) CompleteOnboarding(c *gin.Context) {
+	userID := GetUserID(c)
+	_, _ = h.db.Exec(c.Request.Context(), `UPDATE users SET onboarding_done = true, updated_at = now() WHERE id = $1`, userID)
+	c.JSON(http.StatusOK, gin.H{"message": "onboarding completed"})
 }

@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -148,6 +150,95 @@ func (a *AuthService) Login(ctx context.Context, email, password, userAgent, ip 
 	return a.issueTokens(ctx, user, org, userAgent, ip)
 }
 
+func (a *AuthService) LoginOrRegisterOAuth(ctx context.Context, provider, providerUID, email, displayName, avatarURL, userAgent, ip string) (*models.AuthResponse, error) {
+	var userID string
+	err := a.db.QueryRow(ctx, `
+		SELECT user_id FROM oauth_identities WHERE provider = $1 AND provider_user_id = $2
+	`, provider, providerUID).Scan(&userID)
+	if err != nil {
+		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+		if userID == "" {
+			resp, err := a.Register(ctx, email, GenerateRandomPassword(), displayName)
+			if err != nil && !strings.Contains(err.Error(), "already exists") {
+				return nil, err
+			}
+			if resp != nil {
+				userID = resp.User.ID
+			} else {
+				_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+			}
+		}
+		_, _ = a.db.Exec(ctx, `
+			INSERT INTO oauth_identities (id, user_id, provider, provider_user_id)
+			VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+		`, uuid.New().String(), userID, provider, providerUID)
+	}
+	if avatarURL != "" {
+		_, _ = a.db.Exec(ctx, `UPDATE users SET avatar_url = $1, display_name = COALESCE(NULLIF(display_name,''), $2), updated_at = now() WHERE id = $3`, avatarURL, displayName, userID)
+	}
+
+	var orgID string
+	err = a.db.QueryRow(ctx, `SELECT org_id FROM organization_members WHERE user_id = $1 ORDER BY joined_at LIMIT 1`, userID).Scan(&orgID)
+	if err != nil {
+		return nil, fmt.Errorf("no organization found")
+	}
+	user, org, err := a.loadUserOrg(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	return a.issueTokens(ctx, user, org, userAgent, ip)
+}
+
+func GenerateRandomPassword() string {
+	b := make([]byte, 24)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+func (a *AuthService) RequestPasswordReset(ctx context.Context, email, webURL string) error {
+	email = strings.ToLower(strings.TrimSpace(email))
+	var userID string
+	err := a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	if err != nil {
+		return nil
+	}
+	token, err := GenerateToken(32)
+	if err != nil {
+		return err
+	}
+	_, _ = a.db.Exec(ctx, `DELETE FROM password_reset_tokens WHERE user_id = $1 AND used_at IS NULL`, userID)
+	_, err = a.db.Exec(ctx, `
+		INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at)
+		VALUES ($1, $2, $3, now() + interval '1 hour')
+	`, uuid.New().String(), userID, HashToken(token))
+	if err != nil {
+		return err
+	}
+	resetURL := strings.TrimSuffix(webURL, "/") + "/reset-password?token=" + token
+	emailSvc := NewEmailService(a.cfg)
+	return emailSvc.SendPasswordReset(email, resetURL)
+}
+
+func (a *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	if err := ValidatePassword(newPassword); err != nil {
+		return err
+	}
+	hash := HashToken(token)
+	var userID string
+	err := a.db.QueryRow(ctx, `
+		SELECT user_id FROM password_reset_tokens
+		WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+	`, hash).Scan(&userID)
+	if err != nil {
+		return fmt.Errorf("invalid or expired token")
+	}
+	passHash, _ := HashPassword(newPassword)
+	_, _ = a.db.Exec(ctx, `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, passHash, userID)
+	_, _ = a.db.Exec(ctx, `UPDATE password_reset_tokens SET used_at = now() WHERE token_hash = $1`, hash)
+	_, _ = a.db.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, userID)
+	return nil
+}
+
 func (a *AuthService) Refresh(ctx context.Context, refreshToken string) (*models.AuthResponse, error) {
 	hash := HashToken(refreshToken)
 	var sessionID, userID string
@@ -223,10 +314,10 @@ func (a *AuthService) loadUserOrg(ctx context.Context, userID, orgID string) (mo
 	var user models.User
 	err := a.db.QueryRow(ctx, `
 		SELECT id, email, display_name, avatar_url, timezone, COALESCE(locale, 'en'), email_verified_at,
-		       notify_incidents, notify_weekly, notify_product, notify_ssl, created_at
+		       notify_incidents, notify_weekly, notify_product, notify_ssl, COALESCE(onboarding_done, false), created_at
 		FROM users WHERE id = $1
 	`, userID).Scan(&user.ID, &user.Email, &user.DisplayName, &user.AvatarURL, &user.Timezone, &user.Locale,
-		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.CreatedAt)
+		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.OnboardingDone, &user.CreatedAt)
 	if err != nil {
 		return user, models.Organization{}, err
 	}

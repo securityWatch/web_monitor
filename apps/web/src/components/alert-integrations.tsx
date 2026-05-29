@@ -8,7 +8,7 @@ interface AlertChannel {
   id: string;
   name: string;
   type: string;
-  config: { url?: string; email?: string };
+  config: { url?: string; email?: string; routingKey?: string };
   enabled: boolean;
 }
 
@@ -16,6 +16,7 @@ const CHANNEL_TYPES = [
   { id: 'webhook', labelKey: 'typeWebhook' },
   { id: 'slack', labelKey: 'typeSlack' },
   { id: 'discord', labelKey: 'typeDiscord' },
+  { id: 'pagerduty', labelKey: 'typePagerDuty' },
 ] as const;
 
 export function AlertIntegrations() {
@@ -23,7 +24,7 @@ export function AlertIntegrations() {
   const tc = useTranslations('common');
   const orgId = getStoredAuth()?.organization.id;
   const [channels, setChannels] = useState<AlertChannel[]>([]);
-  const [form, setForm] = useState({ type: 'webhook', name: '', url: '' });
+  const [form, setForm] = useState({ type: 'webhook', name: '', url: '', routingKey: '', delayMinutes: 0 });
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -38,17 +39,21 @@ export function AlertIntegrations() {
   useEffect(() => { load(); }, [load]);
 
   const create = async () => {
-    if (!orgId || !form.name.trim() || !form.url.trim()) return;
+    if (!orgId || !form.name.trim()) return;
+    const isPD = form.type === 'pagerduty';
+    if (isPD && !form.routingKey.trim()) return;
+    if (!isPD && !form.url.trim()) return;
     await apiFetch(`/api/v1/orgs/${orgId}/alert-channels`, {
       method: 'POST',
       body: JSON.stringify({
         name: form.name.trim(),
         type: form.type,
-        config: { url: form.url.trim() },
+        config: isPD ? { routingKey: form.routingKey.trim() } : { url: form.url.trim() },
         enabled: true,
+        delayMinutes: form.delayMinutes,
       }),
     });
-    setForm({ type: 'webhook', name: '', url: '' });
+    setForm({ type: 'webhook', name: '', url: '', routingKey: '', delayMinutes: 0 });
     setMsg(t('channelCreated'));
     load();
   };
@@ -101,9 +106,22 @@ export function AlertIntegrations() {
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">{t('webhookUrl')}</label>
-          <input className="input font-mono text-sm" placeholder="https://..." value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-          <p className="mt-1 text-xs text-zinc-600">{t('webhookHint')}</p>
+          {form.type === 'pagerduty' ? (
+            <>
+              <label className="mb-1 block text-xs text-zinc-500">PagerDuty Routing Key</label>
+              <input className="input font-mono text-sm" value={form.routingKey} onChange={(e) => setForm({ ...form, routingKey: e.target.value })} />
+            </>
+          ) : (
+            <>
+              <label className="mb-1 block text-xs text-zinc-500">{t('webhookUrl')}</label>
+              <input className="input font-mono text-sm" placeholder="https://..." value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
+              <p className="mt-1 text-xs text-zinc-600">{t('webhookHint')}</p>
+            </>
+          )}
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">告警延迟（分钟，DOWN 持续 N 分钟后通知）</label>
+          <input type="number" min={0} className="input w-32" value={form.delayMinutes} onChange={(e) => setForm({ ...form, delayMinutes: Number(e.target.value) })} />
         </div>
         <button type="button" onClick={create} className="btn-primary">{t('addChannel')}</button>
       </div>
@@ -118,7 +136,7 @@ export function AlertIntegrations() {
               <div key={ch.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-800 p-3">
                 <div>
                   <p className="font-medium">{ch.name} <span className="text-xs text-zinc-500">({ch.type})</span></p>
-                  <p className="mt-1 truncate font-mono text-xs text-zinc-500">{ch.config?.url || '—'}</p>
+                  <p className="mt-1 truncate font-mono text-xs text-zinc-500">{ch.config?.url || ch.config?.routingKey || '—'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button type="button" className="btn-secondary text-xs" onClick={() => test(ch.id)}>{t('sendTest')}</button>

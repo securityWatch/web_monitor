@@ -17,6 +17,7 @@ type User struct {
 	NotifyWeekly    bool       `json:"notifyWeekly"`
 	NotifyProduct   bool       `json:"notifyProduct"`
 	NotifySSL       bool       `json:"notifySsl"`
+	OnboardingDone  bool       `json:"onboardingDone"`
 	CreatedAt       time.Time  `json:"createdAt"`
 }
 
@@ -48,6 +49,7 @@ type Monitor struct {
 	Regions          json.RawMessage `json:"regions"`
 	LastCheckedAt    *time.Time      `json:"lastCheckedAt"`
 	LastResponseMs   *int            `json:"lastResponseMs"`
+	HeartbeatToken   *string         `json:"heartbeatToken,omitempty"`
 	Uptime24h        *float64        `json:"uptime24h,omitempty"`
 	Uptime7d         *float64        `json:"uptime7d,omitempty"`
 	CreatedAt        time.Time       `json:"createdAt"`

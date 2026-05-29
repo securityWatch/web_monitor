@@ -1,75 +1,124 @@
-'use client';
-
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
-import { apiFetch, getStoredAuth } from '@/lib/api';
-import { MonitorHttpConfig } from '@/components/monitor-http-config';
-import { HttpMonitorConfig, buildHttpConfigPayload, defaultHttpConfig } from '@/lib/monitor-config';
-
-export default function NewMonitorPage() {
-  const t = useTranslations('monitors');
-  const router = useRouter();
-  const auth = getStoredAuth();
-  const [form, setForm] = useState({ name: '', targetUrl: '', type: 'http', intervalSeconds: 300 });
-  const [httpConfig, setHttpConfig] = useState<HttpMonitorConfig>(defaultHttpConfig());
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const config = buildHttpConfigPayload(httpConfig, form.type);
-      const m = await apiFetch<{ id: string }>(`/api/v1/orgs/${auth!.organization.id}/monitors`, {
-        method: 'POST',
-        body: JSON.stringify({ ...form, config: config || {} }),
-      });
-      router.push(`/monitors/${m.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">{t('createTitle')}</h1>
-      <form onSubmit={submit} className="card space-y-4">
-        <div>
-          <label className="mb-1 block text-sm text-zinc-400">{t('friendlyName')}</label>
-          <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm text-zinc-400">{t('targetUrl')}</label>
-          <input required className="input font-mono" placeholder="https://example.com" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} />
-          <p className="mt-1 text-xs text-zinc-500">{t('targetUrlChainHint')}</p>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm text-zinc-400">{t('monitorType')}</label>
-          <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-            <option value="http">{t('typeHttp')}</option>
-            <option value="tcp">{t('typeTcp')}</option>
-            <option value="ping">{t('typePing')}</option>
-            <option value="keyword">{t('typeKeyword')}</option>
-            <option value="ssl">{t('typeSsl')}</option>
-          </select>
-        </div>
-        <MonitorHttpConfig type={form.type} config={httpConfig} onChange={setHttpConfig} />
-        <div>
-          <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
-          <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>
-            <option value={300}>5 {t('minutes')}</option>
-            <option value={60}>1 {t('minutes')}</option>
-            <option value={30}>30 {t('seconds')}</option>
-          </select>
-        </div>
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? '...' : t('createTitle')}</button>
-      </form>
-    </div>
-  );
-}
-
+'use client';
+
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
+import { apiFetch, getStoredAuth } from '@/lib/api';
+import { MonitorHttpConfig } from '@/components/monitor-http-config';
+import { HttpMonitorConfig, buildHttpConfigPayload, defaultHttpConfig, parseHttpConfig } from '@/lib/monitor-config';
+import { MONITOR_TEMPLATES } from '@/lib/monitor-templates';
+import { useLocale } from 'next-intl';
+
+export default function NewMonitorPage() {
+  const t = useTranslations('monitors');
+  const locale = useLocale();
+  const router = useRouter();
+  const auth = getStoredAuth();
+  const [form, setForm] = useState({ name: '', targetUrl: '', type: 'http', intervalSeconds: 300, regions: 'us-east,eu-west' });
+  const [httpConfig, setHttpConfig] = useState<HttpMonitorConfig>(defaultHttpConfig());
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [hbInfo, setHbInfo] = useState<{ token?: string; url?: string } | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const config = buildHttpConfigPayload(httpConfig, form.type);
+      const regions = form.regions.split(/[,，\s]+/).filter(Boolean);
+      const m = await apiFetch<{ id: string; heartbeatToken?: string }>(`/api/v1/orgs/${auth!.organization.id}/monitors`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: form.name,
+          type: form.type,
+          targetUrl: form.type === 'heartbeat' ? 'heartbeat://ping' : form.targetUrl,
+          intervalSeconds: form.intervalSeconds,
+          config: config || {},
+          regions,
+        }),
+      });
+      if (form.type === 'heartbeat' && m.heartbeatToken) {
+        setHbInfo({ token: m.heartbeatToken, url: `${window.location.origin}/api/v1/heartbeat/${m.heartbeatToken}` });
+        return;
+      }
+      router.push(`/monitors/${m.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (hbInfo) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 card">
+        <h1 className="text-xl font-bold">Heartbeat 监控已创建</h1>
+        <p className="text-sm text-zinc-400">定时向以下 URL 发送 POST 请求（如 cron job）：</p>
+        <code className="block break-all rounded bg-zinc-900 p-3 text-sm">{hbInfo.url}</code>
+        <button className="btn-primary" onClick={() => router.push('/monitors')}>返回列表</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <h1 className="text-2xl font-bold">{t('createTitle')}</h1>
+      <div className="flex flex-wrap gap-2">
+        {MONITOR_TEMPLATES.map((tpl) => (
+          <button
+            key={tpl.id}
+            type="button"
+            className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-600"
+            onClick={() => {
+              setForm({ name: locale === 'zh' ? tpl.nameZh : tpl.name, targetUrl: tpl.targetUrl, type: tpl.type, intervalSeconds: tpl.intervalSeconds, regions: 'us-east,eu-west' });
+              setHttpConfig(tpl.config ? parseHttpConfig(tpl.config) : defaultHttpConfig());
+            }}
+          >
+            {locale === 'zh' ? tpl.nameZh : tpl.name}
+          </button>
+        ))}
+      </div>
+      <form onSubmit={submit} className="card space-y-4">
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">{t('friendlyName')}</label>
+          <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        </div>
+        {form.type !== 'heartbeat' && (
+          <div>
+            <label className="mb-1 block text-sm text-zinc-400">{t('targetUrl')}</label>
+            <input required className="input font-mono" placeholder="https://example.com" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} />
+            <p className="mt-1 text-xs text-zinc-500">{t('targetUrlChainHint')}</p>
+          </div>
+        )}
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">{t('monitorType')}</label>
+          <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+            <option value="http">{t('typeHttp')}</option>
+            <option value="tcp">{t('typeTcp')}</option>
+            <option value="ping">{t('typePing')}</option>
+            <option value="keyword">{t('typeKeyword')}</option>
+            <option value="ssl">{t('typeSsl')}</option>
+            <option value="heartbeat">Heartbeat / Cron</option>
+            <option value="dns">DNS</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">检测区域（多区域探针）</label>
+          <input className="input font-mono text-sm" value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} placeholder="us-east, eu-west" />
+        </div>
+        <MonitorHttpConfig type={form.type} config={httpConfig} onChange={setHttpConfig} />
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
+          <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>
+            <option value={300}>5 {t('minutes')}</option>
+            <option value={60}>1 {t('minutes')}</option>
+            <option value={30}>30 {t('seconds')}</option>
+          </select>
+        </div>
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? '...' : t('createTitle')}</button>
+      </form>
+    </div>
+  );
+}

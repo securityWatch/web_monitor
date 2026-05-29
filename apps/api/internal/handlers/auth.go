@@ -88,12 +88,39 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// Always return success to prevent email enumeration
+	_ = h.auth.RequestPasswordReset(c.Request.Context(), req.Email, h.cfg.WebURL)
 	c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a reset link has been sent"})
+}
+
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req struct {
+		Token       string `json:"token" binding:"required"`
+		NewPassword string `json:"newPassword" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.auth.ResetPassword(c.Request.Context(), req.Token, req.NewPassword); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "password reset successful"})
 }
 
 func (h *AuthHandler) Health(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "pulsewatch-api"})
+}
+
+func (h *AuthHandler) OAuthProviders(c *gin.Context) {
+	providers := []string{}
+	if h.cfg.GoogleClientID != "" {
+		providers = append(providers, "google")
+	}
+	if h.cfg.GitHubClientID != "" {
+		providers = append(providers, "github")
+	}
+	c.JSON(http.StatusOK, gin.H{"providers": providers})
 }
 
 func GetUserID(c *gin.Context) string {

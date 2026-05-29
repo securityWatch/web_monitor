@@ -6,8 +6,10 @@ import {
   HttpMonitorConfig,
   HttpStep,
   HttpExtractRule,
+  JSONAssertion,
   emptyExtractRule,
   emptyHttpStep,
+  emptyJsonAssertion,
   formatExpectedStatusesInput,
   parseExpectedStatusesInput,
 } from '@/lib/monitor-config';
@@ -122,6 +124,39 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
               <input className="input" value={config.keyword || ''} onChange={(e) => update({ keyword: e.target.value })} />
             </div>
           )}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-zinc-400">JSON 断言 (JSONPath)</label>
+              <button type="button" className="text-xs text-blue-400" onClick={() => update({ jsonAssertions: [...(config.jsonAssertions || []), emptyJsonAssertion()] })}>
+                + 添加
+              </button>
+            </div>
+            {(config.jsonAssertions || []).map((a, i) => (
+              <div key={i} className="grid gap-2 sm:grid-cols-4">
+                <input className="input font-mono text-sm" placeholder="data.status" value={a.path} onChange={(e) => {
+                  const list = [...(config.jsonAssertions || [])];
+                  list[i] = { ...list[i], path: e.target.value };
+                  update({ jsonAssertions: list });
+                }} />
+                <select className="input" value={a.operator} onChange={(e) => {
+                  const list = [...(config.jsonAssertions || [])];
+                  list[i] = { ...list[i], operator: e.target.value as JSONAssertion['operator'] };
+                  update({ jsonAssertions: list });
+                }}>
+                  <option value="eq">equals</option>
+                  <option value="ne">not equals</option>
+                  <option value="contains">contains</option>
+                  <option value="exists">exists</option>
+                </select>
+                <input className="input text-sm" placeholder="期望值" disabled={a.operator === 'exists'} value={a.value || ''} onChange={(e) => {
+                  const list = [...(config.jsonAssertions || [])];
+                  list[i] = { ...list[i], value: e.target.value };
+                  update({ jsonAssertions: list });
+                }} />
+                <button type="button" className="text-xs text-red-400" onClick={() => update({ jsonAssertions: (config.jsonAssertions || []).filter((_, j) => j !== i) })}>删除</button>
+              </div>
+            ))}
+          </div>
         </>
       ) : (
         <div className="space-y-4">

@@ -260,6 +260,7 @@
       "typeWebhook": "Webhook",
       "typeSlack": "Slack",
       "typeDiscord": "Discord",
+      "typePagerDuty": "PagerDuty",
       "channelName": "Name",
       "channelNamePlaceholder": "e.g. Production alerts",
       "webhookUrl": "Webhook URL",

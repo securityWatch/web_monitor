@@ -33,6 +33,8 @@ func RunCheck(ctx context.Context, monitorType, targetURL string, config json.Ra
 		return runTCPCheck(ctx, targetURL, start)
 	case "ping":
 		return runPingCheck(ctx, targetURL, start)
+	case "dns":
+		return runDNSCheck(ctx, targetURL, config, start)
 	default:
 		return CheckOutcome{IsUp: false, ResponseMs: int(time.Since(start).Milliseconds()), ErrorMessage: "unknown monitor type"}
 	}
@@ -89,6 +91,72 @@ func parseHostPort(target, defaultPort string) (string, string, error) {
 
 func failOutcome(start time.Time, msg string) CheckOutcome {
 	return CheckOutcome{IsUp: false, ResponseMs: int(time.Since(start).Milliseconds()), ErrorMessage: msg}
+}
+
+func runDNSCheck(ctx context.Context, target string, config json.RawMessage, start time.Time) CheckOutcome {
+	cfg := map[string]interface{}{}
+	_ = json.Unmarshal(config, &cfg)
+	recordType := "A"
+	if v, ok := cfg["recordType"].(string); ok && v != "" {
+		recordType = strings.ToUpper(v)
+	}
+	host := strings.TrimPrefix(strings.TrimPrefix(target, "dns://"), "http://")
+	host = strings.Split(host, "/")[0]
+	host = strings.Split(host, ":")[0]
+
+	var addrs []string
+	var err error
+	switch recordType {
+	case "AAAA":
+		addrs, err = net.DefaultResolver.LookupHost(ctx, host)
+	case "CNAME":
+		cname, e := net.DefaultResolver.LookupCNAME(ctx, host)
+		if e != nil {
+			err = e
+		} else if cname == "" {
+			err = fmt.Errorf("no CNAME record")
+		} else {
+			addrs = []string{cname}
+		}
+	case "MX":
+		mxs, e := net.DefaultResolver.LookupMX(ctx, host)
+		if e != nil {
+			err = e
+		} else if len(mxs) == 0 {
+			err = fmt.Errorf("no MX records")
+		} else {
+			for _, mx := range mxs {
+				addrs = append(addrs, mx.Host)
+			}
+		}
+	default:
+		addrs, err = net.DefaultResolver.LookupHost(ctx, host)
+	}
+	elapsed := int(time.Since(start).Milliseconds())
+	if err != nil || len(addrs) == 0 {
+		msg := "DNS lookup failed"
+		if err != nil {
+			msg = err.Error()
+		}
+		return CheckOutcome{IsUp: false, ResponseMs: elapsed, ErrorMessage: msg}
+	}
+	expected := ""
+	if v, ok := cfg["expectedValue"].(string); ok {
+		expected = v
+	}
+	if expected != "" {
+		found := false
+		for _, a := range addrs {
+			if strings.Contains(a, expected) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return CheckOutcome{IsUp: false, ResponseMs: elapsed, ErrorMessage: fmt.Sprintf("expected %q not in records", expected), Metadata: map[string]interface{}{"records": addrs}}
+		}
+	}
+	return CheckOutcome{IsUp: true, ResponseMs: elapsed, Metadata: map[string]interface{}{"records": addrs, "recordType": recordType}}
 }
 
 func NormalizeURL(raw string) (string, error) {

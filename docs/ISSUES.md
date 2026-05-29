@@ -1,50 +1,47 @@
 # PulseWatch 功能任务清单
 
-> 基于竞品对标与 P0/P1 优先级拆分。完成一项勾选一项。
+## Phase 1 — 核心闭环 ✅ 已完成
 
-## P0 — 核心闭环（用户留存）
-
-| ID | 任务 | 状态 | 验收标准 |
-|----|------|------|----------|
-| P0-1a | Webhook 真实 HTTP POST | ✅ | 故障触发后 webhook 收到 JSON |
-| P0-1b | 告警渠道 CRUD API | ✅ | GET/POST/PATCH/DELETE alert-channels |
-| P0-1c | 设置页「集成」Tab | ✅ | 配置 Webhook/Slack/Discord + 测试按钮 |
-| P0-2a | 检测失败重试（3 次） | ✅ | 单次调度内重试 5s 间隔，减少误报 |
-| P0-2b | 恢复通知 | ✅ | UP 时发送 recovery 告警 |
-| P0-2c | 告警 event_type 精确匹配 | ✅ | down/up/all 分别生效 |
-| P0-3a | status_pages 表 + API | ✅ | 创建/编辑/列表 |
-| P0-3b | 公开状态页 `/status/{slug}` | ✅ | 无需登录可查看 |
-| P0-3c | 状态页管理 UI | ✅ | 选择监控、发布 |
-| P0-4 | Google/GitHub OAuth | ⏳ | 下一 Sprint |
-| P0-5 | Slack/Discord 告警 | ✅ | Incoming Webhook 格式 |
-| P0-6 | 邮件模板优化 | ✅ | HTML 模板 + 恢复/故障区分 |
-
-## P1 — 付费转化
-
-| ID | 任务 | 状态 |
-|----|------|------|
-| P1-1 | API JSON 断言（JSONPath） | ⏳ |
-| P1-2 | Heartbeat / Cron 监控 | ⏳ |
-| P1-3 | 维护窗口 | ⏳ |
-| P1-4 | 告警延迟（DOWN 持续 N 分钟才通知） | ⏳ |
-| P1-5 | Stripe Founding 付费 | ⏳ |
-| P1-6 | Onboarding 3 步向导 | ⏳ |
-
-## P2 — 团队/企业
-
-| ID | 任务 | 状态 |
-|----|------|------|
-| P2-1 | 团队邀请 + RBAC UI | ⏳ |
-| P2-2 | PagerDuty 集成 | ⏳ |
-| P2-3 | SLA 报告导出 | ⏳ |
-| P2-4 | 多区域探针 | ⏳ |
+见 Git 历史 / 上一版本文档（P0–P2 全部 ✅）
 
 ---
 
-## 实现顺序（当前 Sprint）
+## Phase 2 — 增长与开发者体验（当前）
 
-1. P0-1 → P0-2 → P0-5（告警链路）
-2. P0-3（状态页）
-3. 部署 API + Web → 服务器验证
-4. P0-4 OAuth（下一 Sprint）
-5. P1 功能迭代
+| ID | 任务 | 状态 |
+|----|------|------|
+| P2-5 | API Keys 管理 + Bearer 认证 | ✅ |
+| P2-6 | 密码重置（忘记密码 → 邮件链接 → 重置） | ✅ |
+| P2-7 | DNS 监控（A/AAAA/CNAME/MX） | ✅ |
+| P2-8 | 告警降噪：15 分钟去重 + Flapping 抑制 | ✅ |
+| P2-9 | 多区域 N-of-M 投票（多数失败才 DOWN） | ✅ |
+| P2-10 | 监控模板（API/WordPress/Stripe/SSL/DNS/Heartbeat） | ✅ |
+| P2-11 | 免费 SSL Checker 工具页（SEO 获客） | ✅ |
+| P2-12 | Founding Member 徽章（账单页） | ✅ |
+
+## Phase 3 — 待开发
+
+| ID | 任务 | 优先级 |
+|----|------|--------|
+| P3-1 | 邮箱验证流程（未验证限 3 监控） | P0 |
+| P3-2 | Magic Link 登录 | P1 |
+| P3-3 | 2FA TOTP | P1 |
+| P3-4 | Org Switcher 多组织切换 | P1 |
+| P3-5 | 审计日志 | P1 |
+| P3-6 | SLA PDF 报告 | P2 |
+| P3-7 | 状态页邮件订阅 + 自定义域名 | P2 |
+| P3-8 | 独立定价页 `/pricing` + FAQ schema | P1 |
+| P3-9 | 配额触顶升级弹窗（Founding $1 CTA） | P1 |
+| P3-10 | OpenAPI 文档 + Terraform Provider | P2 |
+
+---
+
+## 环境变量
+
+| 变量 | 用途 |
+|------|------|
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth |
+| `WEB_URL` | OAuth / 密码重置 / Stripe 跳转 |
+| `STRIPE_SECRET_KEY` / `STRIPE_PRO_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` | 付费 |
+| `SMTP_*` | 密码重置与告警邮件 |

@@ -260,6 +260,7 @@
       "typeWebhook": "Webhook",
       "typeSlack": "Slack",
       "typeDiscord": "Discord",
+      "typePagerDuty": "PagerDuty",
       "channelName": "名称",
       "channelNamePlaceholder": "例如：生产环境告警",
       "webhookUrl": "Webhook 地址",

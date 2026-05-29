@@ -38,6 +38,15 @@ type AlertPayload struct {
 }
 
 func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID, name, status, detail string) {
+	if monitorID != "" && status == "down" {
+		var suppressedUntil *time.Time
+		_ = a.db.QueryRow(ctx, `SELECT flap_suppressed_until FROM monitors WHERE id = $1`, monitorID).Scan(&suppressedUntil)
+		if suppressedUntil != nil && time.Now().Before(*suppressedUntil) {
+			log.Printf("[FLAP] Skipping down alert for %s (suppressed until %s)", name, suppressedUntil.Format(time.RFC3339))
+			return
+		}
+	}
+
 	event := status
 	if status == "up" {
 		event = "recovery"
@@ -98,6 +107,19 @@ func (a *AlertService) fallbackOwnerEmail(ctx context.Context, orgID, name, stat
 }
 
 func (a *AlertService) deliver(ctx context.Context, orgID, channelID, chType string, chConfig json.RawMessage, payload AlertPayload, sentEmail *bool) {
+	if payload.Event != "recovery" && payload.Event != "test" {
+		var recent int
+		_ = a.db.QueryRow(ctx, `
+			SELECT COUNT(*) FROM alert_deliveries
+			WHERE org_id = $1 AND channel_id = $2 AND status = 'sent'
+			  AND created_at > now() - interval '15 minutes'
+			  AND payload::text ILIKE $3
+		`, orgID, channelID, "%"+payload.Monitor+"%").Scan(&recent)
+		if recent > 0 {
+			return
+		}
+	}
+
 	var cfg map[string]string
 	_ = json.Unmarshal(chConfig, &cfg)
 
@@ -147,6 +169,17 @@ func (a *AlertService) deliver(ctx context.Context, orgID, channelID, chType str
 				errMsg = err.Error()
 			}
 		}
+	case "pagerduty":
+		routingKey := cfg["routingKey"]
+		if routingKey == "" {
+			routingKey = cfg["integrationKey"]
+		}
+		if routingKey != "" {
+			if err := a.postPagerDuty(routingKey, payload); err != nil {
+				deliveryStatus = "failed"
+				errMsg = err.Error()
+			}
+		}
 	}
 
 	payloadJSON, _ := json.Marshal(payload)
@@ -157,6 +190,30 @@ func (a *AlertService) deliver(ctx context.Context, orgID, channelID, chType str
 		INSERT INTO alert_deliveries (id, org_id, channel_id, status, payload, sent_at)
 		VALUES ($1, $2, $3, $4, $5::jsonb, CASE WHEN $4 = 'sent' THEN now() ELSE NULL END)
 	`, uuid.New().String(), orgID, channelID, deliveryStatus, string(payloadJSON))
+}
+
+func (a *AlertService) postPagerDuty(routingKey string, payload AlertPayload) error {
+	severity := "error"
+	if payload.Event == "recovery" {
+		severity = "info"
+	}
+	body := map[string]interface{}{
+		"routing_key": routingKey,
+		"event_action": "trigger",
+		"payload": map[string]interface{}{
+			"summary":  fmt.Sprintf("%s is %s", payload.Monitor, payload.Status),
+			"severity": severity,
+			"source":   "pulsewatch",
+			"custom_details": map[string]string{
+				"detail": payload.Detail,
+				"event":  payload.Event,
+			},
+		},
+	}
+	if payload.Event == "recovery" {
+		body["event_action"] = "resolve"
+	}
+	return a.postJSON("https://events.pagerduty.com/v2/enqueue", body)
 }
 
 func (a *AlertService) postJSON(url string, body interface{}) error {
