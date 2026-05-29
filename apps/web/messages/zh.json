@@ -159,6 +159,8 @@
     "expectedStatusPlaceholder": "200, 201, 204",
     "expectedStatusHint": "多个状态码用英文逗号分隔，响应匹配其中任意一个即视为成功。",
     "enableRequestChain": "启用多步请求链",
+    "enableRequestChainHelpTitle": "多步请求链说明",
+    "enableRequestChainHelp": "适用于需要先登录、获取 token 再探测 API 等场景。开启后按顺序执行最多 5 步请求；可从每一步响应提取变量（如 token），在后续步骤的 URL、请求头或请求体中用 {{变量名}} 引用。第 1 步 URL 可留空，将使用上方「目标 URL」。",
     "requestChainHint": "按顺序执行多个请求。可在 URL、请求头、请求体中使用 {{变量名}}，从每一步响应中提取变量供下一步使用。",
     "targetUrlChainHint": "单次请求时使用此 URL；请求链第 1 步留空时将使用此 URL。",
     "chainStep": "步骤 {n}",

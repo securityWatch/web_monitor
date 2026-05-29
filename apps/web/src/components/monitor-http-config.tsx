@@ -1,5 +1,6 @@
 'use client';
 
+import { CircleHelp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   HttpMonitorConfig,
@@ -56,7 +57,23 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
           checked={useChain}
           onChange={(e) => update({ steps: e.target.checked ? [emptyHttpStep()] : [] })}
         />
-        {t('enableRequestChain')}
+        <span>{t('enableRequestChain')}</span>
+        <span className="group relative inline-flex">
+          <button
+            type="button"
+            tabIndex={0}
+            className="inline-flex text-zinc-500 hover:text-zinc-300 focus:outline-none focus-visible:text-zinc-300"
+            aria-label={t('enableRequestChainHelpTitle')}
+          >
+            <CircleHelp className="h-4 w-4" />
+          </button>
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-72 -translate-x-1/2 rounded-md border border-zinc-700 bg-zinc-800 p-2.5 text-xs leading-relaxed text-zinc-300 shadow-lg group-hover:block group-focus-within:block"
+          >
+            {t('enableRequestChainHelp')}
+          </span>
+        </span>
       </label>
 
       {!useChain ? (

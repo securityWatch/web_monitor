@@ -159,6 +159,8 @@
     "expectedStatusPlaceholder": "200, 201, 204",
     "expectedStatusHint": "Comma-separated HTTP status codes. Check passes if response matches any of them.",
     "enableRequestChain": "Enable multi-step request chain",
+    "enableRequestChainHelpTitle": "About multi-step request chains",
+    "enableRequestChainHelp": "Use when a check needs login, a token, or other setup before probing an API. Runs up to 5 ordered requests. Extract values from each step (e.g. token) and reference them as {{varName}} in later URLs, headers, or bodies. Step 1 URL is optional — it uses the monitor target URL above.",
     "requestChainHint": "Run requests in order. Use {{varName}} in URL, headers, or body. Extract values from each step for the next.",
     "targetUrlChainHint": "For single requests, this is the check URL. Step 1 of a chain uses this URL when left empty.",
     "chainStep": "Step {n}",
