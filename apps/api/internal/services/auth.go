@@ -62,8 +62,8 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 	now := time.Now().UTC()
 	_, err = tx.Exec(ctx, `
 		INSERT INTO users (id, email, password_hash, display_name, email_verified_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $6)
-	`, userID, email, hash, displayName, now, now)
+		VALUES ($1, $2, $3, $4, NULL, $5, $5)
+	`, userID, email, hash, displayName, now)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +118,7 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 		return nil, err
 	}
 
+	_ = a.sendVerificationEmail(ctx, userID, email)
 	return a.issueTokens(ctx, user, org, "", "")
 }
 
@@ -147,6 +148,15 @@ func (a *AuthService) Login(ctx context.Context, email, password, userAgent, ip 
 		return nil, err
 	}
 
+	totpSvc := NewTOTPService(a.db)
+	if totpSvc.IsEnabled(ctx, userID) {
+		temp, err := a.signTempTotpToken(userID)
+		if err != nil {
+			return nil, err
+		}
+		return &models.AuthResponse{RequiresTotp: true, TempToken: temp}, nil
+	}
+
 	return a.issueTokens(ctx, user, org, userAgent, ip)
 }
 
@@ -174,7 +184,7 @@ func (a *AuthService) LoginOrRegisterOAuth(ctx context.Context, provider, provid
 		`, uuid.New().String(), userID, provider, providerUID)
 	}
 	if avatarURL != "" {
-		_, _ = a.db.Exec(ctx, `UPDATE users SET avatar_url = $1, display_name = COALESCE(NULLIF(display_name,''), $2), updated_at = now() WHERE id = $3`, avatarURL, displayName, userID)
+		_, _ = a.db.Exec(ctx, `UPDATE users SET avatar_url = $1, display_name = COALESCE(NULLIF(display_name,''), $2), email_verified_at = COALESCE(email_verified_at, now()), updated_at = now() WHERE id = $3`, avatarURL, displayName, userID)
 	}
 
 	var orgID string
@@ -265,7 +275,14 @@ func (a *AuthService) Refresh(ctx context.Context, refreshToken string) (*models
 }
 
 func (a *AuthService) issueTokens(ctx context.Context, user models.User, org models.Organization, userAgent, ip string) (*models.AuthResponse, error) {
-	accessToken, err := a.signAccessToken(user.ID, user.Email, org.ID, "owner")
+	var role string
+	_ = a.db.QueryRow(ctx, `
+		SELECT role::text FROM organization_members WHERE user_id = $1 AND org_id = $2
+	`, user.ID, org.ID).Scan(&role)
+	if role == "" {
+		role = "member"
+	}
+	accessToken, err := a.signAccessToken(user.ID, user.Email, org.ID, role)
 	if err != nil {
 		return nil, err
 	}
@@ -328,4 +345,172 @@ func (a *AuthService) loadUserOrg(ctx context.Context, userID, orgID string) (mo
 		FROM organizations WHERE id = $1
 	`, orgID).Scan(&org.ID, &org.Name, &org.Slug, &org.PlanTier, &org.MonitorQuota, &org.SeatQuota, &org.FoundingMember)
 	return user, org, err
+}
+
+func (a *AuthService) sendVerificationEmail(ctx context.Context, userID, email string) error {
+	token, err := GenerateToken(32)
+	if err != nil {
+		return err
+	}
+	_, _ = a.db.Exec(ctx, `DELETE FROM email_verification_tokens WHERE user_id = $1 AND used_at IS NULL`, userID)
+	_, err = a.db.Exec(ctx, `
+		INSERT INTO email_verification_tokens (id, user_id, token_hash, expires_at)
+		VALUES ($1, $2, $3, now() + interval '24 hours')
+	`, uuid.New().String(), userID, HashToken(token))
+	if err != nil {
+		return err
+	}
+	url := strings.TrimSuffix(a.cfg.WebURL, "/") + "/verify-email?token=" + token
+	return NewEmailService(a.cfg).SendEmailVerification(email, url)
+}
+
+func (a *AuthService) VerifyEmail(ctx context.Context, token string) error {
+	hash := HashToken(token)
+	var userID string
+	err := a.db.QueryRow(ctx, `
+		SELECT user_id FROM email_verification_tokens
+		WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+	`, hash).Scan(&userID)
+	if err != nil {
+		return fmt.Errorf("invalid or expired token")
+	}
+	_, _ = a.db.Exec(ctx, `UPDATE users SET email_verified_at = now(), updated_at = now() WHERE id = $1`, userID)
+	_, _ = a.db.Exec(ctx, `UPDATE email_verification_tokens SET used_at = now() WHERE token_hash = $1`, hash)
+	return nil
+}
+
+func (a *AuthService) ResendVerification(ctx context.Context, userID string) error {
+	var email string
+	var verifiedAt *time.Time
+	err := a.db.QueryRow(ctx, `SELECT email, email_verified_at FROM users WHERE id = $1`, userID).Scan(&email, &verifiedAt)
+	if err != nil || verifiedAt != nil {
+		return fmt.Errorf("already verified")
+	}
+	return a.sendVerificationEmail(ctx, userID, email)
+}
+
+func (a *AuthService) RequestMagicLink(ctx context.Context, email string) error {
+	email = strings.ToLower(strings.TrimSpace(email))
+	var exists bool
+	_ = a.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, email).Scan(&exists)
+	if !exists {
+		return nil
+	}
+	token, err := GenerateToken(32)
+	if err != nil {
+		return err
+	}
+	_, _ = a.db.Exec(ctx, `DELETE FROM magic_link_tokens WHERE email = $1 AND used_at IS NULL`, email)
+	_, _ = a.db.Exec(ctx, `
+		INSERT INTO magic_link_tokens (id, email, token_hash, expires_at)
+		VALUES ($1, $2, $3, now() + interval '15 minutes')
+	`, uuid.New().String(), email, HashToken(token))
+	url := strings.TrimSuffix(a.cfg.WebURL, "/") + "/auth/magic?token=" + token
+	return NewEmailService(a.cfg).SendMagicLink(email, url)
+}
+
+func (a *AuthService) LoginByUserID(ctx context.Context, userID, userAgent, ip string) (*models.AuthResponse, error) {
+	var orgID string
+	err := a.db.QueryRow(ctx, `
+		SELECT org_id FROM organization_members WHERE user_id = $1 ORDER BY joined_at LIMIT 1
+	`, userID).Scan(&orgID)
+	if err != nil {
+		return nil, fmt.Errorf("no organization found")
+	}
+	user, org, err := a.loadUserOrg(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	totpSvc := NewTOTPService(a.db)
+	if totpSvc.IsEnabled(ctx, userID) {
+		temp, err := a.signTempTotpToken(userID)
+		if err != nil {
+			return nil, err
+		}
+		return &models.AuthResponse{RequiresTotp: true, TempToken: temp}, nil
+	}
+	return a.issueTokens(ctx, user, org, userAgent, ip)
+}
+
+func (a *AuthService) VerifyMagicLink(ctx context.Context, token, userAgent, ip string) (*models.AuthResponse, error) {
+	hash := HashToken(token)
+	var email string
+	err := a.db.QueryRow(ctx, `
+		SELECT email FROM magic_link_tokens
+		WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+	`, hash).Scan(&email)
+	if err != nil {
+		return nil, fmt.Errorf("invalid or expired link")
+	}
+	_, _ = a.db.Exec(ctx, `UPDATE magic_link_tokens SET used_at = now() WHERE token_hash = $1`, hash)
+	var userID string
+	_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	return a.LoginByUserID(ctx, userID, userAgent, ip)
+}
+
+func (a *AuthService) CompleteTotpLogin(ctx context.Context, tempToken, code, userAgent, ip string) (*models.AuthResponse, error) {
+	userID, err := a.parseTempTotpToken(tempToken)
+	if err != nil {
+		return nil, err
+	}
+	totpSvc := NewTOTPService(a.db)
+	if !totpSvc.Validate(ctx, userID, code) {
+		return nil, fmt.Errorf("invalid code")
+	}
+	var orgID string
+	err = a.db.QueryRow(ctx, `
+		SELECT org_id FROM organization_members WHERE user_id = $1 ORDER BY joined_at LIMIT 1
+	`, userID).Scan(&orgID)
+	if err != nil {
+		return nil, fmt.Errorf("no organization found")
+	}
+	user, org, err := a.loadUserOrg(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	return a.issueTokens(ctx, user, org, userAgent, ip)
+}
+
+func (a *AuthService) SwitchOrg(ctx context.Context, userID, orgID, userAgent, ip string) (*models.AuthResponse, error) {
+	var exists bool
+	_ = a.db.QueryRow(ctx, `
+		SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)
+	`, userID, orgID).Scan(&exists)
+	if !exists {
+		return nil, fmt.Errorf("not a member of organization")
+	}
+	user, org, err := a.loadUserOrg(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	return a.issueTokens(ctx, user, org, userAgent, ip)
+}
+
+func (a *AuthService) signTempTotpToken(userID string) (string, error) {
+	claims := middleware.AuthClaims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+			Subject:   userID,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(a.cfg.JWTSecret + ":totp"))
+}
+
+func (a *AuthService) parseTempTotpToken(tokenStr string) (string, error) {
+	claims := &middleware.AuthClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+		return []byte(a.cfg.JWTSecret + ":totp"), nil
+	})
+	if err != nil || !token.Valid || claims.UserID == "" {
+		return "", fmt.Errorf("invalid temp token")
+	}
+	return claims.UserID, nil
+}
+
+func IsEmailVerified(ctx context.Context, db *pgxpool.Pool, userID string) bool {
+	var verifiedAt *time.Time
+	_ = db.QueryRow(ctx, `SELECT email_verified_at FROM users WHERE id = $1`, userID).Scan(&verifiedAt)
+	return verifiedAt != nil
 }

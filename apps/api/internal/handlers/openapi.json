@@ -1,0 +1,39 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PulseWatch API",
+    "version": "1.0.0",
+    "description": "REST API for PulseWatch uptime monitoring"
+  },
+  "servers": [{ "url": "/api/v1" }],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Login with email and password",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" }, "password": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Auth tokens or TOTP challenge" } }
+      }
+    },
+    "/auth/register": { "post": { "summary": "Register new account" } },
+    "/auth/magic-link": { "post": { "summary": "Request magic login link" } },
+    "/orgs/{orgId}/monitors": {
+      "get": { "summary": "List monitors", "security": [{ "bearerAuth": [] }] },
+      "post": { "summary": "Create monitor", "security": [{ "bearerAuth": [] }] }
+    },
+    "/orgs/{orgId}/monitors/{id}": {
+      "get": { "summary": "Get monitor", "security": [{ "bearerAuth": [] }] },
+      "patch": { "summary": "Update monitor", "security": [{ "bearerAuth": [] }] },
+      "delete": { "summary": "Delete monitor", "security": [{ "bearerAuth": [] }] }
+    },
+    "/orgs/{orgId}/alert-channels": { "get": { "summary": "List alert channels" }, "post": { "summary": "Create alert channel" } },
+    "/orgs/{orgId}/api-keys": { "get": { "summary": "List API keys" }, "post": { "summary": "Create API key" } },
+    "/orgs/{orgId}/reports/sla.csv": { "get": { "summary": "Export SLA CSV" } },
+    "/public/status/{slug}": { "get": { "summary": "Public status page" } },
+    "/public/ssl-check": { "get": { "summary": "SSL certificate check", "parameters": [{ "name": "host", "in": "query", "required": true }] } }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "JWT or API key (pw_live_...)" }
+    }
+  }
+}

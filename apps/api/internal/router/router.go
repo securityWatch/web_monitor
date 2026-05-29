@@ -41,18 +41,19 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	emailSvc := services.NewEmailService(cfg)
 	authSvc := services.NewAuthService(db, cfg)
 	oauthSvc := services.NewOAuthService(authSvc, cfg)
+	totpSvc := services.NewTOTPService(db)
 	alertSvc := services.NewAlertService(db, emailSvc)
 	billingSvc := services.NewBillingService(cfg)
 	hbSvc := services.NewHeartbeatService(db)
 
 	authH := handlers.NewAuthHandler(authSvc, emailSvc, cfg)
 	oauthH := handlers.NewOAuthHandler(oauthSvc, cfg.WebURL)
-	meH := handlers.NewMeHandler(db)
+	meH := handlers.NewMeHandler(db, authSvc, totpSvc)
 	monitorH := handlers.NewMonitorHandler(db)
 	dashH := handlers.NewDashboardHandler(db)
 	incH := handlers.NewIncidentHandler(db)
 	alertH := handlers.NewAlertHandler(db, alertSvc)
-	statusH := handlers.NewStatusPageHandler(db)
+	statusH := handlers.NewStatusPageHandler(db, emailSvc, cfg.WebURL)
 	maintH := handlers.NewMaintenanceHandler(db)
 	hbH := handlers.NewHeartbeatHandler(hbSvc)
 	billingH := handlers.NewBillingHandler(db, billingSvc, cfg)
@@ -60,12 +61,17 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	reportH := handlers.NewReportHandler(db)
 	apiKeyH := handlers.NewAPIKeyHandler(db)
 	toolsH := handlers.NewToolsHandler()
+	auditH := handlers.NewAuditHandler(db)
+	openAPIH := handlers.NewOpenAPIHandler()
 
 	rateLimit := middleware.NewRateLimiter(120, time.Minute)
 
 	r.GET("/health", authH.Health)
+	r.GET("/api/v1/openapi.json", openAPIH.Spec)
 	r.GET("/api/v1/public/founding-count", meH.FoundingCount)
 	r.GET("/api/v1/public/status/:slug", statusH.PublicGet)
+	r.POST("/api/v1/public/status/:slug/subscribe", statusH.PublicSubscribe)
+	r.POST("/api/v1/public/status/:slug/subscribe/confirm", statusH.PublicSubscribeConfirm)
 	r.POST("/api/v1/heartbeat/:token", hbH.Ping)
 	r.POST("/api/v1/billing/webhook", billingH.Webhook)
 	r.GET("/api/v1/public/ssl-check", toolsH.SSLCheck)
@@ -78,6 +84,10 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 		auth.POST("/refresh", authH.Refresh)
 		auth.POST("/forgot-password", authH.ForgotPassword)
 		auth.POST("/reset-password", authH.ResetPassword)
+		auth.GET("/verify-email", authH.VerifyEmail)
+		auth.POST("/magic-link", authH.MagicLinkRequest)
+		auth.GET("/magic", authH.MagicLinkVerify)
+		auth.POST("/totp", authH.TotpLogin)
 		auth.GET("/oauth/:provider", oauthH.Start)
 		auth.GET("/oauth/:provider/callback", oauthH.Callback)
 		auth.GET("/providers", authH.OAuthProviders)
@@ -93,6 +103,12 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 			protected.POST("/me/email/confirm", meH.ConfirmEmailChange)
 			protected.PATCH("/me/notifications", meH.UpdateNotifications)
 			protected.POST("/me/onboarding/complete", meH.CompleteOnboarding)
+			protected.POST("/me/verify-email/resend", meH.ResendVerification)
+			protected.POST("/me/switch-org", meH.SwitchOrg)
+			protected.GET("/me/totp", meH.TotpStatus)
+			protected.POST("/me/totp/setup", meH.TotpSetup)
+			protected.POST("/me/totp/enable", meH.TotpEnable)
+			protected.POST("/me/totp/disable", meH.TotpDisable)
 			protected.POST("/invites/accept", inviteH.Accept)
 
 			org := protected.Group("/orgs/:orgId")
@@ -130,10 +146,13 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.POST("/invitations", inviteH.Create)
 
 				org.GET("/reports/sla.csv", reportH.SLAExport)
+				org.GET("/reports/sla.html", reportH.SLAReportHTML)
 
 				org.GET("/api-keys", apiKeyH.List)
 				org.POST("/api-keys", apiKeyH.Create)
 				org.DELETE("/api-keys/:keyId", apiKeyH.Delete)
+
+				org.GET("/audit-logs", auditH.List)
 			}
 		}
 	}

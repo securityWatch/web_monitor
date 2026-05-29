@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { LanguageToggle } from '@/components/language-toggle';
 import { clearStoredAuth, getStoredAuth } from '@/lib/api';
+import { OrgSwitcher } from '@/components/org-switcher';
 import { Activity, LayoutDashboard, Globe, AlertTriangle, Settings, Plus, LogOut, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,10 +59,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="md:hidden font-semibold">{tc('appName')}</div>
           <div className="ml-auto flex items-center gap-3">
             <LanguageToggle />
+            <OrgSwitcher />
             <Link href="/monitors/new" className="btn-primary flex items-center gap-1 text-xs sm:text-sm">
               <Plus className="h-4 w-4" /> {t('addMonitor')}
             </Link>
-            <span className="hidden text-sm text-zinc-500 sm:block">{auth?.user.email}</span>
+            <span className="hidden text-sm text-zinc-500 lg:block">{auth?.user.email}</span>
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>

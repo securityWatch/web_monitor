@@ -11,6 +11,7 @@ interface StatusPage {
   name: string;
   slug: string;
   isPublic: boolean;
+  customDomain?: string | null;
 }
 
 interface Monitor {
@@ -26,6 +27,8 @@ export default function StatusPagesPage() {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', slug: '', monitorIds: [] as string[] });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [customDomain, setCustomDomain] = useState('');
 
   useEffect(() => {
     if (!orgId) return;
@@ -41,6 +44,17 @@ export default function StatusPagesPage() {
     });
     setShowForm(false);
     setForm({ name: '', slug: '', monitorIds: [] });
+    const d = await apiFetch<{ statusPages: StatusPage[] }>(`/api/v1/orgs/${orgId}/status-pages`);
+    setPages(d.statusPages);
+  };
+
+  const saveDomain = async (pageId: string) => {
+    if (!orgId) return;
+    await apiFetch(`/api/v1/orgs/${orgId}/status-pages/${pageId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ customDomain }),
+    });
+    setEditingId(null);
     const d = await apiFetch<{ statusPages: StatusPage[] }>(`/api/v1/orgs/${orgId}/status-pages`);
     setPages(d.statusPages);
   };
@@ -98,17 +112,37 @@ export default function StatusPagesPage() {
       ) : (
         <div className="space-y-3">
           {pages.map((p) => (
-            <div key={p.id} className="card flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold">{p.name}</p>
-                <p className="font-mono text-sm text-zinc-500">/status/{p.slug}</p>
+            <div key={p.id} className="card space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold">{p.name}</p>
+                  <p className="font-mono text-sm text-zinc-500">/status/{p.slug}</p>
+                  {p.customDomain && (
+                    <p className="text-xs text-blue-400">{p.customDomain}</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Link href={`/status/${p.slug}`} target="_blank" className="btn-secondary flex items-center gap-1 text-sm">
+                    <ExternalLink className="h-4 w-4" /> {t('viewPublic')}
+                  </Link>
+                  <button type="button" className="text-sm text-zinc-400 hover:text-white" onClick={() => { setEditingId(p.id); setCustomDomain(p.customDomain || ''); }}>
+                    自定义域名
+                  </button>
+                  <button type="button" className="text-sm text-red-400" onClick={() => remove(p.id)}>{tc('delete')}</button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Link href={`/status/${p.slug}`} target="_blank" className="btn-secondary flex items-center gap-1 text-sm">
-                  <ExternalLink className="h-4 w-4" /> {t('viewPublic')}
-                </Link>
-                <button type="button" className="text-sm text-red-400" onClick={() => remove(p.id)}>{tc('delete')}</button>
-              </div>
+              {editingId === p.id && (
+                <div className="flex gap-2 border-t border-zinc-800 pt-3">
+                  <input
+                    className="input flex-1 font-mono text-sm"
+                    placeholder="status.example.com"
+                    value={customDomain}
+                    onChange={(e) => setCustomDomain(e.target.value)}
+                  />
+                  <button type="button" className="btn-primary text-sm" onClick={() => saveDomain(p.id)}>保存</button>
+                  <button type="button" className="btn-secondary text-sm" onClick={() => setEditingId(null)}>取消</button>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 import { DashboardShell } from '@/components/dashboard-shell';
+import { EmailVerificationBanner } from '@/components/email-verification-banner';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashboardShell>
       {showOnboarding && <OnboardingWizard />}
+      <EmailVerificationBanner />
       {children}
     </DashboardShell>
   );

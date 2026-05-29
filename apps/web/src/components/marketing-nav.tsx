@@ -18,7 +18,7 @@ export function MarketingNav() {
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
           <a href="#features" className="hover:text-white transition-colors">{t('features')}</a>
-          <a href="#pricing" className="hover:text-white transition-colors">{t('pricing')}</a>
+          <Link href="/pricing" className="hover:text-white transition-colors">{t('pricing')}</Link>
           <Link href="/tools/ssl-checker" className="hover:text-white transition-colors">SSL Checker</Link>
         </nav>
         <div className="flex items-center gap-3">

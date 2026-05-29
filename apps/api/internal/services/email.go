@@ -85,3 +85,28 @@ func (e *EmailService) SendEmailChangeConfirm(to, confirmURL string) error {
 <p><a href="%s">%s</a></p>`, confirmURL, confirmURL)
 	return e.Send(context.Background(), to, subject, body)
 }
+
+func (e *EmailService) SendEmailVerification(to, verifyURL string) error {
+	subject := "Verify your PulseWatch email"
+	body := fmt.Sprintf(`<h2>Verify your email</h2>
+<p>Click the link below to verify your email (valid for 24 hours):</p>
+<p><a href="%s">%s</a></p>`, verifyURL, verifyURL)
+	return e.Send(context.Background(), to, subject, body)
+}
+
+func (e *EmailService) SendMagicLink(to, loginURL string) error {
+	subject := "Your PulseWatch login link"
+	body := fmt.Sprintf(`<h2>Sign in to PulseWatch</h2>
+<p>Click below to sign in (valid for 15 minutes):</p>
+<p><a href="%s">%s</a></p>
+<p>If you didn't request this, ignore this email.</p>`, loginURL, loginURL)
+	return e.Send(context.Background(), to, subject, body)
+}
+
+func (e *EmailService) SendStatusSubscribeConfirm(to, confirmURL, pageName string) error {
+	subject := fmt.Sprintf("Confirm subscription to %s status page", pageName)
+	body := fmt.Sprintf(`<h2>Status page updates</h2>
+<p>Confirm your subscription to <strong>%s</strong>:</p>
+<p><a href="%s">%s</a></p>`, pageName, confirmURL, confirmURL)
+	return e.Send(context.Background(), to, subject, body)
+}

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { apiFetch, getStoredAuth } from '@/lib/api';
+import { apiFetch, getStoredAuth, ApiError } from '@/lib/api';
+import { UpgradeModal } from '@/components/upgrade-modal';
 import { MonitorHttpConfig } from '@/components/monitor-http-config';
 import { HttpMonitorConfig, buildHttpConfigPayload, defaultHttpConfig, parseHttpConfig } from '@/lib/monitor-config';
 import { MONITOR_TEMPLATES } from '@/lib/monitor-templates';
@@ -19,6 +20,7 @@ export default function NewMonitorPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [hbInfo, setHbInfo] = useState<{ token?: string; url?: string } | null>(null);
+  const [upgradeModal, setUpgradeModal] = useState<'quota' | 'email' | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +46,13 @@ export default function NewMonitorPage() {
       }
       router.push(`/monitors/${m.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      if (err instanceof ApiError) {
+        if (err.code === 'MONITOR_QUOTA_EXCEEDED') setUpgradeModal('quota');
+        else if (err.code === 'EMAIL_NOT_VERIFIED') setUpgradeModal('email');
+        else setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : 'Error');
+      }
     } finally {
       setLoading(false);
     }
@@ -119,6 +127,7 @@ export default function NewMonitorPage() {
         {error && <p className="text-sm text-red-400">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? '...' : t('createTitle')}</button>
       </form>
+      <UpgradeModal open={!!upgradeModal} reason={upgradeModal || 'quota'} onClose={() => setUpgradeModal(null)} />
     </div>
   );
 }

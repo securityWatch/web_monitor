@@ -20,6 +20,7 @@ var migrationFiles = []string{
 	"migrations/003_p0_features.sql",
 	"migrations/004_p1_p2_features.sql",
 	"migrations/005_phase2_features.sql",
+	"migrations/006_phase3_features.sql",
 }
 
 func Connect(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {

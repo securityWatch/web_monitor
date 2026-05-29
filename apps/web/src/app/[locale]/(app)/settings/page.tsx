@@ -8,13 +8,16 @@ import { AlertIntegrations } from '@/components/alert-integrations';
 import { TeamSettings } from '@/components/team-settings';
 import { MaintenanceWindows } from '@/components/maintenance-windows';
 import { APIKeysSettings } from '@/components/api-keys-settings';
+import { TotpSettings } from '@/components/totp-settings';
+import { AuditLogs } from '@/components/audit-logs';
+import { EmailVerificationBanner } from '@/components/email-verification-banner';
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
   const locale = useLocale();
   const auth = getStoredAuth();
-  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'team' | 'maintenance' | 'apikeys' | 'billing'>('profile');
+  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'team' | 'maintenance' | 'apikeys' | 'billing' | 'audit'>('profile');
   const [displayName, setDisplayName] = useState(auth?.user.displayName || '');
   const [passwords, setPasswords] = useState({ current: '', newPass: '' });
   const [notify, setNotify] = useState({ incidents: true, weekly: true, product: false, ssl: true });
@@ -51,6 +54,7 @@ export default function SettingsPage() {
     { id: 'team' as const, label: '团队' },
     { id: 'maintenance' as const, label: '维护窗口' },
     { id: 'apikeys' as const, label: 'API Keys' },
+    { id: 'audit' as const, label: '审计日志' },
     { id: 'billing' as const, label: t('billing') },
   ];
 
@@ -63,6 +67,7 @@ export default function SettingsPage() {
         ))}
       </div>
       {msg && <p className="text-sm text-emerald-400">{msg}</p>}
+      <EmailVerificationBanner />
 
       {tab === 'profile' && (
         <div className="card space-y-4">
@@ -80,11 +85,14 @@ export default function SettingsPage() {
       )}
 
       {tab === 'security' && (
-        <div className="card space-y-4">
-          <h2 className="font-semibold">{t('changePassword')}</h2>
-          <input type="password" className="input" placeholder={t('currentPassword')} value={passwords.current} onChange={(e) => setPasswords({ ...passwords, current: e.target.value })} />
-          <input type="password" className="input" placeholder={t('newPassword')} value={passwords.newPass} onChange={(e) => setPasswords({ ...passwords, newPass: e.target.value })} />
-          <button onClick={changePassword} className="btn-primary">{t('changePassword')}</button>
+        <div className="space-y-6">
+          <div className="card space-y-4">
+            <h2 className="font-semibold">{t('changePassword')}</h2>
+            <input type="password" className="input" placeholder={t('currentPassword')} value={passwords.current} onChange={(e) => setPasswords({ ...passwords, current: e.target.value })} />
+            <input type="password" className="input" placeholder={t('newPassword')} value={passwords.newPass} onChange={(e) => setPasswords({ ...passwords, newPass: e.target.value })} />
+            <button onClick={changePassword} className="btn-primary">{t('changePassword')}</button>
+          </div>
+          <TotpSettings />
         </div>
       )}
 
@@ -112,6 +120,8 @@ export default function SettingsPage() {
       {tab === 'maintenance' && <MaintenanceWindows />}
 
       {tab === 'apikeys' && <APIKeysSettings />}
+
+      {tab === 'audit' && <AuditLogs />}
 
       {tab === 'billing' && (
         <div className="card space-y-4">
@@ -157,6 +167,25 @@ export default function SettingsPage() {
             }}
           >
             导出 SLA 报告 (CSV)
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={async () => {
+              if (!auth?.organization.id) return;
+              const token = getStoredAuth()?.accessToken;
+              const res = await fetch(`/api/v1/orgs/${auth.organization.id}/reports/sla.html`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              const html = await res.text();
+              const blob = new Blob([html], { type: 'text/html' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'sla-report.html';
+              a.click();
+            }}
+          >
+            导出 SLA 报告 (HTML)
           </button>
         </div>
       )}

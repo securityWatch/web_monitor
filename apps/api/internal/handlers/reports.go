@@ -76,3 +76,43 @@ func (h *ReportHandler) SLAExport(c *gin.Context) {
 		c.String(http.StatusOK, "%q,%s,%d,%d,%s,%s\n", name, mType, total, up, upPct, avg)
 	}
 }
+
+func (h *ReportHandler) SLAReportHTML(c *gin.Context) {
+	orgID := c.Param("orgId")
+	userID := GetUserID(c)
+	var exists bool
+	_ = h.db.QueryRow(c.Request.Context(), `
+		SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)
+	`, userID, orgID).Scan(&exists)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	days := 30
+	rows, _ := h.db.Query(c.Request.Context(), `
+		SELECT m.name,
+		       ROUND(100.0 * COUNT(*) FILTER (WHERE cr.is_up) / NULLIF(COUNT(*), 0), 2) AS uptime_pct
+		FROM monitors m
+		LEFT JOIN check_results cr ON cr.monitor_id = m.id AND cr.checked_at > now() - interval '30 days'
+		WHERE m.org_id = $1
+		GROUP BY m.id, m.name ORDER BY m.name
+	`, orgID)
+	defer rows.Close()
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.String(http.StatusOK, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SLA Report</title>
+<style>body{font-family:sans-serif;padding:2rem}table{border-collapse:collapse;width:100%%}th,td{border:1px solid #ddd;padding:8px}</style></head><body>
+<h1>SLA Report (%d days)</h1><table><tr><th>Monitor</th><th>Uptime %%</th></tr>`, days)
+	for rows.Next() {
+		var name string
+		var uptime *float64
+		if rows.Scan(&name, &uptime) != nil {
+			continue
+		}
+		pct := "100.00"
+		if uptime != nil {
+			pct = fmt.Sprintf("%.2f", *uptime)
+		}
+		c.String(http.StatusOK, "<tr><td>%s</td><td>%s</td></tr>", name, pct)
+	}
+	c.String(http.StatusOK, "</table><p>Generated %s</p></body></html>", time.Now().Format(time.RFC3339))
+}

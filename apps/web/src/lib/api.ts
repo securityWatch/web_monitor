@@ -8,11 +8,39 @@ export function getApiUrl(): string {
   return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:4000';
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  planTier: string;
+  monitorQuota: number;
+  seatQuota?: number;
+  foundingMember?: boolean;
+  role?: string;
+}
+
 export interface AuthData {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; email: string; displayName?: string; locale?: string };
-  organization: { id: string; name: string; slug: string; planTier: string; monitorQuota: number };
+  user: {
+    id: string;
+    email: string;
+    displayName?: string;
+    locale?: string;
+    emailVerifiedAt?: string | null;
+  };
+  organization: Organization;
+  requiresTotp?: boolean;
+  tempToken?: string;
+}
+
+export class ApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+  }
 }
 
 export function getStoredAuth(): AuthData | null {
@@ -63,15 +91,21 @@ export async function apiFetch<T>(
       return apiFetch<T>(path, options, false);
     }
     clearStoredAuth();
-    throw new Error('UNAUTHORIZED');
+    throw new ApiError('UNAUTHORIZED', 'UNAUTHORIZED');
   }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || err.message || `HTTP ${res.status}`);
+    throw new ApiError(err.error || err.message || `HTTP ${res.status}`, err.code);
   }
 
-  return res.json();
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text);
 }
 
 export { API_URL };

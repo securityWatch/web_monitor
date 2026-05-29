@@ -139,6 +139,16 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		return
 	}
 
+	userID := GetUserID(c)
+	if !services.IsEmailVerified(c.Request.Context(), h.db, userID) {
+		var unverifiedCount int
+		_ = h.db.QueryRow(c.Request.Context(), `SELECT COUNT(*) FROM monitors WHERE org_id = $1`, orgID).Scan(&unverifiedCount)
+		if unverifiedCount >= 3 {
+			c.JSON(http.StatusForbidden, gin.H{"error": "verify email to add more than 3 monitors", "code": "EMAIL_NOT_VERIFIED"})
+			return
+		}
+	}
+
 	minInterval := services.PlanMinInterval(planTier)
 	if req.IntervalSeconds == 0 {
 		req.IntervalSeconds = minInterval
@@ -203,6 +213,7 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 	}
 
 	m, _ := h.fetchMonitor(c, orgID, id)
+	services.LogAudit(c.Request.Context(), h.db, orgID, GetUserID(c), "monitor.create", c.ClientIP(), map[string]interface{}{"name": req.Name, "id": id})
 	c.JSON(http.StatusCreated, m)
 }
 

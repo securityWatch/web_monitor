@@ -6,7 +6,7 @@
 
 ---
 
-## Phase 2 — 增长与开发者体验（当前）
+## Phase 2 — 增长与开发者体验 ✅ 已完成
 
 | ID | 任务 | 状态 |
 |----|------|------|
@@ -19,20 +19,20 @@
 | P2-11 | 免费 SSL Checker 工具页（SEO 获客） | ✅ |
 | P2-12 | Founding Member 徽章（账单页） | ✅ |
 
-## Phase 3 — 待开发
+## Phase 3 — 企业级功能 ✅ 已完成
 
-| ID | 任务 | 优先级 |
-|----|------|--------|
-| P3-1 | 邮箱验证流程（未验证限 3 监控） | P0 |
-| P3-2 | Magic Link 登录 | P1 |
-| P3-3 | 2FA TOTP | P1 |
-| P3-4 | Org Switcher 多组织切换 | P1 |
-| P3-5 | 审计日志 | P1 |
-| P3-6 | SLA PDF 报告 | P2 |
-| P3-7 | 状态页邮件订阅 + 自定义域名 | P2 |
-| P3-8 | 独立定价页 `/pricing` + FAQ schema | P1 |
-| P3-9 | 配额触顶升级弹窗（Founding $1 CTA） | P1 |
-| P3-10 | OpenAPI 文档 + Terraform Provider | P2 |
+| ID | 任务 | 状态 |
+|----|------|------|
+| P3-1 | 邮箱验证流程（未验证限 3 监控） | ✅ |
+| P3-2 | Magic Link 登录 | ✅ |
+| P3-3 | 2FA TOTP | ✅ |
+| P3-4 | Org Switcher 多组织切换 | ✅ |
+| P3-5 | 审计日志 | ✅ |
+| P3-6 | SLA HTML 报告（CSV + HTML 导出） | ✅ |
+| P3-7 | 状态页邮件订阅 + 自定义域名 | ✅ |
+| P3-8 | 独立定价页 `/pricing` + FAQ schema | ✅ |
+| P3-9 | 配额触顶升级弹窗（Founding $1 CTA） | ✅ |
+| P3-10 | OpenAPI 文档 + Terraform 示例 | ✅ |
 
 ---
 

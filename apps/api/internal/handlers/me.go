@@ -12,11 +12,13 @@ import (
 )
 
 type MeHandler struct {
-	db *pgxpool.Pool
+	db   *pgxpool.Pool
+	auth *services.AuthService
+	totp *services.TOTPService
 }
 
-func NewMeHandler(db *pgxpool.Pool) *MeHandler {
-	return &MeHandler{db: db}
+func NewMeHandler(db *pgxpool.Pool, auth *services.AuthService, totp *services.TOTPService) *MeHandler {
+	return &MeHandler{db: db, auth: auth, totp: totp}
 }
 
 func (h *MeHandler) GetMe(c *gin.Context) {
@@ -218,4 +220,72 @@ func (h *MeHandler) CompleteOnboarding(c *gin.Context) {
 	userID := GetUserID(c)
 	_, _ = h.db.Exec(c.Request.Context(), `UPDATE users SET onboarding_done = true, updated_at = now() WHERE id = $1`, userID)
 	c.JSON(http.StatusOK, gin.H{"message": "onboarding completed"})
+}
+
+func (h *MeHandler) ResendVerification(c *gin.Context) {
+	userID := GetUserID(c)
+	if err := h.auth.ResendVerification(c.Request.Context(), userID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "verification email sent"})
+}
+
+func (h *MeHandler) SwitchOrg(c *gin.Context) {
+	userID := GetUserID(c)
+	var req struct {
+		OrgID string `json:"orgId" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.auth.SwitchOrg(c.Request.Context(), userID, req.OrgID, c.GetHeader("User-Agent"), c.ClientIP())
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	services.LogAudit(c.Request.Context(), h.db, req.OrgID, userID, "org.switch", c.ClientIP(), nil)
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *MeHandler) TotpStatus(c *gin.Context) {
+	enabled := h.totp.IsEnabled(c.Request.Context(), GetUserID(c))
+	c.JSON(http.StatusOK, gin.H{"enabled": enabled})
+}
+
+func (h *MeHandler) TotpSetup(c *gin.Context) {
+	userID := GetUserID(c)
+	var email string
+	_ = h.db.QueryRow(c.Request.Context(), `SELECT email FROM users WHERE id = $1`, userID).Scan(&email)
+	secret, uri, err := h.totp.Setup(c.Request.Context(), userID, email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"secret": secret, "uri": uri})
+}
+
+func (h *MeHandler) TotpEnable(c *gin.Context) {
+	userID := GetUserID(c)
+	var req struct {
+		Code string `json:"code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.totp.Enable(c.Request.Context(), userID, req.Code); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	services.LogAudit(c.Request.Context(), h.db, GetOrgID(c), userID, "totp.enable", c.ClientIP(), nil)
+	c.JSON(http.StatusOK, gin.H{"message": "2FA enabled"})
+}
+
+func (h *MeHandler) TotpDisable(c *gin.Context) {
+	userID := GetUserID(c)
+	h.totp.Disable(c.Request.Context(), userID)
+	services.LogAudit(c.Request.Context(), h.db, GetOrgID(c), userID, "totp.disable", c.ClientIP(), nil)
+	c.JSON(http.StatusOK, gin.H{"message": "2FA disabled"})
 }

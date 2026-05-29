@@ -129,13 +129,14 @@ type AlertChannel struct {
 }
 
 type StatusPage struct {
-	ID        string    `json:"id"`
-	OrgID     string    `json:"orgId"`
-	Name      string    `json:"name"`
-	Slug      string    `json:"slug"`
-	IsPublic  bool      `json:"isPublic"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID           string    `json:"id"`
+	OrgID        string    `json:"orgId"`
+	Name         string    `json:"name"`
+	Slug         string    `json:"slug"`
+	IsPublic     bool      `json:"isPublic"`
+	CustomDomain *string   `json:"customDomain,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
 type StatusPageDetail struct {
@@ -158,10 +159,12 @@ type ResponseTimePoint struct {
 }
 
 type AuthResponse struct {
-	AccessToken  string       `json:"accessToken"`
-	RefreshToken string       `json:"refreshToken"`
-	User         User         `json:"user"`
-	Organization Organization `json:"organization"`
+	AccessToken  string       `json:"accessToken,omitempty"`
+	RefreshToken string       `json:"refreshToken,omitempty"`
+	User         User         `json:"user,omitempty"`
+	Organization Organization `json:"organization,omitempty"`
+	RequiresTotp bool         `json:"requiresTotp,omitempty"`
+	TempToken    string       `json:"tempToken,omitempty"`
 }
 
 type ErrorResponse struct {

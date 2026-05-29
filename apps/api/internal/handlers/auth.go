@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +64,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials", "code": "UNAUTHORIZED"})
 		return
 	}
+	if resp.RequiresTotp {
+		c.JSON(http.StatusOK, resp)
+		return
+	}
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -121,6 +126,72 @@ func (h *AuthHandler) OAuthProviders(c *gin.Context) {
 		providers = append(providers, "github")
 	}
 	c.JSON(http.StatusOK, gin.H{"providers": providers})
+}
+
+func (h *AuthHandler) VerifyEmail(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "token required"})
+		return
+	}
+	if err := h.auth.VerifyEmail(c.Request.Context(), token); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "email verified"})
+}
+
+func (h *AuthHandler) MagicLinkRequest(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	_ = h.auth.RequestMagicLink(c.Request.Context(), req.Email)
+	c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a login link has been sent"})
+}
+
+func (h *AuthHandler) MagicLinkVerify(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.Redirect(http.StatusTemporaryRedirect, h.cfg.WebURL+"/login?error=magic")
+		return
+	}
+	resp, err := h.auth.VerifyMagicLink(c.Request.Context(), token, c.GetHeader("User-Agent"), c.ClientIP())
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, h.cfg.WebURL+"/login?error=magic")
+		return
+	}
+	if resp.RequiresTotp {
+		c.Redirect(http.StatusTemporaryRedirect, strings.TrimSuffix(h.cfg.WebURL, "/")+"/login?totp="+url.QueryEscape(resp.TempToken))
+		return
+	}
+	redirect := strings.TrimSuffix(h.cfg.WebURL, "/") + "/auth/callback"
+	u, _ := url.Parse(redirect)
+	q := u.Query()
+	q.Set("accessToken", resp.AccessToken)
+	q.Set("refreshToken", resp.RefreshToken)
+	u.RawQuery = q.Encode()
+	c.Redirect(http.StatusTemporaryRedirect, u.String())
+}
+
+func (h *AuthHandler) TotpLogin(c *gin.Context) {
+	var req struct {
+		TempToken string `json:"tempToken" binding:"required"`
+		Code      string `json:"code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.auth.CompleteTotpLogin(c.Request.Context(), req.TempToken, req.Code, c.GetHeader("User-Agent"), c.ClientIP())
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func GetUserID(c *gin.Context) string {
