@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { LanguageToggle } from '@/components/language-toggle';
 import { clearStoredAuth, getStoredAuth } from '@/lib/api';
-import { Activity, LayoutDashboard, Globe, AlertTriangle, Settings, Plus, LogOut } from 'lucide-react';
+import { Activity, LayoutDashboard, Globe, AlertTriangle, Settings, Plus, LogOut, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -18,6 +18,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     { href: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
     { href: '/monitors', label: t('monitors'), icon: Globe },
     { href: '/incidents', label: t('incidents'), icon: AlertTriangle },
+    { href: '/status-pages', label: t('statusPages'), icon: Radio },
     { href: '/settings', label: t('settings'), icon: Settings },
   ];
 

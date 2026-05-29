@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -76,6 +75,15 @@ func (s *Scheduler) tick(ctx context.Context) {
 
 func (s *Scheduler) runCheck(ctx context.Context, id, orgID, name, mType, target string, interval int, prevStatus string, config json.RawMessage, planTier string) {
 	outcome := RunCheck(ctx, mType, target, config)
+	for attempt := 1; attempt < 3 && !outcome.IsUp; attempt++ {
+		time.Sleep(5 * time.Second)
+		retry := RunCheck(ctx, mType, target, config)
+		if retry.IsUp {
+			outcome = retry
+			break
+		}
+		outcome = retry
+	}
 	metaJSON, _ := json.Marshal(outcome.Metadata)
 
 	newStatus := "up"
@@ -153,94 +161,4 @@ func (s *Scheduler) checkResponseAnomaly(ctx context.Context, monitorID, orgID, 
 	if float64(currentMs) > *avgMs*1.5 && float64(currentMs) > 500 {
 		log.Printf("[ANOMALY] Response time spike on %s: %dms vs 7d avg %.0fms", name, currentMs, *avgMs)
 	}
-}
-
-type AlertService struct {
-	db    *pgxpool.Pool
-	email *EmailService
-}
-
-func NewAlertService(db *pgxpool.Pool, email *EmailService) *AlertService {
-	return &AlertService{db: db, email: email}
-}
-
-func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID, name, status, detail string) {
-	rows, err := a.db.Query(ctx, `
-		SELECT ac.type, ac.config, u.email
-		FROM alert_rules ar
-		JOIN alert_channels ac ON ac.id = ar.channel_id AND ac.enabled = true
-		JOIN organization_members om ON om.org_id = ar.org_id
-		JOIN users u ON u.id = om.user_id AND u.notify_incidents = true
-		WHERE ar.org_id = $1 AND (ar.monitor_id IS NULL OR ar.monitor_id = $2)
-		  AND ar.enabled = true AND ar.event_type IN ('down', 'up', 'all')
-		LIMIT 10
-	`, orgID, monitorID)
-	if err != nil {
-		// Fallback: org owner email
-		var email string
-		_ = a.db.QueryRow(ctx, `
-			SELECT u.email FROM users u
-			JOIN organization_members om ON om.user_id = u.id AND om.role = 'owner'
-			WHERE om.org_id = $1 LIMIT 1
-		`, orgID).Scan(&email)
-		if email != "" {
-			_ = a.email.SendAlert(email, name, status, detail)
-		}
-		return
-	}
-	defer rows.Close()
-
-	sent := make(map[string]bool)
-	for rows.Next() {
-		var chType string
-		var chConfig json.RawMessage
-		var userEmail string
-		if err := rows.Scan(&chType, &chConfig, &userEmail); err != nil {
-			continue
-		}
-		switch chType {
-		case "email":
-			if !sent[userEmail] {
-				_ = a.email.SendAlert(userEmail, name, status, detail)
-				sent[userEmail] = true
-			}
-		case "webhook":
-			var cfg map[string]string
-			_ = json.Unmarshal(chConfig, &cfg)
-			if url, ok := cfg["url"]; ok && url != "" {
-				go postWebhook(url, name, status, detail)
-			}
-		}
-	}
-
-	if len(sent) == 0 {
-		var email string
-		_ = a.db.QueryRow(ctx, `
-			SELECT u.email FROM users u
-			JOIN organization_members om ON om.user_id = u.id AND om.role = 'owner'
-			WHERE om.org_id = $1 LIMIT 1
-		`, orgID).Scan(&email)
-		if email != "" {
-			_ = a.email.SendAlert(email, name, status, detail)
-		}
-	}
-}
-
-func (a *AlertService) NotifySSLWarning(ctx context.Context, orgID, name string, daysLeft int) {
-	var email string
-	_ = a.db.QueryRow(ctx, `
-		SELECT u.email FROM users u
-		JOIN organization_members om ON om.user_id = u.id
-		WHERE om.org_id = $1 AND u.notify_ssl = true LIMIT 1
-	`, orgID).Scan(&email)
-	if email != "" {
-		detail := fmt.Sprintf("SSL certificate expires in %d days", daysLeft)
-		_ = a.email.SendAlert(email, name, "ssl_warning", detail)
-	}
-}
-
-func postWebhook(url, name, status, detail string) {
-	payload := fmt.Sprintf(`{"monitor":"%s","status":"%s","detail":%q}`, name, status, detail)
-	// Simple POST - use http in production
-	log.Printf("[WEBHOOK] POST %s: %s", url, payload)
 }

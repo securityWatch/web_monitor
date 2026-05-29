@@ -5,6 +5,8 @@
     "loading": "加载中...",
     "save": "保存",
     "cancel": "取消",
+    "enabled": "已启用",
+    "disabled": "已禁用",
     "delete": "删除",
     "edit": "编辑",
     "create": "创建",
@@ -41,7 +43,8 @@
     "incidents": "故障",
     "settings": "设置",
     "logout": "退出登录",
-    "addMonitor": "添加监控"
+    "addMonitor": "添加监控",
+    "statusPages": "状态页"
   },
   "landing": {
     "heroTitle": "开发者真正爱用的网站监控",
@@ -248,7 +251,41 @@
     "billingDesc": "创始会员价可用",
     "currentPlan": "当前套餐",
     "upgradePro": "升级 Pro — 创始价 $1/月",
-    "foundingMember": "创始会员"
+    "foundingMember": "创始会员",
+    "integrationsTab": "集成",
+    "integrations": {
+      "desc": "配置 Webhook、Slack 或 Discord，在监控故障或恢复时接收告警。",
+      "addChannel": "添加渠道",
+      "channelType": "渠道类型",
+      "typeWebhook": "Webhook",
+      "typeSlack": "Slack",
+      "typeDiscord": "Discord",
+      "channelName": "名称",
+      "channelNamePlaceholder": "例如：生产环境告警",
+      "webhookUrl": "Webhook 地址",
+      "webhookHint": "Slack/Discord：在 workspace 设置中创建 Incoming Webhook 并粘贴 URL。",
+      "existingChannels": "已配置渠道",
+      "noChannels": "暂无集成渠道。邮件告警默认发送到您的账户邮箱。",
+      "sendTest": "发送测试",
+      "testSent": "测试告警已发送",
+      "channelCreated": "渠道已创建",
+      "deleteConfirm": "确定删除此告警渠道？"
+    }
+  },
+  "statusPages": {
+    "title": "状态页",
+    "subtitle": "向用户展示服务可用性",
+    "create": "创建状态页",
+    "pageName": "页面名称",
+    "slugPlaceholder": "my-service",
+    "selectMonitors": "展示的监控",
+    "empty": "暂无状态页。创建一个向客户展示服务状态。",
+    "viewPublic": "查看公开页",
+    "deleteConfirm": "确定删除此状态页？",
+    "loading": "加载中...",
+    "allOperational": "所有系统运行正常",
+    "degraded": "部分系统异常",
+    "poweredBy": "由 PulseWatch 提供"
   },
   "meta": {
     "title": "PulseWatch — 网站监控",

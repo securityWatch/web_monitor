@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { apiFetch, getStoredAuth, setStoredAuth } from '@/lib/api';
 import { LanguageToggle } from '@/components/language-toggle';
+import { AlertIntegrations } from '@/components/alert-integrations';
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
   const locale = useLocale();
   const auth = getStoredAuth();
-  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'billing'>('profile');
+  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'billing'>('profile');
   const [displayName, setDisplayName] = useState(auth?.user.displayName || '');
   const [passwords, setPasswords] = useState({ current: '', newPass: '' });
   const [notify, setNotify] = useState({ incidents: true, weekly: true, product: false, ssl: true });
@@ -43,6 +44,7 @@ export default function SettingsPage() {
     { id: 'profile' as const, label: t('profile') },
     { id: 'security' as const, label: t('security') },
     { id: 'notifications' as const, label: t('notifications') },
+    { id: 'integrations' as const, label: t('integrationsTab') },
     { id: 'billing' as const, label: t('billing') },
   ];
 
@@ -96,6 +98,8 @@ export default function SettingsPage() {
           <button onClick={saveNotify} className="btn-primary">{tc('save')}</button>
         </div>
       )}
+
+      {tab === 'integrations' && <AlertIntegrations />}
 
       {tab === 'billing' && (
         <div className="card space-y-4">

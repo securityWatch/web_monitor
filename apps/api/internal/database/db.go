@@ -17,6 +17,7 @@ var migrationsFS embed.FS
 var migrationFiles = []string{
 	"migrations/001_initial.sql",
 	"migrations/002_locale.sql",
+	"migrations/003_p0_features.sql",
 }
 
 func Connect(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {

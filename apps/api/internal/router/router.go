@@ -47,11 +47,14 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	monitorH := handlers.NewMonitorHandler(db)
 	dashH := handlers.NewDashboardHandler(db)
 	incH := handlers.NewIncidentHandler(db)
+	alertH := handlers.NewAlertHandler(db, alertSvc)
+	statusH := handlers.NewStatusPageHandler(db)
 
 	rateLimit := middleware.NewRateLimiter(120, time.Minute)
 
 	r.GET("/health", authH.Health)
 	r.GET("/api/v1/public/founding-count", meH.FoundingCount)
+	r.GET("/api/v1/public/status/:slug", statusH.PublicGet)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -83,6 +86,18 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.DELETE("/monitors/:id", monitorH.Delete)
 				org.GET("/monitors/:id/checks", monitorH.GetChecks)
 				org.GET("/monitors/:id/stats", monitorH.GetStats)
+
+				org.GET("/alert-channels", alertH.ListChannels)
+				org.POST("/alert-channels", alertH.CreateChannel)
+				org.PATCH("/alert-channels/:channelId", alertH.UpdateChannel)
+				org.DELETE("/alert-channels/:channelId", alertH.DeleteChannel)
+				org.POST("/alert-channels/:channelId/test", alertH.TestChannel)
+
+				org.GET("/status-pages", statusH.List)
+				org.POST("/status-pages", statusH.Create)
+				org.GET("/status-pages/:pageId", statusH.Get)
+				org.PATCH("/status-pages/:pageId", statusH.Update)
+				org.DELETE("/status-pages/:pageId", statusH.Delete)
 			}
 		}
 	}

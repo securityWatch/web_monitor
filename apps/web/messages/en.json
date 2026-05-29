@@ -5,6 +5,8 @@
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
@@ -41,7 +43,8 @@
     "incidents": "Incidents",
     "settings": "Settings",
     "logout": "Log out",
-    "addMonitor": "Add monitor"
+    "addMonitor": "Add monitor",
+    "statusPages": "Status pages"
   },
   "landing": {
     "heroTitle": "Website monitoring that developers actually enjoy",
@@ -248,7 +251,41 @@
     "billingDesc": "Founding Member pricing available",
     "currentPlan": "Current plan",
     "upgradePro": "Upgrade to Pro — $1/mo founding",
-    "foundingMember": "Founding Member"
+    "foundingMember": "Founding Member",
+    "integrationsTab": "Integrations",
+    "integrations": {
+      "desc": "Configure Webhook, Slack, or Discord to receive alerts when monitors go down or recover.",
+      "addChannel": "Add channel",
+      "channelType": "Channel type",
+      "typeWebhook": "Webhook",
+      "typeSlack": "Slack",
+      "typeDiscord": "Discord",
+      "channelName": "Name",
+      "channelNamePlaceholder": "e.g. Production alerts",
+      "webhookUrl": "Webhook URL",
+      "webhookHint": "Slack/Discord: use Incoming Webhook URL from your workspace settings.",
+      "existingChannels": "Configured channels",
+      "noChannels": "No integration channels yet. Email alerts use your account email by default.",
+      "sendTest": "Send test",
+      "testSent": "Test alert sent",
+      "channelCreated": "Channel created",
+      "deleteConfirm": "Delete this alert channel?"
+    }
+  },
+  "statusPages": {
+    "title": "Status pages",
+    "subtitle": "Share uptime with your users",
+    "create": "Create status page",
+    "pageName": "Page name",
+    "slugPlaceholder": "my-service",
+    "selectMonitors": "Monitors to display",
+    "empty": "No status pages yet. Create one to share with customers.",
+    "viewPublic": "View public page",
+    "deleteConfirm": "Delete this status page?",
+    "loading": "Loading...",
+    "allOperational": "All systems operational",
+    "degraded": "Some systems experiencing issues",
+    "poweredBy": "Powered by PulseWatch"
   },
   "meta": {
     "title": "PulseWatch — Website Monitoring",

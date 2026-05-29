@@ -116,6 +116,39 @@ type MonitorStatsSummary struct {
 	ErrorRate   float64 `json:"errorRate"`
 }
 
+type AlertChannel struct {
+	ID        string          `json:"id"`
+	OrgID     string          `json:"orgId"`
+	Name      string          `json:"name"`
+	Type      string          `json:"type"`
+	Config    json.RawMessage `json:"config"`
+	Enabled   bool            `json:"enabled"`
+	CreatedAt time.Time       `json:"createdAt"`
+}
+
+type StatusPage struct {
+	ID        string    `json:"id"`
+	OrgID     string    `json:"orgId"`
+	Name      string    `json:"name"`
+	Slug      string    `json:"slug"`
+	IsPublic  bool      `json:"isPublic"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type StatusPageDetail struct {
+	StatusPage
+	MonitorIDs []string `json:"monitorIds"`
+}
+
+type StatusPageComponent struct {
+	MonitorID string  `json:"monitorId"`
+	Name      string  `json:"name"`
+	Status    string  `json:"status"`
+	TargetURL string  `json:"targetUrl"`
+	Uptime24h float64 `json:"uptime24h"`
+}
+
 type ResponseTimePoint struct {
 	Time   string  `json:"time"`
 	AvgMs  float64 `json:"avgMs"`
