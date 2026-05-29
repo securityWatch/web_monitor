@@ -1,7 +1,7 @@
 'use client';
 
 import { CircleHelp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   HttpMonitorConfig,
   HttpStep,
@@ -11,6 +11,7 @@ import {
   formatExpectedStatusesInput,
   parseExpectedStatusesInput,
 } from '@/lib/monitor-config';
+import { buildLoginChainDemo, formatChainDemoText, getChainFieldDemos } from '@/lib/monitor-chain-demos';
 
 interface Props {
   type: string;
@@ -23,6 +24,8 @@ const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH']);
 
 export function MonitorHttpConfig({ type, config, onChange }: Props) {
   const t = useTranslations('monitors');
+  const locale = useLocale();
+  const demos = getChainFieldDemos(locale);
 
   if (type !== 'http' && type !== 'keyword' && type !== 'ssl') return null;
 
@@ -123,6 +126,24 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
       ) : (
         <div className="space-y-4">
           <p className="text-xs text-zinc-500">{t('requestChainHint')}</p>
+
+          <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-blue-200">{t('chainDemoTitle')}</p>
+              <button
+                type="button"
+                className="text-xs text-blue-400 hover:text-blue-300"
+                onClick={() => update({ steps: buildLoginChainDemo(locale) })}
+              >
+                {t('chainDemoFill')}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-zinc-400">{t('chainDemoDesc')}</p>
+            <pre className="mt-2 overflow-x-auto rounded border border-zinc-800 bg-zinc-950/80 p-3 font-mono text-xs leading-relaxed text-zinc-300">
+              {formatChainDemoText(locale)}
+            </pre>
+          </div>
+
           {(config.steps || []).map((step, stepIndex) => (
             <div key={stepIndex} className="space-y-3 rounded-lg border border-zinc-700 p-3">
               <div className="flex items-center justify-between">
@@ -155,24 +176,34 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
                 ))}
               </select>
               {BODY_METHODS.has((step.method || 'GET').toUpperCase()) && (
-                <textarea
-                  className="input min-h-24 font-mono text-xs"
-                  placeholder={t('requestBodyWithVars')}
-                  value={step.body || ''}
-                  onChange={(e) => updateStep(stepIndex, { body: e.target.value })}
-                />
+                <div>
+                  <label className="mb-1 block text-xs text-zinc-400">{t('requestBody')}</label>
+                  <textarea
+                    className="input min-h-24 font-mono text-xs"
+                    placeholder={demos.loginBody}
+                    value={step.body || ''}
+                    onChange={(e) => updateStep(stepIndex, { body: e.target.value })}
+                  />
+                  <p className="mt-1 font-mono text-xs text-zinc-600">{t('chainBodyHint')}</p>
+                </div>
               )}
-              <textarea
-                className="input min-h-16 font-mono text-xs"
-                placeholder={t('stepHeadersPlaceholder')}
-                value={step.headers && Object.keys(step.headers).length ? JSON.stringify(step.headers, null, 2) : ''}
-                onChange={(e) => {
-                  try {
-                    const parsed = e.target.value.trim() ? JSON.parse(e.target.value) : {};
-                    updateStep(stepIndex, { headers: parsed });
-                  } catch { /* typing */ }
-                }}
-              />
+              <div>
+                <label className="mb-1 block text-xs text-zinc-400">{t('requestHeaders')}</label>
+                <textarea
+                  className="input min-h-16 font-mono text-xs"
+                  placeholder={stepIndex === 0 ? demos.loginHeaders : demos.authHeaders}
+                  value={step.headers && Object.keys(step.headers).length ? JSON.stringify(step.headers, null, 2) : ''}
+                  onChange={(e) => {
+                    try {
+                      const parsed = e.target.value.trim() ? JSON.parse(e.target.value) : {};
+                      updateStep(stepIndex, { headers: parsed });
+                    } catch { /* typing */ }
+                  }}
+                />
+                <p className="mt-1 font-mono text-xs text-zinc-600">
+                  {stepIndex === 0 ? t('chainHeadersHintStep1') : t('chainHeadersHintLater')}
+                </p>
+              </div>
               <div>
                 <label className="mb-1 block text-xs text-zinc-400">{t('expectedStatus')}</label>
                 <input
@@ -184,6 +215,7 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
               </div>
               <div className="space-y-2">
                 <p className="text-xs text-zinc-400">{t('extractRules')}</p>
+                <p className="font-mono text-xs text-zinc-600">{t('chainExtractHint')}</p>
                 {(step.extract || []).map((rule, extractIndex) => (
                   <div key={extractIndex} className="grid gap-2 sm:grid-cols-4">
                     <input className="input text-xs" placeholder={t('varName')} value={rule.var} onChange={(e) => updateExtract(stepIndex, extractIndex, { var: e.target.value })} />
