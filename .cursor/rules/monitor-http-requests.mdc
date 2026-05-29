@@ -47,7 +47,10 @@ When `config.steps` is non-empty:
 
 ## After changes
 
+Follow **Mandatory post-change workflow** in `.cursor/rules/pulsewatch.mdc` (test → commit → deploy → verify → push).
+
+For this feature specifically:
+
 1. `go test ./internal/services/...` in `apps/api`
-2. Deploy API + web (`redeploy-api.js` + `redeploy-web.js`)
-3. Browser-verify create/edit on `/monitors/new` and `/monitors/[id]/edit`
-4. Commit, push, update PRD reference if scope changes
+2. `cd deploy && node redeploy-api.js` + `node redeploy-web.js`
+3. Browser-verify `/monitors/new` and `/monitors/[id]/edit`

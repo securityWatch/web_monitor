@@ -12,6 +12,7 @@ export interface HttpStep {
   headers?: Record<string, string>;
   body?: string;
   expectedStatus?: number;
+  expectedStatuses?: number[];
   extract?: HttpExtractRule[];
 }
 
@@ -20,6 +21,7 @@ export interface HttpMonitorConfig {
   body?: string;
   headers?: Record<string, string>;
   expectedStatus?: number;
+  expectedStatuses?: number[];
   keyword?: string;
   keywordMustContain?: boolean;
   timeout?: number;
@@ -30,7 +32,7 @@ export const defaultHttpConfig = (): HttpMonitorConfig => ({
   method: 'GET',
   body: '',
   headers: {},
-  expectedStatus: 200,
+  expectedStatuses: [200],
   steps: [],
 });
 
@@ -40,7 +42,7 @@ export const emptyHttpStep = (): HttpStep => ({
   method: 'GET',
   body: '',
   headers: {},
-  expectedStatus: 200,
+  expectedStatuses: [200],
   extract: [],
 });
 
@@ -50,27 +52,61 @@ export const emptyExtractRule = (): HttpExtractRule => ({
   path: '',
 });
 
+export function parseExpectedStatusesInput(input: string): number[] {
+  const codes = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => !Number.isNaN(n) && n >= 100 && n <= 599);
+  const unique = [...new Set(codes)];
+  return unique.length > 0 ? unique : [200];
+}
+
+export function formatExpectedStatusesInput(statuses?: number[], fallback?: number): string {
+  if (statuses && statuses.length > 0) return statuses.join(', ');
+  if (fallback && fallback > 0) return String(fallback);
+  return '200';
+}
+
+export function resolveExpectedStatusesList(cfg: { expectedStatus?: number; expectedStatuses?: number[] }): number[] {
+  if (cfg.expectedStatuses && cfg.expectedStatuses.length > 0) return cfg.expectedStatuses;
+  if (cfg.expectedStatus && cfg.expectedStatus > 0) return [cfg.expectedStatus];
+  return [200];
+}
+
 export function parseHttpConfig(raw: unknown): HttpMonitorConfig {
   if (!raw || typeof raw !== 'object') return defaultHttpConfig();
   const obj = raw as Record<string, unknown>;
+  const expectedStatuses = Array.isArray(obj.expectedStatuses)
+    ? (obj.expectedStatuses as number[]).filter((n) => typeof n === 'number')
+    : undefined;
   return {
     method: typeof obj.method === 'string' ? obj.method : 'GET',
     body: typeof obj.body === 'string' ? obj.body : '',
     headers: (obj.headers as Record<string, string>) || {},
-    expectedStatus: typeof obj.expectedStatus === 'number' ? obj.expectedStatus : 200,
+    expectedStatus: typeof obj.expectedStatus === 'number' ? obj.expectedStatus : undefined,
+    expectedStatuses: expectedStatuses?.length ? expectedStatuses : resolveExpectedStatusesList({ expectedStatus: obj.expectedStatus as number | undefined }),
     keyword: typeof obj.keyword === 'string' ? obj.keyword : undefined,
     keywordMustContain: typeof obj.keywordMustContain === 'boolean' ? obj.keywordMustContain : undefined,
     timeout: typeof obj.timeout === 'number' ? obj.timeout : undefined,
-    steps: Array.isArray(obj.steps) ? (obj.steps as HttpStep[]) : [],
+    steps: Array.isArray(obj.steps)
+      ? (obj.steps as HttpStep[]).map((s) => ({
+          ...s,
+          expectedStatuses: s.expectedStatuses?.length
+            ? s.expectedStatuses
+            : resolveExpectedStatusesList({ expectedStatus: s.expectedStatus }),
+        }))
+      : [],
   };
 }
 
 export function buildHttpConfigPayload(cfg: HttpMonitorConfig, type: string): HttpMonitorConfig | undefined {
   if (type !== 'http' && type !== 'keyword' && type !== 'ssl') return undefined;
+  const statuses = resolveExpectedStatusesList(cfg);
   const payload: HttpMonitorConfig = {
     method: cfg.method || 'GET',
-    expectedStatus: cfg.expectedStatus || 200,
+    expectedStatuses: statuses,
   };
+  if (statuses.length === 1) payload.expectedStatus = statuses[0];
   if (cfg.body?.trim()) payload.body = cfg.body;
   if (cfg.headers && Object.keys(cfg.headers).length > 0) payload.headers = cfg.headers;
   if (type === 'keyword' && cfg.keyword) {
@@ -78,10 +114,15 @@ export function buildHttpConfigPayload(cfg: HttpMonitorConfig, type: string): Ht
     payload.keywordMustContain = cfg.keywordMustContain ?? true;
   }
   if (cfg.steps && cfg.steps.length > 0) {
-    payload.steps = cfg.steps.map((s) => ({
-      ...s,
-      extract: (s.extract || []).filter((e) => e.var.trim()),
-    }));
+    payload.steps = cfg.steps.map((s) => {
+      const stepStatuses = resolveExpectedStatusesList(s);
+      return {
+        ...s,
+        expectedStatuses: stepStatuses,
+        expectedStatus: stepStatuses.length === 1 ? stepStatuses[0] : undefined,
+        extract: (s.extract || []).filter((e) => e.var.trim()),
+      };
+    });
   }
   return payload;
 }

@@ -156,6 +156,8 @@
     "requestBody": "请求体",
     "requestHeaders": "请求头（JSON）",
     "expectedStatus": "期望状态码",
+    "expectedStatusPlaceholder": "200, 201, 204",
+    "expectedStatusHint": "多个状态码用英文逗号分隔，响应匹配其中任意一个即视为成功。",
     "enableRequestChain": "启用多步请求链",
     "requestChainHint": "按顺序执行多个请求。可在 URL、请求头、请求体中使用 {{变量名}}，从每一步响应中提取变量供下一步使用。",
     "targetUrlChainHint": "单次请求时使用此 URL；请求链第 1 步留空时将使用此 URL。",

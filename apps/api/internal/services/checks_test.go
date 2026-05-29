@@ -127,6 +127,23 @@ func TestHTTPTimingsMetadata(t *testing.T) {
 	assert.NotNil(t, timings["totalMs"])
 }
 
+func TestRunHTTPMultipleExpectedStatuses(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+
+	cfg := json.RawMessage(`{"expectedStatuses":[200,201,204]}`)
+	outcome := services.RunCheck(context.Background(), "http", srv.URL, cfg)
+	assert.True(t, outcome.IsUp, outcome.ErrorMessage)
+
+	cfg2 := json.RawMessage(`{"expectedStatuses":[200,404]}`)
+	outcome2 := services.RunCheck(context.Background(), "http", srv.URL, cfg2)
+	assert.False(t, outcome2.IsUp)
+	assert.Contains(t, outcome2.ErrorMessage, "201")
+}
+
 func TestRunCheckTimeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second)

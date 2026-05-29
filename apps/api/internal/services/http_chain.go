@@ -40,11 +40,7 @@ func executeHTTPMonitor(ctx context.Context, targetURL string, cfg HTTPMonitorCo
 	if method == "" {
 		method = "GET"
 	}
-	expected := cfg.ExpectedStatus
-	if expected == 0 {
-		expected = 200
-	}
-	return runSingleHTTP(ctx, targetURL, method, cfg.Body, cfg.Headers, expected, cfg.Keyword, cfg.KeywordMustContain, monitorType, start, timeout)
+	return runSingleHTTP(ctx, targetURL, method, cfg.Body, cfg.Headers, expectedStatusesForConfig(cfg), cfg.Keyword, cfg.KeywordMustContain, monitorType, start, timeout)
 }
 
 func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, monitorType string, start time.Time, timeout time.Duration) CheckOutcome {
@@ -95,17 +91,14 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 		appendChainStepMeta(metadata, stepMeta)
 		last = res
 
-		expected := step.ExpectedStatus
-		if expected == 0 {
-			expected = 200
-		}
-		if res.statusCode != expected {
+		allowed := expectedStatusesForStep(step)
+		if !statusAllowed(res.statusCode, allowed) {
 			setPrimaryTimings(metadata, res.timings)
 			return CheckOutcome{
 				IsUp:         false,
 				StatusCode:   &res.statusCode,
 				ResponseMs:   elapsedMs(start),
-				ErrorMessage: fmt.Sprintf("step %d (%s): expected status %d, got %d", i+1, stepLabel(step, i), expected, res.statusCode),
+				ErrorMessage: fmt.Sprintf("step %d (%s): expected status one of [%s], got %d", i+1, stepLabel(step, i), formatExpectedStatuses(allowed), res.statusCode),
 				Metadata:     metadata,
 			}
 		}
@@ -133,7 +126,7 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 	return outcome
 }
 
-func runSingleHTTP(ctx context.Context, url, method, body string, headers map[string]string, expectedStatus int, keyword string, keywordMustContain bool, monitorType string, start time.Time, timeout time.Duration) CheckOutcome {
+func runSingleHTTP(ctx context.Context, url, method, body string, headers map[string]string, allowedStatuses []int, keyword string, keywordMustContain bool, monitorType string, start time.Time, timeout time.Duration) CheckOutcome {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -154,9 +147,9 @@ func runSingleHTTP(ctx context.Context, url, method, body string, headers map[st
 		}
 	}
 
-	if res.statusCode != expectedStatus {
+	if !statusAllowed(res.statusCode, allowedStatuses) {
 		code := res.statusCode
-		return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("expected status %d, got %d", expectedStatus, res.statusCode), Metadata: metadata}
+		return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("expected status one of [%s], got %d", formatExpectedStatuses(allowedStatuses), res.statusCode), Metadata: metadata}
 	}
 
 	return evaluateHTTPBody(res.body, res.statusCode, elapsedMs(start), keyword, keywordMustContain, monitorType, metadata)

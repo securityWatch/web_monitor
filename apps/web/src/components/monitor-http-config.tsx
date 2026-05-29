@@ -7,6 +7,8 @@ import {
   HttpExtractRule,
   emptyExtractRule,
   emptyHttpStep,
+  formatExpectedStatusesInput,
+  parseExpectedStatusesInput,
 } from '@/lib/monitor-config';
 
 interface Props {
@@ -154,6 +156,15 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
                   } catch { /* typing */ }
                 }}
               />
+              <div>
+                <label className="mb-1 block text-xs text-zinc-400">{t('expectedStatus')}</label>
+                <input
+                  className="input font-mono text-sm"
+                  placeholder={t('expectedStatusPlaceholder')}
+                  value={formatExpectedStatusesInput(step.expectedStatuses, step.expectedStatus)}
+                  onChange={(e) => updateStep(stepIndex, { expectedStatuses: parseExpectedStatusesInput(e.target.value), expectedStatus: undefined })}
+                />
+              </div>
               <div className="space-y-2">
                 <p className="text-xs text-zinc-400">{t('extractRules')}</p>
                 {(step.extract || []).map((rule, extractIndex) => (
@@ -193,11 +204,12 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
       <div>
         <label className="mb-1 block text-sm text-zinc-400">{t('expectedStatus')}</label>
         <input
-          type="number"
-          className="input max-w-[120px]"
-          value={config.expectedStatus || 200}
-          onChange={(e) => update({ expectedStatus: Number(e.target.value) || 200 })}
+          className="input max-w-xs font-mono"
+          placeholder={t('expectedStatusPlaceholder')}
+          value={formatExpectedStatusesInput(config.expectedStatuses, config.expectedStatus)}
+          onChange={(e) => update({ expectedStatuses: parseExpectedStatusesInput(e.target.value), expectedStatus: undefined })}
         />
+        <p className="mt-1 text-xs text-zinc-500">{t('expectedStatusHint')}</p>
       </div>
     </div>
   );

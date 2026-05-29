@@ -17,7 +17,8 @@
 | `method` | string | GET / POST / PUT / PATCH / DELETE / HEAD，默认 GET |
 | `body` | string | POST/PUT/PATCH 请求体，支持 JSON 文本 |
 | `headers` | object | 自定义请求头 |
-| `expectedStatus` | number | 期望 HTTP 状态码，默认 200 |
+| `expectedStatus` | number | 单个期望 HTTP 状态码（兼容旧配置） |
+| `expectedStatuses` | number[] | 多个期望状态码，**匹配任一即成功**，默认 `[200]` |
 | `keyword` | string | keyword 类型：响应体关键词 |
 | `keywordMustContain` | boolean | 是否必须包含关键词 |
 | `timeout` | number | 超时秒数，默认 30 |
@@ -35,7 +36,8 @@
 | `method` | 请求方法 |
 | `body` | 请求体，支持 `{{var}}` 模板 |
 | `headers` | 请求头，支持 `{{var}}` |
-| `expectedStatus` | 本步期望状态码，默认 200 |
+| `expectedStatus` | 本步单个期望状态码（兼容） |
+| `expectedStatuses` | 本步多个期望状态码，匹配任一即成功 |
 | `extract` | 从本步响应提取变量 |
 
 提取规则 `extract[]`：
