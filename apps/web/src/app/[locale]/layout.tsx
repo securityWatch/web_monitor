@@ -15,10 +15,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     .split(',')
     .map((k) => k.trim())
     .filter(Boolean);
+  const baiduToken = process.env.BAIDU_SITE_VERIFICATION?.trim();
   return {
     title: { default: t('title'), template: `%s | ${t('title')}` },
     description: t('description'),
     keywords,
+    ...(baiduToken
+      ? { verification: { other: { 'baidu-site-verification': baiduToken } } }
+      : {}),
   };
 }
 
@@ -34,9 +38,6 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   const htmlLang = locale === 'zh' ? 'zh-CN' : 'en';
-
-  // Baidu Webmaster (百度站长): after verification, add to generateMetadata:
-  // verification: { other: { 'baidu-site-verification': 'YOUR_TOKEN' } }
 
   return (
     <html lang={htmlLang} className="dark">

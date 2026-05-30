@@ -20,8 +20,8 @@ The live site is currently served over **HTTP** at `http://49.234.112.108` (no H
 | Open Graph + Twitter cards | `apps/web/src/lib/seo.ts` → `buildPageMetadata` | Social previews |
 | Canonical + hreflang (`en`, `zh`, `x-default`) | `buildPageMetadata` | Avoid duplicate-language issues; help Google/Baidu pair locales |
 | `robots.txt` | `apps/web/src/app/robots.ts` | Allow crawlers; point to sitemap |
-| `sitemap.xml` | `apps/web/src/app/sitemap.ts` | Home, login, register, pricing, compare pages, SSL tool (× en/zh) |
-| JSON-LD | `apps/web/src/components/landing-json-ld.tsx` | `Organization`, `WebSite`, `WebPage`, `FAQPage` (10 Q&A) |
+| `sitemap.xml` | `apps/web/src/app/sitemap.ts` | Home, login, register, pricing, compare pages, dev tools, SSL tool (× en/zh) |
+| JSON-LD | `apps/web/src/components/landing-json-ld.tsx` | `Organization`, `WebSite`, `WebPage`, `FAQPage` (9 Q&A) |
 | `lang` on `<html>` | `apps/web/src/app/[locale]/layout.tsx` | `en` or `zh-CN` for Baidu/Google language hints |
 | Server-rendered landing copy | `apps/web/src/components/landing-page.tsx` | Indexable H1/H2, FAQ `<details>`, internal links |
 
@@ -33,16 +33,17 @@ After the hero (CTA preserved), the homepage includes:
 - **Use cases** — API, e-commerce, SaaS, 国内/出海团队
 - **Feature grid** — keyword-rich subtitles (existing + SEO subtitle)
 - **Trust / downtime cost** — factual framing, link to comparison page (not fake reviews)
-- **FAQ** — 10 questions (visible + JSON-LD aligned)
-- **Resources** — links to `/login`, `/register`, SSL tool, compare pages
+- **FAQ** — 9 questions (visible + JSON-LD aligned)
+- **Resources** — links to `/login`, `/register`, free developer tools (`/tools`), SSL tool, compare pages
 
-Dev tools (`#tools`) remain in the DOM for crawlers (client-rendered but present in HTML after hydration; primary SEO text is server-rendered).
+Free developer tools live on a dedicated page at `/en/tools` and `/zh/tools` (linked from homepage CTA and nav). The homepage shows a compact card only—full tool UI is not embedded on the landing page.
 
-### Baidu-specific
+### Baidu-specific (internal — not shown on public pages)
 
 - Substantial **unique zh-CN** strings in `messages/zh.json` (not English placeholders).
 - `zh-CN` `lang` attribute on Chinese pages.
-- Placeholder comment in `[locale]/layout.tsx` for `baidu-site-verification` meta when you obtain a token from [百度站长平台](https://ziyuan.baidu.com/).
+- **Site verification meta** via env `BAIDU_SITE_VERIFICATION` — injected in `[locale]/layout.tsx` `generateMetadata` as `verification.other['baidu-site-verification']`. Obtain the token from [百度站长平台](https://ziyuan.baidu.com/) and set in server `.env` (never commit the value).
+- Public FAQ and marketing copy do **not** mention Baidu, Search Console, or indexing — operator steps live in this doc only.
 
 ### Google-specific
 
@@ -63,7 +64,7 @@ Dev tools (`#tools`) remain in the DOM for crawlers (client-rendered but present
 ### 百度站长平台
 
 1. Register site at https://ziyuan.baidu.com/
-2. Verify ownership (meta tag recommended — add token to `generateMetadata` in `[locale]/layout.tsx` as documented in code comment).
+2. Verify ownership (meta tag recommended — set `BAIDU_SITE_VERIFICATION` in `.env`, redeploy web).
 3. Submit sitemap same path: `/sitemap.xml` (includes Chinese URLs).
 4. Use “抓取诊断” on `/zh` to confirm `lang=zh-CN` and Chinese body text.
 5. Plan for **HTTPS + 备案** on production domain for long-term Baidu trust.

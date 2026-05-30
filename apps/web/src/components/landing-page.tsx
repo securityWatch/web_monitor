@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { MarketingNav } from '@/components/marketing-nav';
-import { HomeDevTools } from '@/components/home-dev-tools';
+import { Wrench } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import {
   Activity,
@@ -17,7 +17,7 @@ import {
   Users,
 } from 'lucide-react';
 
-const FAQ_COUNT = 10;
+const FAQ_COUNT = 9;
 
 export async function LandingPage({ foundingCount }: { foundingCount: number }) {
   const t = await getTranslations('landing');
@@ -118,12 +118,23 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
         </div>
       </section>
 
-      <HomeDevTools />
+      <section className="border-t border-zinc-800 bg-zinc-950/50 py-16">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <div className="card border-zinc-800 bg-zinc-900/40 p-8 text-center">
+            <Wrench className="mx-auto h-10 w-10 text-blue-500" aria-hidden />
+            <h2 className="mt-4 text-2xl font-bold">{t('toolsCtaTitle')}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-zinc-400">{t('toolsCtaDesc')}</p>
+            <Link href="/tools" className="btn-primary mt-6 inline-block px-6 py-3">
+              {t('toolsCtaButton')}
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <section id="features" className="border-t border-zinc-800 bg-zinc-950/50 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="text-center text-3xl font-bold">{t('featuresTitle')}</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-zinc-400">{t('featuresSeoSubtitle')}</p>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-zinc-400">{t('featuresSubtitle')}</p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
               <article key={f.title} className="card hover:border-zinc-700 transition-colors">
@@ -227,6 +238,11 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
             <li>
               <Link href="/register" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
                 {t('resourcesRegister')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/tools" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesDevTools')}
               </Link>
             </li>
             <li>

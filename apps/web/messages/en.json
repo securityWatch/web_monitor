@@ -114,7 +114,7 @@
     "useCase3Desc": "Track admin panels, background workers, and staging environments. Share a branded status page so users know you are already on it.",
     "useCase4Title": "China-based & global teams",
     "useCase4Desc": "Bilingual UI (English / 中文), webhook-friendly alerts, and paths toward domestic IM channels—built for teams shipping worldwide from 国内.",
-    "featuresSeoSubtitle": "Keyword-rich monitoring capabilities: HTTP uptime checks, SSL expiry, incidents, status pages, and developer APIs.",
+    "featuresSubtitle": "HTTP uptime checks, SSL expiry, incidents, status pages, and developer APIs.",
     "trustTitle": "Downtime is expensive—monitoring is not",
     "trustLead": "Industry studies often cite five-figure USD losses per hour for mid-size online businesses. PulseWatch helps you detect issues in seconds, not after social media does.",
     "trustPoint1": "A single undetected API outage during peak traffic can cost more than a year of Pro monitoring.",
@@ -138,22 +138,24 @@
     "faq6A": "Yes—PulseWatch allows commercial use on the free tier (15 monitors) so early-stage SaaS and client work can start without a credit card. Upgrade when you need more monitors or team features.",
     "faq7Q": "How fast are alerts sent?",
     "faq7A": "Alerts trigger after consecutive failed checks according to your monitor settings—typically within one to two intervals. Recovery notifications fire when service is healthy again.",
-    "faq8Q": "Do you support Chinese language and Baidu indexing?",
-    "faq8A": "The site is available in English (/en) and Simplified Chinese (/zh) with unique copy per locale, hreflang tags, and sitemap entries. Submit both URLs to Google Search Console and 百度站长平台 for best crawl coverage in China.",
-    "faq9Q": "Where is my check data stored?",
-    "faq9A": "Check results and monitor configuration are stored in PostgreSQL with partitioned time-series tables for performance. You can export insights from the dashboard and API.",
-    "faq10Q": "How do I start monitoring in under five minutes?",
-    "faq10A": "Register free, click Add monitor, paste your URL, choose HTTP check settings, and save. PulseWatch begins scheduling checks immediately. Log in anytime at /login to view dashboards and incidents.",
+    "faq8Q": "Where is my check data stored?",
+    "faq8A": "Check results and monitor configuration are stored in PostgreSQL with partitioned time-series tables for performance. You can export insights from the dashboard and API.",
+    "faq9Q": "How do I start monitoring in under five minutes?",
+    "faq9A": "Register free, click Add monitor, paste your URL, choose HTTP check settings, and save. PulseWatch begins scheduling checks immediately. Log in anytime at /login to view dashboards and incidents.",
     "pricingFullLink": "View full pricing details →",
     "resourcesTitle": "Explore PulseWatch",
     "resourcesLogin": "Log in to dashboard",
     "resourcesRegister": "Create free account",
+    "resourcesDevTools": "Free developer tools",
     "resourcesSsl": "Free SSL checker tool",
     "resourcesCompare": "Compare with Better Stack",
     "resourcesAppNote": "Monitors, incidents, and status pages are available after sign-in from your authenticated dashboard.",
     "jsonLdOrgDescription": "Uptime and website monitoring with fast alerts, incidents, and status pages.",
     "jsonLdPageName": "PulseWatch — Uptime & Website Monitoring",
-    "jsonLdPageDescription": "Commercial-friendly uptime monitoring for APIs, SaaS, and e-commerce with bilingual support."
+    "jsonLdPageDescription": "Commercial-friendly uptime monitoring for APIs, SaaS, and e-commerce with bilingual support.",
+    "toolsCtaTitle": "Free developer tools",
+    "toolsCtaDesc": "Format JSON, escape strings, encode Base64 and URLs, convert timestamps — all in your browser, no signup.",
+    "toolsCtaButton": "Open free developer tools"
   },
   "homeTools": {
     "title": "Free developer tools",
@@ -194,10 +196,10 @@
     },
     "timestamp": {
       "toDate": "To date",
-      "toTimestamp": "To timestamp",
-      "unitms": "Milliseconds",
-      "units": "Seconds"
+      "toTimestamp": "To timestamp"
     },
+    "timestampUnitMs": "Milliseconds",
+    "timestampUnitS": "Seconds",
     "hints": {
       "json": "Paste raw JSON",
       "escape": "Plain text or JSON string literal",
@@ -211,7 +213,12 @@
       "base64": "Hello, world!",
       "url": "hello world & special=chars",
       "timestamp": "1717084800000 or 2024-05-30T12:00:00Z"
-    }
+    },
+    "placeholderJson": "{\"name\":\"PulseWatch\",\"uptime\":99.98}",
+    "placeholderEscape": "Hello \"world\"\\nNew line",
+    "placeholderBase64": "Hello, world!",
+    "placeholderUrl": "hello world & special=chars",
+    "placeholderTimestamp": "1717084800000 or 2024-05-30T12:00:00Z"
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -494,5 +501,10 @@
     "title": "PulseWatch — Uptime & Website Monitoring | Free Tier",
     "description": "Monitor websites, APIs, and SSL certificates with 60-second alerts. Free for 15 monitors. English & 中文. Status pages, incidents, and developer-friendly pricing.",
     "keywords": "uptime monitoring, website monitoring, uptime checker, SSL expiry monitor, status page, API health check, website downtime alert, 网站监控, 可用性监控"
+  },
+  "meta.tools": {
+    "title": "Free Developer Tools — JSON, Base64, URL & Timestamp | PulseWatch",
+    "description": "Browser-based JSON formatter, string escape, Base64 and URL encoder, Unix timestamp converter. No signup — all processing stays local.",
+    "keywords": "JSON formatter, JSON minify, Base64 encode, URL encode, Unix timestamp converter, developer tools, 在线 JSON 格式化, Base64 编码"
   }
 }

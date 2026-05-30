@@ -43,14 +43,14 @@ const TOOLS: { id: ToolId; icon: typeof Braces }[] = [
   { id: 'timestamp', icon: Clock },
 ];
 
-export function HomeDevTools() {
+export function DevToolsPanel() {
   const t = useTranslations('homeTools');
   const placeholders: Record<ToolId, string> = {
-    json: t('placeholders.json'),
-    escape: t('placeholders.escape'),
-    base64: t('placeholders.base64'),
-    url: t('placeholders.url'),
-    timestamp: t('placeholders.timestamp'),
+    json: t('placeholderJson'),
+    escape: t('placeholderEscape'),
+    base64: t('placeholderBase64'),
+    url: t('placeholderUrl'),
+    timestamp: t('placeholderTimestamp'),
   };
   const hints: Record<ToolId, string> = {
     json: t('hints.json'),
@@ -127,10 +127,10 @@ export function HomeDevTools() {
   };
 
   return (
-    <section id="tools" className="border-t border-zinc-800 bg-zinc-950/50 py-24">
+    <section className="py-12 sm:py-16 lg:py-20">
       <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold sm:text-4xl">{t('title')}</h2>
+          <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
           <p className="mx-auto mt-3 max-w-2xl text-lg text-zinc-400">{t('subtitle')}</p>
         </div>
 
@@ -189,7 +189,13 @@ export function HomeDevTools() {
                 ))}
                 <span className="mx-1 hidden h-5 w-px bg-zinc-700 sm:inline" />
                 {(['ms', 's'] as const).map((unit) => (
-                  <ActionChip key={unit} active={timestampUnit === unit} onClick={() => setTimestampUnit(unit)} label={t(`timestamp.unit${unit}`)} small />
+                  <ActionChip
+                    key={unit}
+                    active={timestampUnit === unit}
+                    onClick={() => setTimestampUnit(unit)}
+                    label={unit === 'ms' ? t('timestampUnitMs') : t('timestampUnitS')}
+                    small
+                  />
                 ))}
               </>
             )}

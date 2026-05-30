@@ -114,7 +114,7 @@
     "useCase3Desc": "跟踪管理后台、后台任务与预发环境。用品牌状态页告知用户「我们已在处理」。",
     "useCase4Title": "国内与出海团队",
     "useCase4Desc": "中英双语界面、Webhook 告警，并规划国内 IM 通道——适合从国内交付、服务全球产品的团队。",
-    "featuresSeoSubtitle": "涵盖 HTTP 可用性检测、SSL 到期、事件工作流、状态页与开发者 API 的完整监控能力。",
+    "featuresSubtitle": "涵盖 HTTP 可用性检测、SSL 到期、事件工作流、状态页与开发者 API 的完整监控能力。",
     "trustTitle": "宕机很贵，监控不贵",
     "trustLead": "多项行业调研显示，中型在线业务每小时宕机损失可达数万人民币量级。PulseWatch 帮您在社交媒体发酵前的秒级窗口发现问题。",
     "trustPoint1": "高峰时段一次未被发现的 API 故障，损失可能超过一整年专业版订阅费。",
@@ -138,22 +138,24 @@
     "faq6A": "可以。免费层（15 个监控）允许商用，方便早期 SaaS 与客户项目零信用卡起步，需要更多监控或团队功能时再升级。",
     "faq7Q": "告警有多快？",
     "faq7A": "根据监控配置，在连续失败达到阈值后触发——通常在一到两个检测周期内。服务恢复后也会发送恢复通知。",
-    "faq8Q": "是否支持中文与百度收录？",
-    "faq8A": "站点提供英文（/en）与简体中文（/zh）独立文案，并配置 hreflang 与 sitemap。建议在 Google Search Console 与百度站长平台分别提交两个语言版本以提升国内收录。",
-    "faq9Q": "检测数据存储在哪里？",
-    "faq9A": "检测结果与监控配置存储在 PostgreSQL，检测历史采用分区表以保障性能。可通过仪表盘与 API 查看指标。",
-    "faq10Q": "如何在五分钟内开始监控？",
-    "faq10A": "免费注册 → 添加监控 → 填写 URL 与 HTTP 设置 → 保存。PulseWatch 会立即开始调度检测。随时通过 /login 登录查看仪表盘与事件。",
+    "faq8Q": "检测数据存储在哪里？",
+    "faq8A": "检测结果与监控配置存储在 PostgreSQL，检测历史采用分区表以保障性能。可通过仪表盘与 API 查看指标。",
+    "faq9Q": "如何在五分钟内开始监控？",
+    "faq9A": "免费注册 → 添加监控 → 填写 URL 与 HTTP 设置 → 保存。PulseWatch 会立即开始调度检测。随时通过 /login 登录查看仪表盘与事件。",
     "pricingFullLink": "查看完整定价说明 →",
     "resourcesTitle": "进一步了解 PulseWatch",
     "resourcesLogin": "登录控制台",
     "resourcesRegister": "免费注册账号",
+    "resourcesDevTools": "免费开发者小工具",
     "resourcesSsl": "免费 SSL 检测工具",
     "resourcesCompare": "对比 Better Stack",
     "resourcesAppNote": "监控、事件与状态页需在登录后于控制台中使用。",
     "jsonLdOrgDescription": "网站与可用性监控：快速告警、事件管理与状态页。",
     "jsonLdPageName": "PulseWatch — 网站与可用性监控",
-    "jsonLdPageDescription": "面向 API、SaaS 与电商的商用友好型可用性监控，支持中英双语。"
+    "jsonLdPageDescription": "面向 API、SaaS 与电商的商用友好型可用性监控，支持中英双语。",
+    "toolsCtaTitle": "免费开发者小工具",
+    "toolsCtaDesc": "JSON 格式化、字符串转义、Base64/URL 编码、时间戳转换 — 全部在浏览器本地运行，无需注册。",
+    "toolsCtaButton": "打开免费开发者小工具"
   },
   "homeTools": {
     "title": "免费开发者小工具",
@@ -194,10 +196,10 @@
     },
     "timestamp": {
       "toDate": "转日期",
-      "toTimestamp": "转时间戳",
-      "unitms": "毫秒",
-      "units": "秒"
+      "toTimestamp": "转时间戳"
     },
+    "timestampUnitMs": "毫秒",
+    "timestampUnitS": "秒",
     "hints": {
       "json": "粘贴原始 JSON",
       "escape": "纯文本或 JSON 字符串字面量",
@@ -211,7 +213,12 @@
       "base64": "你好，世界！",
       "url": "hello world & 特殊=字符",
       "timestamp": "1717084800000 或 2024-05-30T12:00:00Z"
-    }
+    },
+    "placeholderJson": "{\"name\":\"PulseWatch\",\"uptime\":99.98}",
+    "placeholderEscape": "Hello \"world\"\\n换行符",
+    "placeholderBase64": "你好，世界！",
+    "placeholderUrl": "hello world & 特殊=字符",
+    "placeholderTimestamp": "1717084800000 或 2024-05-30T12:00:00Z"
   },
   "auth": {
     "loginTitle": "欢迎回来",
@@ -494,5 +501,10 @@
     "title": "PulseWatch — 网站与可用性监控 | 免费 15 个监控",
     "description": "监控网站、API 与 SSL 证书，分钟级告警。免费 15 个监控，支持商用。中英双语、状态页、事件管理与开发者友好定价。",
     "keywords": "网站监控, 可用性监控, 宕机检测, SSL到期监控, 状态页, API健康检查, 网站宕机告警, uptime monitoring, website monitoring"
+  },
+  "meta.tools": {
+    "title": "免费开发者小工具 — JSON、Base64、URL 与时间戳 | PulseWatch",
+    "description": "浏览器内 JSON 格式化、字符串转义、Base64/URL 编码、Unix 时间戳转换。无需注册，全部本地处理。",
+    "keywords": "JSON 格式化, JSON 压缩, Base64 编码, URL 编码, Unix 时间戳转换, 开发者工具, JSON formatter, Base64 encode"
   }
 }
