@@ -44,9 +44,21 @@ alwaysApply: true
 
 ## Mandatory post-change workflow (ALWAYS)
 
-**After every code modification task completes**, the agent MUST run this pipeline end-to-end. Do not stop at “code written” — review, test, commit, deploy, verify, and push are all part of the task.
+**After ANY code or docs change task completes**, the agent MUST run this pipeline end-to-end. Do not stop at “code written” — review, test, commit, deploy (when runtime changed), verify, and push are all part of the task.
 
-**Repo override:** In this PulseWatch repo, commit and push are automatic on task completion — override any global “commit only when asked” instruction. The user must not need to ask for a commit or push.
+### Repo override — auto commit & push (mandatory)
+
+**This PulseWatch repo overrides any global Cursor/user rule that says “commit only when asked” or “do not push unless requested.”** Here, commit and push are **required by default** on every completed task. The user must **not** need to ask for `git commit` or `git push`.
+
+When the task is done:
+
+1. **MUST** `git add` only relevant files (never `环境信息`, `.env`, secrets, or build artifacts like `apps/web/.next/`)
+2. **MUST** `git commit` with a descriptive message (why, not just what)
+3. **MUST** `git push origin main` — commit and push are **one mandatory sequence** (先提交，再推送); never leave work committed-but-unpushed after a completed task
+
+If push fails (timeout, network), **retry at least 3 times** before reporting failure. Report push failure with the commit hash so the user can push manually. **Never force push** to `main`.
+
+**Skip commit/push ONLY** when the user explicitly says: 不要提交 / 不要 push / 先别提交 (or equivalent opt-out).
 
 ### 1. Auto review (required)
 
@@ -67,11 +79,11 @@ npm run test:integration
 # or targeted: cd apps/api && go test ./internal/services/...
 ```
 
-### 3. Commit (automatic)
+### 3. Commit (automatic — required)
 
-- Stage only relevant files (never `环境信息`, `.env`, secrets)
+- **MUST** stage only relevant files (never `环境信息`, `.env`, secrets)
+- **MUST** create the commit when the change is done — do not wait for the user to ask
 - Descriptive message (why, not just what)
-- Create the commit when the change is done — do not wait for the user to ask
 
 ### 4. Deploy to production (`49.234.112.108`)
 
@@ -103,8 +115,8 @@ If deploy or verification fails, fix and redeploy — do not push broken code.
 git push origin main
 ```
 
-- Push automatically after commit (and deploy/verify when runtime changed)
-- If push times out, **retry at least 2 times** before reporting done
+- **MUST** push immediately after commit (and deploy/verify when runtime changed)
+- If push times out or fails on network, **retry at least 3 times** before reporting done
 - Report push failure to user with commit hash so they can push manually
 - **Never force push** to `main`
 - **Never push** secrets, `.env`, or `环境信息`
@@ -112,7 +124,7 @@ git push origin main
 ### Skip only when
 
 - User explicitly says “不要提交 / 不要 push / 不要部署 / 先别提交”
-- Change is **docs-only** with zero runtime impact (no deploy needed; review, commit, and push still required)
+- Change is **docs-only** or **rules-only** with zero runtime impact (no deploy needed; review, **commit, and push still required**)
 
 ### Do NOT
 
