@@ -21,10 +21,17 @@ export default function SettingsPage() {
   const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'team' | 'maintenance' | 'apikeys' | 'billing' | 'audit' | 'oncall'>('profile');
   const [displayName, setDisplayName] = useState(auth?.user.displayName || '');
   const [passwords, setPasswords] = useState({ current: '', newPass: '' });
-  const [notify, setNotify] = useState({ incidents: true, weekly: true, product: false, ssl: true });
+  const [notify, setNotify] = useState({
+    incidents: auth?.user.notifyIncidents ?? true,
+    daily: auth?.user.notifyDaily ?? false,
+    weekly: auth?.user.notifyWeekly ?? true,
+    product: auth?.user.notifyProduct ?? false,
+    ssl: auth?.user.notifySsl ?? true,
+  });
   const [msg, setMsg] = useState('');
-  const [aiReport, setAiReport] = useState('');
-  const [aiReportLoading, setAiReportLoading] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [systemReport, setSystemReport] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
 
   const saveProfile = async () => {
     await apiFetch('/api/v1/me/profile', { method: 'PATCH', body: JSON.stringify({ displayName, locale }) });
@@ -44,32 +51,39 @@ export default function SettingsPage() {
   const saveNotify = async () => {
     await apiFetch('/api/v1/me/notifications', {
       method: 'PATCH',
-      body: JSON.stringify({ notifyIncidents: notify.incidents, notifyWeekly: notify.weekly, notifyProduct: notify.product, notifySsl: notify.ssl }),
+      body: JSON.stringify({ notifyIncidents: notify.incidents, notifyDaily: notify.daily, notifyWeekly: notify.weekly, notifyProduct: notify.product, notifySsl: notify.ssl }),
     });
     setMsg(t('saved'));
   };
 
-  const generateAIReport = async () => {
+  const generateSystemReport = async (withAI: boolean) => {
     if (!auth?.organization.id) return;
-    setAiReportLoading(true);
+    setReportLoading(true);
     setMsg('');
     try {
       const res = await apiFetch<{
-        report: { headline?: string; summary?: string; risks?: string[]; wins?: string[]; nextActions?: string[]; customerBrief?: string };
-      }>(`/api/v1/orgs/${auth.organization.id}/reports/ai-security`, { method: 'POST' });
+        report: {
+          period: string; days: number; monitorCount: number; upMonitors: number; downMonitors: number; pausedMonitors: number;
+          uptimePct: number; totalChecks: number; failedChecks: number; avgResponseMs: number; incidentCount: number; openIncidents: number; securityFindings: number;
+          aiSummary?: { headline?: string; summary?: string; risks?: string[]; wins?: string[]; nextActions?: string[]; customerBrief?: string };
+        };
+      }>(`/api/v1/orgs/${auth.organization.id}/reports/system?period=${reportPeriod}&ai=${withAI ? 'true' : 'false'}`);
       const r = res.report;
-      setAiReport([
-        r.headline,
-        r.summary,
-        r.risks?.length ? `风险：${r.risks.join('；')}` : '',
-        r.wins?.length ? `亮点：${r.wins.join('；')}` : '',
-        r.nextActions?.length ? `建议：${r.nextActions.join('；')}` : '',
-        r.customerBrief ? `客户简报：${r.customerBrief}` : '',
+      const ai = r.aiSummary;
+      setSystemReport([
+        `${r.period} 报告（${r.days} 天）`,
+        `监控：${r.monitorCount} 个（正常 ${r.upMonitors} / 故障 ${r.downMonitors} / 暂停 ${r.pausedMonitors}）`,
+        `可用率：${r.uptimePct}% · 检查 ${r.totalChecks} 次 · 失败 ${r.failedChecks} 次 · 平均响应 ${r.avgResponseMs}ms`,
+        `事件：${r.incidentCount} 个（进行中 ${r.openIncidents}） · 安全发现 ${r.securityFindings} 条`,
+        ai?.headline ? `AI：${ai.headline}` : '',
+        ai?.summary || '',
+        ai?.risks?.length ? `风险：${ai.risks.join('；')}` : '',
+        ai?.nextActions?.length ? `建议：${ai.nextActions.join('；')}` : '',
       ].filter(Boolean).join('\n'));
     } catch (err) {
-      setAiReport(err instanceof Error ? err.message : 'AI error');
+      setSystemReport(err instanceof Error ? err.message : 'Report error');
     } finally {
-      setAiReportLoading(false);
+      setReportLoading(false);
     }
   };
 
@@ -80,7 +94,7 @@ export default function SettingsPage() {
     { id: 'integrations' as const, label: t('integrationsTab') },
     { id: 'team' as const, label: '团队' },
     { id: 'maintenance' as const, label: '维护窗口' },
-    { id: 'apikeys' as const, label: 'API Keys' },
+    { id: 'apikeys' as const, label: locale === 'zh' ? '接口密钥' : 'API Keys' },
     { id: 'audit' as const, label: '审计日志' },
     { id: 'oncall' as const, label: 'On-Call' },
     { id: 'billing' as const, label: t('billing') },
@@ -89,10 +103,12 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
-      <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
+      <div className="w-full overflow-x-auto border-b border-zinc-800 pb-4 [scrollbar-width:thin]">
+        <div className="inline-flex min-w-max gap-2 whitespace-nowrap">
         {tabs.map((tb) => (
-          <button key={tb.id} onClick={() => { setTab(tb.id); setMsg(''); }} className={`rounded-lg px-4 py-2 text-sm ${tab === tb.id ? 'bg-zinc-800 text-white' : 'text-zinc-400'}`}>{tb.label}</button>
+          <button key={tb.id} onClick={() => { setTab(tb.id); setMsg(''); }} className={`shrink-0 whitespace-nowrap rounded-lg px-4 py-2 text-sm ${tab === tb.id ? 'bg-zinc-800 text-white' : 'text-zinc-400'}`}>{tb.label}</button>
         ))}
+        </div>
       </div>
       {msg && <p className="text-sm text-emerald-400">{msg}</p>}
       <EmailVerificationBanner />
@@ -128,6 +144,7 @@ export default function SettingsPage() {
         <div className="card space-y-4">
           {[
             { key: 'incidents' as const, label: t('notifyIncidents') },
+            { key: 'daily' as const, label: t('notifyDaily') },
             { key: 'weekly' as const, label: t('notifyWeekly') },
             { key: 'product' as const, label: t('notifyProduct') },
             { key: 'ssl' as const, label: t('notifySsl') },
@@ -180,15 +197,23 @@ export default function SettingsPage() {
           >
             {t('upgradePro')}
           </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={generateAIReport}
-            disabled={aiReportLoading}
-          >
-            {aiReportLoading ? '...' : '生成 AI 安全周报'}
-          </button>
-          {aiReport && <pre className="whitespace-pre-wrap rounded-lg border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-100/80">{aiReport}</pre>}
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+            <p className="text-sm font-medium text-zinc-300">监控报告</p>
+            <div className="grid gap-3 sm:grid-cols-[160px_1fr_1fr]">
+              <select className="input" value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value as 'daily' | 'weekly' | 'monthly')}>
+                <option value="daily">{t('dailyReport')}</option>
+                <option value="weekly">{t('weeklyReport')}</option>
+                <option value="monthly">{t('monthlyReport')}</option>
+              </select>
+              <button type="button" className="btn-secondary" onClick={() => generateSystemReport(false)} disabled={reportLoading}>
+                {reportLoading ? '...' : t('systemReport')}
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => generateSystemReport(true)} disabled={reportLoading}>
+                {t('systemReportAI')}
+              </button>
+            </div>
+          </div>
+          {systemReport && <pre className="whitespace-pre-wrap rounded-lg border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-100/80">{systemReport}</pre>}
           <button
             type="button"
             className="btn-secondary"

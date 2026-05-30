@@ -28,6 +28,11 @@ export interface AuthData {
     displayName?: string;
     locale?: string;
     emailVerifiedAt?: string | null;
+    notifyIncidents?: boolean;
+    notifyDaily?: boolean;
+    notifyWeekly?: boolean;
+    notifyProduct?: boolean;
+    notifySsl?: boolean;
   };
   organization: Organization;
   requiresTotp?: boolean;

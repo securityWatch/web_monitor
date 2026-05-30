@@ -107,6 +107,27 @@ func (h *ReportHandler) AISecurityReport(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"report": report})
 }
 
+func (h *ReportHandler) SystemReport(c *gin.Context) {
+	orgID := c.Param("orgId")
+	userID := GetUserID(c)
+	var exists bool
+	_ = h.db.QueryRow(c.Request.Context(), `
+		SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)
+	`, userID, orgID).Scan(&exists)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	period := c.DefaultQuery("period", "weekly")
+	includeAI := c.Query("ai") == "true"
+	report, err := services.BuildSystemReport(c.Request.Context(), h.db, orgID, period, includeAI)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"report": report})
+}
+
 func (h *ReportHandler) SLAReportHTML(c *gin.Context) {
 	orgID := c.Param("orgId")
 	userID := GetUserID(c)

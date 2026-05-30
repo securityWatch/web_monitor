@@ -183,6 +183,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 
 				org.GET("/reports/sla.csv", reportH.SLAExport)
 				org.GET("/reports/sla.html", reportH.SLAReportHTML)
+				org.GET("/reports/system", reportH.SystemReport)
 				org.POST("/reports/ai-security", reportH.AISecurityReport)
 
 				org.GET("/api-keys", apiKeyH.List)

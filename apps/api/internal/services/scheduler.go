@@ -53,7 +53,7 @@ func (s *Scheduler) loop() {
 				s.probes.AggregatePending(ctx, s)
 			}
 			s.processPendingAlerts(ctx)
-			s.processAIWeeklyReports(ctx)
+			s.processSystemReports(ctx)
 			s.processOnCallEscalation(ctx)
 		}
 	}
@@ -246,21 +246,16 @@ func (s *Scheduler) processPendingAlerts(ctx context.Context) {
 	}
 }
 
-func (s *Scheduler) processAIWeeklyReports(ctx context.Context) {
-	if s.email == nil || !deepSeekConfigured() || time.Since(s.lastAIWeeklyCheck) < time.Hour {
+func (s *Scheduler) processSystemReports(ctx context.Context) {
+	if s.email == nil || time.Since(s.lastAIWeeklyCheck) < time.Hour {
 		return
 	}
 	s.lastAIWeeklyCheck = time.Now()
 	rows, err := s.db.Query(ctx, `
-		SELECT o.id, o.plan_tier, u.email
+		SELECT o.id, u.email, COALESCE(u.notify_daily, false), u.notify_weekly
 		FROM organizations o
 		JOIN organization_members om ON om.org_id = o.id AND om.role = 'owner'
-		JOIN users u ON u.id = om.user_id AND u.notify_weekly = true
-		WHERE NOT EXISTS (
-			SELECT 1 FROM audit_logs al
-			WHERE al.org_id = o.id AND al.action = 'ai.weekly_report.sent'
-			  AND al.created_at > now() - interval '7 days'
-		)
+		JOIN users u ON u.id = om.user_id AND (u.notify_weekly = true OR COALESCE(u.notify_daily, false) = true)
 		LIMIT 25
 	`)
 	if err != nil {
@@ -268,25 +263,38 @@ func (s *Scheduler) processAIWeeklyReports(ctx context.Context) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var orgID, planTier, email string
-		if rows.Scan(&orgID, &planTier, &email) != nil || email == "" {
+		var orgID, email string
+		var notifyDaily, notifyWeekly bool
+		if rows.Scan(&orgID, &email, &notifyDaily, &notifyWeekly) != nil || email == "" {
 			continue
 		}
-		if CheckAIQuota(ctx, s.db, orgID, planTier, "weekly_report_auto") != nil {
-			continue
+		if notifyDaily {
+			s.sendSystemReportIfDue(ctx, orgID, email, "daily", "24 hours")
 		}
-		report, err := GenerateAISecurityReport(ctx, BuildAISecurityReportInput(ctx, s.db, orgID))
-		if err != nil {
-			RecordAIUsage(ctx, s.db, orgID, "weekly_report_auto", "error", err.Error())
-			continue
+		if notifyWeekly {
+			s.sendSystemReportIfDue(ctx, orgID, email, "weekly", "7 days")
 		}
-		if err := s.email.Send(ctx, email, "[PulseWatch] AI weekly reliability report", FormatAISecurityReportHTML(report)); err != nil {
-			RecordAIUsage(ctx, s.db, orgID, "weekly_report_auto", "error", err.Error())
-			continue
-		}
-		RecordAIUsage(ctx, s.db, orgID, "weekly_report_auto", "ok", "")
-		LogAudit(ctx, s.db, orgID, "", "ai.weekly_report.sent", "", map[string]interface{}{"email": email})
 	}
+}
+
+func (s *Scheduler) sendSystemReportIfDue(ctx context.Context, orgID, email, period, window string) {
+	action := "system_report." + period + ".sent"
+	var recent int
+	_ = s.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM audit_logs
+		WHERE org_id = $1 AND action = $2 AND created_at > now() - ($3)::interval
+	`, orgID, action, window).Scan(&recent)
+	if recent > 0 {
+		return
+	}
+	report, err := BuildSystemReport(ctx, s.db, orgID, period, deepSeekConfigured())
+	if err != nil {
+		return
+	}
+	if err := s.email.Send(ctx, email, "[PulseWatch] "+period+" monitoring report", FormatSystemReportHTML(report)); err != nil {
+		return
+	}
+	LogAudit(ctx, s.db, orgID, "", action, "", map[string]interface{}{"email": email})
 }
 
 func (s *Scheduler) fireDownAlert(ctx context.Context, monitorID, orgID, name, detail string) {
