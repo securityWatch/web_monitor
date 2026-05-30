@@ -62,6 +62,15 @@ func (se *SecurityEvents) AfterCheck(ctx context.Context, monitorID, orgID, name
 		se.alerts.NotifySecurityEvent(ctx, orgID, monitorID, name, "tamper_policy_violation", detail)
 		se.openSecurityIncident(ctx, orgID, monitorID, name, detail)
 	}
+
+	if outcome.Metadata["tamperAIContentViolation"] == true {
+		detail, _ := outcome.Metadata["aiPolicySummary"].(string)
+		if detail == "" {
+			detail = "AI content risk detected"
+		}
+		se.alerts.NotifySecurityEvent(ctx, orgID, monitorID, name, "tamper_ai_content_violation", detail)
+		se.openSecurityIncident(ctx, orgID, monitorID, name, detail)
+	}
 }
 
 func (se *SecurityEvents) applyBaselineUpdates(ctx context.Context, monitorID string, cfg map[string]interface{}, meta map[string]interface{}) {

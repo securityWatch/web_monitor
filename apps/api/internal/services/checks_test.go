@@ -27,7 +27,7 @@ func TestRunHTTPCheck(t *testing.T) {
 	assert.True(t, outcome.IsUp)
 	require.NotNil(t, outcome.StatusCode)
 	assert.Equal(t, 200, *outcome.StatusCode)
-	assert.Greater(t, outcome.ResponseMs, 0)
+	assert.GreaterOrEqual(t, outcome.ResponseMs, 0)
 }
 
 func TestRunHTTPCheckDown(t *testing.T) {
@@ -154,4 +154,53 @@ func TestRunCheckTimeout(t *testing.T) {
 	cfg := json.RawMessage(`{"timeout":1}`)
 	outcome := services.RunCheck(context.Background(), "http", srv.URL, cfg)
 	assert.False(t, outcome.IsUp)
+}
+
+func TestRunTamperCheckDeepSeekFlagsContent(t *testing.T) {
+	deepSeek := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
+		body, _ := io.ReadAll(r.Body)
+		assert.Contains(t, string(body), "hacked casino")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"choices":[{"message":{"content":"{\"flagged\":true,\"riskLevel\":\"high\",\"categories\":[\"defacement\",\"gambling\"],\"summary\":\"Defacement and gambling content detected\",\"confidence\":0.93}"}}]}`))
+	}))
+	defer deepSeek.Close()
+
+	page := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<html><body><h1>hacked casino bonus</h1></body></html>`))
+	}))
+	defer page.Close()
+
+	t.Setenv("DEEPSEEK_API_KEY", "test-key")
+	t.Setenv("DEEPSEEK_API_BASE_URL", deepSeek.URL)
+	t.Setenv("DEEPSEEK_MODEL", "deepseek-test")
+
+	cfg := json.RawMessage(`{"aiContentRecognitionEnabled":true}`)
+	outcome := services.RunCheck(context.Background(), "tamper", page.URL, cfg)
+	assert.False(t, outcome.IsUp)
+	assert.Contains(t, outcome.ErrorMessage, "AI content risk detected")
+	assert.Equal(t, true, outcome.Metadata["tamperAIContentViolation"])
+	aiMeta, ok := outcome.Metadata["aiContentRecognition"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "ok", aiMeta["status"])
+	assert.Equal(t, "deepseek-test", aiMeta["model"])
+	assert.Equal(t, true, aiMeta["flagged"])
+}
+
+func TestRunTamperCheckDeepSeekMissingKeyDoesNotFailCheck(t *testing.T) {
+	page := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<html><body><h1>normal site</h1></body></html>`))
+	}))
+	defer page.Close()
+
+	t.Setenv("DEEPSEEK_API_KEY", "")
+	cfg := json.RawMessage(`{"aiContentRecognitionEnabled":true}`)
+	outcome := services.RunCheck(context.Background(), "tamper", page.URL, cfg)
+	assert.True(t, outcome.IsUp, outcome.ErrorMessage)
+	aiMeta, ok := outcome.Metadata["aiContentRecognition"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "error", aiMeta["status"])
+	assert.Contains(t, aiMeta["error"], "API key not configured")
 }

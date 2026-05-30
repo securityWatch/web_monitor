@@ -149,7 +149,14 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		}
 	}
 
-	minInterval := services.PlanMinInterval(planTier)
+	if req.Config == nil {
+		req.Config = json.RawMessage(`{}`)
+	}
+	if req.Regions == nil {
+		req.Regions = json.RawMessage(`["us-east"]`)
+	}
+
+	minInterval := services.PlanMinIntervalForMonitor(planTier, req.Type, req.Config)
 	if req.IntervalSeconds == 0 {
 		req.IntervalSeconds = minInterval
 	}
@@ -199,12 +206,6 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		req.IntervalSeconds = minInterval
 	}
 
-	if req.Config == nil {
-		req.Config = json.RawMessage(`{}`)
-	}
-	if req.Regions == nil {
-		req.Regions = json.RawMessage(`["us-east"]`)
-	}
 	regions := services.ParseRegions(req.Regions)
 	maxRegions := services.PlanMaxRegions(planTier)
 	if len(regions) > maxRegions {
@@ -269,6 +270,37 @@ func (h *MonitorHandler) Update(c *gin.Context) {
 		return
 	}
 
+	var planTier, currentType string
+	var currentConfig json.RawMessage
+	var currentInterval int
+	if err := h.db.QueryRow(c.Request.Context(), `
+		SELECT o.plan_tier, m.type, m.config, m.interval_seconds
+		FROM monitors m
+		JOIN organizations o ON o.id = m.org_id
+		WHERE m.id = $1 AND m.org_id = $2
+	`, id, orgID).Scan(&planTier, &currentType, &currentConfig, &currentInterval); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	effectiveConfig := currentConfig
+	if req.Config != nil {
+		effectiveConfig = req.Config
+	}
+	effectiveInterval := currentInterval
+	if req.IntervalSeconds != nil {
+		effectiveInterval = *req.IntervalSeconds
+	}
+	minInterval := services.PlanMinIntervalForMonitor(planTier, currentType, effectiveConfig)
+	if strings.ToLower(currentType) == "domain" && effectiveInterval < 86400 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "interval below plan minimum", "code": "INTERVAL_QUOTA", "minInterval": 86400})
+		return
+	}
+	if strings.ToLower(currentType) != "domain" && effectiveInterval < minInterval {
+		c.JSON(http.StatusForbidden, gin.H{"error": "interval below plan minimum", "code": "INTERVAL_QUOTA", "minInterval": minInterval})
+		return
+	}
+
 	if req.Name != nil {
 		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET name = $1, updated_at = now() WHERE id = $2 AND org_id = $3`, *req.Name, id, orgID)
 	}
@@ -281,19 +313,10 @@ func (h *MonitorHandler) Update(c *gin.Context) {
 		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET target_url = $1, updated_at = now() WHERE id = $2 AND org_id = $3`, target, id, orgID)
 	}
 	if req.IntervalSeconds != nil {
-		var planTier string
-		_ = h.db.QueryRow(c.Request.Context(), `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
-		minInterval := services.PlanMinInterval(planTier)
 		interval := *req.IntervalSeconds
-		if interval < minInterval {
-			c.JSON(http.StatusForbidden, gin.H{"error": "interval below plan minimum", "code": "INTERVAL_QUOTA", "minInterval": minInterval})
-			return
-		}
 		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET interval_seconds = $1, updated_at = now() WHERE id = $2 AND org_id = $3`, interval, id, orgID)
 	}
 	if req.Regions != nil {
-		var planTier string
-		_ = h.db.QueryRow(c.Request.Context(), `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
 		regions := services.ParseRegions(req.Regions)
 		if len(regions) > services.PlanMaxRegions(planTier) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "region limit exceeded", "code": "REGION_QUOTA_EXCEEDED"})

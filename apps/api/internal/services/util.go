@@ -91,6 +91,16 @@ func PlanMinInterval(planTier string) int {
 	}
 }
 
+func PlanMinIntervalForMonitor(planTier, monitorType string, config []byte) int {
+	if strings.ToLower(monitorType) == "tamper" && TamperAIRecognitionEnabled(config) {
+		if planTier == "free" || strings.TrimSpace(planTier) == "" {
+			return 1800
+		}
+		return 30
+	}
+	return PlanMinInterval(planTier)
+}
+
 func PlanMaxRegions(planTier string) int {
 	switch planTier {
 	case "pro":

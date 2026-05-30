@@ -1,17 +1,26 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	htmlstd "html"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
+)
+
+const (
+	deepSeekDefaultBaseURL = "https://api.deepseek.com"
+	deepSeekDefaultModel   = "deepseek-chat"
+	tamperAITextLimit      = 6000
 )
 
 var defaultGamblingKeywords = []string{
@@ -101,25 +110,25 @@ func runTamperCheck(ctx context.Context, targetURL string, config json.RawMessag
 		meta["establishBaseline"] = true
 		meta["baselineHash"] = bodyHash
 		meta["baselineSize"] = len(normalized)
-		return CheckOutcome{IsUp: true, StatusCode: &code, ResponseMs: elapsed, Metadata: meta}
-	}
+		meta["baselineCapturedAt"] = start.UTC().Format(time.RFC3339)
+	} else {
+		meta["baselineHash"] = baselineHash
+		diffPercent := tamperDiffPercent(baselineHash, bodyHash, baselineSize, len(normalized))
+		meta["diffPercent"] = diffPercent
 
-	meta["baselineHash"] = baselineHash
-	diffPercent := tamperDiffPercent(baselineHash, bodyHash, baselineSize, len(normalized))
-	meta["diffPercent"] = diffPercent
-
-	if diffPercent >= changeThreshold {
-		detectMajor := true
-		if v, ok := cfg["detectMajorChange"].(bool); ok {
-			detectMajor = v
-		}
-		if detectMajor {
-			meta["tamperMajorChange"] = true
-			meta["diffSummary"] = fmt.Sprintf("Content changed ~%.0f%% (threshold %.0f%%)", diffPercent, changeThreshold)
-			if len(normalized) > 2048 {
-				meta["contentSnippet"] = string(normalized[:2048])
-			} else {
-				meta["contentSnippet"] = string(normalized)
+		if diffPercent >= changeThreshold {
+			detectMajor := true
+			if v, ok := cfg["detectMajorChange"].(bool); ok {
+				detectMajor = v
+			}
+			if detectMajor {
+				meta["tamperMajorChange"] = true
+				meta["diffSummary"] = fmt.Sprintf("Content changed ~%.0f%% (threshold %.0f%%)", diffPercent, changeThreshold)
+				if len(normalized) > 2048 {
+					meta["contentSnippet"] = string(normalized[:2048])
+				} else {
+					meta["contentSnippet"] = string(normalized)
+				}
 			}
 		}
 	}
@@ -135,9 +144,31 @@ func runTamperCheck(ctx context.Context, targetURL string, config json.RawMessag
 		}
 	}
 
-	// ML moderation stub — off by default.
-	if mlEnabled, _ := cfg["mlModerationEnabled"].(bool); mlEnabled {
-		meta["mlModeration"] = "skipped_stub"
+	if tamperAIRecognitionEnabledFromMap(cfg) {
+		result, err := recognizeTamperContentWithDeepSeek(ctx, url, extractVisibleText(content))
+		if err != nil {
+			meta["aiContentRecognition"] = map[string]interface{}{
+				"provider": "deepseek",
+				"status":   "error",
+				"error":    err.Error(),
+			}
+		} else {
+			aiMeta := map[string]interface{}{
+				"provider":   "deepseek",
+				"model":      result.Model,
+				"status":     "ok",
+				"flagged":    result.Flagged,
+				"riskLevel":  result.RiskLevel,
+				"categories": result.Categories,
+				"summary":    result.Summary,
+				"confidence": result.Confidence,
+			}
+			meta["aiContentRecognition"] = aiMeta
+			if result.Flagged {
+				meta["tamperAIContentViolation"] = true
+				meta["aiPolicySummary"] = formatAIContentSummary(result)
+			}
+		}
 	}
 
 	isUp := true
@@ -150,6 +181,12 @@ func runTamperCheck(ctx context.Context, targetURL string, config json.RawMessag
 		isUp = false
 		if errMsg == "" {
 			errMsg = meta["policySummary"].(string)
+		}
+	}
+	if meta["tamperAIContentViolation"] == true {
+		isUp = false
+		if errMsg == "" {
+			errMsg, _ = meta["aiPolicySummary"].(string)
 		}
 	}
 
@@ -285,6 +322,188 @@ func parseStringSlice(raw interface{}) []string {
 	return out
 }
 
+func TamperAIRecognitionEnabled(config json.RawMessage) bool {
+	cfg := map[string]interface{}{}
+	_ = json.Unmarshal(config, &cfg)
+	return tamperAIRecognitionEnabledFromMap(cfg)
+}
+
+func tamperAIRecognitionEnabledFromMap(cfg map[string]interface{}) bool {
+	enabled, _ := cfg["aiContentRecognitionEnabled"].(bool)
+	return enabled
+}
+
+type tamperAIRecognitionResult struct {
+	Flagged    bool
+	RiskLevel  string
+	Categories []string
+	Summary    string
+	Confidence float64
+	Model      string
+}
+
+func recognizeTamperContentWithDeepSeek(ctx context.Context, targetURL, text string) (tamperAIRecognitionResult, error) {
+	apiKey := strings.TrimSpace(os.Getenv("DEEPSEEK_API_KEY"))
+	if apiKey == "" {
+		return tamperAIRecognitionResult{}, errors.New("DeepSeek API key not configured")
+	}
+	model := strings.TrimSpace(os.Getenv("DEEPSEEK_MODEL"))
+	if model == "" {
+		model = deepSeekDefaultModel
+	}
+	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("DEEPSEEK_API_BASE_URL")), "/")
+	if baseURL == "" {
+		baseURL = deepSeekDefaultBaseURL
+	}
+	if len(text) > tamperAITextLimit {
+		text = text[:tamperAITextLimit]
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+
+	payload := map[string]interface{}{
+		"model": model,
+		"messages": []map[string]string{
+			{
+				"role":    "system",
+				"content": "You are a website tamper and content-safety classifier. Return only compact JSON with keys flagged(boolean), riskLevel(one of none,low,medium,high), categories(array), summary(string), confidence(number 0-1). Flag only likely defacement, phishing, gambling, adult/NSFW, malware, spam injection, or illegal content inserted into a normal website.",
+			},
+			{
+				"role":    "user",
+				"content": fmt.Sprintf("URL: %s\n\nVisible page text:\n%s", targetURL, text),
+			},
+		},
+		"response_format": map[string]string{"type": "json_object"},
+		"temperature":     0,
+	}
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, baseURL+"/chat/completions", bytes.NewReader(body))
+	if err != nil {
+		return tamperAIRecognitionResult{}, err
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := (&http.Client{Timeout: 25 * time.Second}).Do(req)
+	if err != nil {
+		return tamperAIRecognitionResult{}, err
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
+	if resp.StatusCode >= 300 {
+		return tamperAIRecognitionResult{}, fmt.Errorf("DeepSeek API returned HTTP %d", resp.StatusCode)
+	}
+
+	var envelope struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(respBody, &envelope); err != nil {
+		return tamperAIRecognitionResult{}, err
+	}
+	if len(envelope.Choices) == 0 || strings.TrimSpace(envelope.Choices[0].Message.Content) == "" {
+		return tamperAIRecognitionResult{}, errors.New("DeepSeek API returned empty content")
+	}
+
+	var parsed struct {
+		Flagged    bool     `json:"flagged"`
+		RiskLevel  string   `json:"riskLevel"`
+		Categories []string `json:"categories"`
+		Summary    string   `json:"summary"`
+		Confidence float64  `json:"confidence"`
+	}
+	if err := json.Unmarshal([]byte(stripJSONCodeFence(envelope.Choices[0].Message.Content)), &parsed); err != nil {
+		return tamperAIRecognitionResult{}, err
+	}
+
+	return sanitizeTamperAIResult(parsed.Flagged, parsed.RiskLevel, parsed.Categories, parsed.Summary, parsed.Confidence, model), nil
+}
+
+func stripJSONCodeFence(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.TrimPrefix(s, "```json")
+	s = strings.TrimPrefix(s, "```")
+	s = strings.TrimSuffix(s, "```")
+	return strings.TrimSpace(s)
+}
+
+func sanitizeTamperAIResult(flagged bool, riskLevel string, categories []string, summary string, confidence float64, model string) tamperAIRecognitionResult {
+	riskLevel = strings.ToLower(strings.TrimSpace(riskLevel))
+	switch riskLevel {
+	case "none", "low", "medium", "high":
+	default:
+		if flagged {
+			riskLevel = "medium"
+		} else {
+			riskLevel = "none"
+		}
+	}
+	if confidence < 0 {
+		confidence = 0
+	}
+	if confidence > 1 {
+		confidence = 1
+	}
+	cleanCategories := make([]string, 0, len(categories))
+	seen := map[string]bool{}
+	for _, c := range categories {
+		c = strings.ToLower(strings.TrimSpace(c))
+		if c == "" || seen[c] {
+			continue
+		}
+		cleanCategories = append(cleanCategories, c)
+		seen[c] = true
+		if len(cleanCategories) >= 6 {
+			break
+		}
+	}
+	summary = strings.TrimSpace(summary)
+	if len(summary) > 240 {
+		summary = summary[:240]
+	}
+	if summary == "" && flagged {
+		summary = "AI content risk detected"
+	}
+	return tamperAIRecognitionResult{Flagged: flagged, RiskLevel: riskLevel, Categories: cleanCategories, Summary: summary, Confidence: confidence, Model: model}
+}
+
+func formatAIContentSummary(result tamperAIRecognitionResult) string {
+	parts := []string{}
+	if result.RiskLevel != "" {
+		parts = append(parts, "risk="+result.RiskLevel)
+	}
+	if len(result.Categories) > 0 {
+		parts = append(parts, "categories="+strings.Join(result.Categories, ","))
+	}
+	if result.Summary != "" {
+		parts = append(parts, result.Summary)
+	}
+	if len(parts) == 0 {
+		return "AI content risk detected"
+	}
+	return "AI content risk detected: " + strings.Join(parts, " | ")
+}
+
+func extractVisibleText(html string) string {
+	text := html
+	for _, pattern := range []string{
+		`(?is)<script[^>]*>.*?</script>`,
+		`(?is)<style[^>]*>.*?</style>`,
+		`(?is)<noscript[^>]*>.*?</noscript>`,
+		`(?is)<svg[^>]*>.*?</svg>`,
+	} {
+		text = regexp.MustCompile(pattern).ReplaceAllString(text, " ")
+	}
+	text = regexp.MustCompile(`(?is)<[^>]+>`).ReplaceAllString(text, " ")
+	text = htmlstd.UnescapeString(text)
+	text = regexp.MustCompile(`\s+`).ReplaceAllString(text, " ")
+	return strings.TrimSpace(text)
+}
+
 // CaptureTamperBaseline fetches the page and returns config fields for baseline.
 func CaptureTamperBaseline(ctx context.Context, targetURL string, config json.RawMessage) (map[string]interface{}, error) {
 	out := runTamperCheck(ctx, targetURL, config, time.Now())
@@ -317,7 +536,7 @@ func CaptureDNSBaseline(ctx context.Context, target string, config json.RawMessa
 		}
 	}
 	patch := map[string]interface{}{
-		"dnsBaseline":      recs,
+		"dnsBaseline":        recs,
 		"dnsBaselineRecords": recs,
 		"baselineCapturedAt": time.Now().UTC().Format(time.RFC3339),
 	}

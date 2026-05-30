@@ -26,6 +26,14 @@ export function MonitorTamperConfig({ monitorId, config, onChange }: Props) {
     });
   };
 
+  const updateAIRecognition = (checked: boolean) => {
+    onChange({
+      ...config,
+      aiContentRecognitionEnabled: checked,
+      contentScanConsent: checked ? true : config.contentScanConsent,
+    });
+  };
+
   const captureBaseline = async () => {
     if (!monitorId || !orgId) return;
     setCapturing(true);
@@ -41,10 +49,27 @@ export function MonitorTamperConfig({ monitorId, config, onChange }: Props) {
   };
 
   const policyOn = config.policyCategories?.gambling || config.policyCategories?.adult;
+  const scanOn = policyOn || config.aiContentRecognitionEnabled;
 
   return (
     <div className="rounded-lg border border-zinc-800 p-4 space-y-4">
       <p className="text-sm font-medium text-zinc-300">{t('tamperConfigTitle')}</p>
+
+      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3">
+        <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={!!config.aiContentRecognitionEnabled}
+            onChange={(e) => updateAIRecognition(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="block font-medium text-blue-100">{t('tamperAIRecognitionTitle')}</span>
+            <span className="mt-1 block text-xs leading-relaxed text-blue-100/70">{t('tamperAIRecognitionDesc')}</span>
+          </span>
+        </label>
+        <p className="mt-2 text-xs text-blue-100/60">{t('tamperAIIntervalHint')}</p>
+      </div>
 
       <div>
         <label className="mb-1 block text-sm text-zinc-400">{t('tamperSensitivity')}</label>
@@ -97,7 +122,7 @@ export function MonitorTamperConfig({ monitorId, config, onChange }: Props) {
           />
           <span>{t('tamperCategoryAdult')}</span>
         </label>
-        {policyOn && (
+        {scanOn && (
           <label className="flex items-start gap-2 text-sm text-amber-200/90">
             <input
               type="checkbox"

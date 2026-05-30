@@ -46,3 +46,12 @@ func TestPlanLimits(t *testing.T) {
 	assert.Equal(t, 15, services.PlanMonitorQuota("free"))
 	assert.Equal(t, 50, services.PlanMonitorQuota("pro"))
 }
+
+func TestPlanMinIntervalForTamperAI(t *testing.T) {
+	aiConfig := []byte(`{"aiContentRecognitionEnabled":true}`)
+	assert.Equal(t, 1800, services.PlanMinIntervalForMonitor("free", "tamper", aiConfig))
+	assert.Equal(t, 30, services.PlanMinIntervalForMonitor("pro", "tamper", aiConfig))
+	assert.Equal(t, 30, services.PlanMinIntervalForMonitor("team", "tamper", aiConfig))
+	assert.Equal(t, 300, services.PlanMinIntervalForMonitor("free", "tamper", []byte(`{}`)))
+	assert.Equal(t, 60, services.PlanMinIntervalForMonitor("pro", "http", aiConfig))
+}
