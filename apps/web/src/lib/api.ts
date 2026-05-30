@@ -41,10 +41,12 @@ export interface AuthData {
 
 export class ApiError extends Error {
   code?: string;
-  constructor(message: string, code?: string) {
+  retryAfterSeconds?: number;
+  constructor(message: string, code?: string, retryAfterSeconds?: number) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -101,7 +103,11 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new ApiError(err.error || err.message || `HTTP ${res.status}`, err.code);
+    throw new ApiError(
+      err.error || err.message || `HTTP ${res.status}`,
+      err.code,
+      typeof err.retryAfterSeconds === 'number' ? err.retryAfterSeconds : undefined
+    );
   }
 
   if (res.status === 204) {

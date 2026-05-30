@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -292,4 +293,77 @@ func (h *MeHandler) TotpDisable(c *gin.Context) {
 	h.totp.Disable(c.Request.Context(), userID)
 	services.LogAudit(c.Request.Context(), h.db, GetOrgID(c), userID, "totp.disable", c.ClientIP(), nil)
 	c.JSON(http.StatusOK, gin.H{"message": "2FA disabled"})
+}
+
+func (h *MeHandler) ListSessions(c *gin.Context) {
+	userID := GetUserID(c)
+	currentHash := ""
+	if raw := c.Query("refreshToken"); raw != "" {
+		currentHash = services.HashToken(raw)
+	}
+	rows, err := h.db.Query(c.Request.Context(), `
+		SELECT id, user_agent, host(ip_address)::text, created_at, expires_at, refresh_hash
+		FROM sessions
+		WHERE user_id = $1 AND expires_at > now()
+		ORDER BY created_at DESC
+	`, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+	type sessionRow struct {
+		ID        string    `json:"id"`
+		UserAgent *string   `json:"userAgent,omitempty"`
+		IPAddress *string   `json:"ipAddress,omitempty"`
+		CreatedAt time.Time `json:"createdAt"`
+		ExpiresAt time.Time `json:"expiresAt"`
+		IsCurrent bool      `json:"isCurrent"`
+	}
+	var list []sessionRow
+	for rows.Next() {
+		var s sessionRow
+		var ua, ip *string
+		var refreshHash string
+		if err := rows.Scan(&s.ID, &ua, &ip, &s.CreatedAt, &s.ExpiresAt, &refreshHash); err != nil {
+			continue
+		}
+		s.UserAgent = ua
+		s.IPAddress = ip
+		s.IsCurrent = currentHash != "" && refreshHash == currentHash
+		list = append(list, s)
+	}
+	if list == nil {
+		list = []sessionRow{}
+	}
+	c.JSON(http.StatusOK, gin.H{"sessions": list})
+}
+
+func (h *MeHandler) RevokeSession(c *gin.Context) {
+	userID := GetUserID(c)
+	sessionID := c.Param("id")
+	res, err := h.db.Exec(c.Request.Context(), `
+		DELETE FROM sessions WHERE id = $1 AND user_id = $2
+	`, sessionID, userID)
+	if err != nil || res.RowsAffected() == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "session revoked"})
+}
+
+func (h *MeHandler) RevokeOtherSessions(c *gin.Context) {
+	userID := GetUserID(c)
+	var req struct {
+		RefreshToken string `json:"refreshToken" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	currentHash := services.HashToken(req.RefreshToken)
+	_, _ = h.db.Exec(c.Request.Context(), `
+		DELETE FROM sessions WHERE user_id = $1 AND refresh_hash <> $2
+	`, userID, currentHash)
+	c.JSON(http.StatusOK, gin.H{"message": "other sessions revoked"})
 }

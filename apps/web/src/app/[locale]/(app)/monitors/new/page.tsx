@@ -209,6 +209,7 @@ export default function NewMonitorPage() {
             <option value="http">{t('typeHttp')}</option>
             <option value="tcp">{t('typeTcp')}</option>
             <option value="ping">{t('typePing')}</option>
+            <option value="api_json">{t('typeApiJson')}</option>
             <option value="keyword">{t('typeKeyword')}</option>
             <option value="ssl">{t('typeSsl')}</option>
             <option value="dns">{t('typeDns')}</option>

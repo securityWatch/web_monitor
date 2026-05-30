@@ -17,12 +17,13 @@ import (
 )
 
 type AuthService struct {
-	db  *pgxpool.Pool
-	cfg *config.Config
+	db      *pgxpool.Pool
+	cfg     *config.Config
+	lockout *LoginLockoutService
 }
 
 func NewAuthService(db *pgxpool.Pool, cfg *config.Config) *AuthService {
-	return &AuthService{db: db, cfg: cfg}
+	return &AuthService{db: db, cfg: cfg, lockout: NewLoginLockoutService(db)}
 }
 
 func (a *AuthService) Register(ctx context.Context, email, password, displayName string) (*models.AuthResponse, error) {
@@ -124,16 +125,27 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 
 func (a *AuthService) Login(ctx context.Context, email, password, userAgent, ip string) (*models.AuthResponse, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
+	if locked, retry, _ := a.lockout.CheckLocked(ctx, email, ip); locked {
+		return nil, &AccountLockedError{RetryAfter: retry}
+	}
+
 	var userID, passHash string
 	err := a.db.QueryRow(ctx, `
 		SELECT id, COALESCE(password_hash, '') FROM users WHERE email = $1
 	`, email).Scan(&userID, &passHash)
+	invalid := func() error {
+		if locked, retry, _ := a.lockout.RecordFailure(ctx, email, ip); locked {
+			return &AccountLockedError{RetryAfter: retry}
+		}
+		return fmt.Errorf("invalid credentials")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, invalid()
 	}
 	if passHash == "" || !CheckPassword(passHash, password) {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, invalid()
 	}
+	a.lockout.Clear(ctx, email, ip)
 
 	var orgID string
 	err = a.db.QueryRow(ctx, `

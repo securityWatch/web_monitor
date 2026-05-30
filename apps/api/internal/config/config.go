@@ -38,7 +38,9 @@ type Config struct {
 	S3Endpoint          string
 	S3Bucket            string
 	S3AccessKey         string
-	S3SecretKey         string
+	S3SecretKey              string
+	CheckRawRetentionDays    int
+	CheckTotalRetentionDays  int
 }
 
 func Load() *Config {
@@ -78,8 +80,22 @@ func Load() *Config {
 		S3Endpoint:          getEnv("S3_ENDPOINT", ""),
 		S3Bucket:            getEnv("S3_BUCKET", ""),
 		S3AccessKey:         getEnv("S3_ACCESS_KEY", ""),
-		S3SecretKey:         getEnv("S3_SECRET_KEY", ""),
+		S3SecretKey:             getEnv("S3_SECRET_KEY", ""),
+		CheckRawRetentionDays:   envInt("CHECK_RAW_RETENTION_DAYS", 7),
+		CheckTotalRetentionDays: envInt("CHECK_TOTAL_RETENTION_DAYS", 90),
 	}
+}
+
+func envInt(key string, def int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n <= 0 {
+		return def
+	}
+	return n
 }
 
 func getEnv(key, fallback string) string {

@@ -157,7 +157,7 @@ func ExplainAlertWithAI(ctx context.Context, monitor, status, detail string) (AI
 func BuildMonitorDraftWithAI(ctx context.Context, prompt string) (AIMonitorDraft, error) {
 	var out AIMonitorDraft
 	err := callDeepSeekJSON(ctx,
-		"Create a PulseWatch monitor draft. Return JSON keys name,type,targetUrl,intervalSeconds,config,regions,explanation. type must be one of http,tcp,ping,keyword,ssl,dns,domain,pagespeed,tamper,heartbeat. Use config JSON compatible with PulseWatch.",
+		"Create a PulseWatch monitor draft. Return JSON keys name,type,targetUrl,intervalSeconds,config,regions,explanation. type must be one of http,tcp,ping,api_json,keyword,ssl,dns,domain,pagespeed,tamper,heartbeat. Use config JSON compatible with PulseWatch.",
 		prompt,
 		&out,
 	)

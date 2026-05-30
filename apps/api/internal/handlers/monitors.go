@@ -49,7 +49,7 @@ func (h *MonitorHandler) AIDraft(c *gin.Context) {
 		return
 	}
 	services.RecordAIUsage(c.Request.Context(), h.db, orgID, "monitor_draft", "ok", "")
-	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true, "tamper": true}
+	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "api_json": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true, "tamper": true}
 	if !validTypes[strings.ToLower(draft.Type)] {
 		draft.Type = "http"
 	}
@@ -266,7 +266,12 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		req.IntervalSeconds = 86400
 	}
 
-	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true, "tamper": true}
+	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true, "tamper": true, "api_json": true}
+	if strings.ToLower(req.Type) == "api_json" && planTier == "free" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "API/JSON monitors require Pro or higher", "code": "PLAN_UPGRADE_REQUIRED"})
+		return
+	}
+
 	if !validTypes[strings.ToLower(req.Type)] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid monitor type"})
 		return

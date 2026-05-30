@@ -26,7 +26,7 @@ func RunCheck(ctx context.Context, monitorType, targetURL string, config json.Ra
 	_ = json.Unmarshal(config, &cfg)
 
 	switch monitorType {
-	case "http", "keyword", "ssl":
+	case "http", "keyword", "ssl", "api_json":
 		httpCfg := ParseHTTPConfig(cfg)
 		return executeHTTPMonitor(ctx, targetURL, httpCfg, monitorType, start)
 	case "pagespeed":
