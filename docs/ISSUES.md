@@ -12,7 +12,7 @@
 | P1-core | 注册/登录/JWT、Monitors、调度、告警、Dashboard、状态页、i18n | ✅ |
 | P1-lockout | 登录失败 5 次锁定 15min（PRD） | ✅ |
 | P1-session-ui | Session 列表与撤销（PRD UM-05） | ✅ |
-| P1-retention | check_results 自动保留/降采样 | ❌ |
+| P1-retention | check_results 自动保留/降采样 | 🔶 |
 | P1-live-demo | 交互式 Live Demo（PRD UX-01） | 🔶 静态 Hero 预览 |
 
 ---

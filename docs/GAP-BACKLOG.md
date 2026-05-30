@@ -38,7 +38,7 @@
 | Stripe Founding + 标准价 | 🔶 | 需 `STRIPE_*`；未配置则 checkout 不可用 |
 | Founding 徽章/计数 | ✅ | |
 | SSL Checker | ✅ | |
-| 90 天保留 + 降采样 | ❌ | 仅分区表 + 查询窗口；**无自动 TTL/降采样** |
+| 90 天保留 + 降采样 | 🔶 | 7 天原始 + 5 分钟 rollup + 90 天 DROP 分区；`CHECK_*_RETENTION_DAYS` | 仅分区表 + 查询窗口；**无自动 TTL/降采样** |
 | WCAG + axe CI | 🔶 | 无 axe Playwright CI 门禁 |
 | 登录 5 次 lockout 15min | ✅ | `login_lockouts` 表 + API `ACCOUNT_LOCKED` |
 | Session 管理 UI | ✅ | `/me/sessions` + Settings → Security |
@@ -58,7 +58,7 @@
 | Terraform Provider | 🔶 | 仅 `integrations/terraform` 示例 + client |
 | SSO OIDC | 🔶 | org 配置 API；无完整 IdP 登录 UI 闭环 |
 | 故障截图 | 🔶 | 占位 PNG + data URI，非 Chromium/S3 |
-| API/JSON 监控类型 | ❌ | PRD Pro+，枚举中无 |
+| API/JSON 监控类型 | ✅ | `api_json` + JSONPath 断言 | PRD Pro+，枚举中无 |
 
 ---
 
@@ -69,8 +69,8 @@
 | 1 | 登录 lockout | ✅ |
 | 2 | Session 管理 UI | ✅ |
 | 3 | 探针生产部署清单 | 📋 DEPLOYMENT |
-| 4 | check_results 保留/归档 | 代码 |
-| 5 | API/JSON 监控 | 代码 |
+| 4 | check_results 保留/归档 | ✅ |
+| 5 | API/JSON 监控 | ✅ |
 | 6 | 真截图 + S3 | 代码 |
 | 7 | Terraform 官方 Provider | 代码 |
 | 8 | SSO 完整登录流 | 代码 |

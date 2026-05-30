@@ -13,10 +13,14 @@ export const MONITOR_TEMPLATES: MonitorTemplate[] = [
     id: 'api-health',
     name: 'API Health Check',
     nameZh: 'API 健康检查',
-    type: 'http',
+    type: 'api_json',
     targetUrl: 'https://api.example.com/health',
     intervalSeconds: 60,
-    config: { method: 'GET', expectedStatuses: [200] },
+    config: {
+      method: 'GET',
+      expectedStatuses: [200],
+      jsonAssertions: [{ path: 'status', operator: 'eq', value: 'ok' }],
+    },
   },
   {
     id: 'stripe-webhook',

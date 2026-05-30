@@ -404,7 +404,9 @@
     "alertSettingsTitle": "Alert settings",
     "webhookAlertsEnabled": "Send Webhook alerts for this monitor",
     "webhookAlertsHint": "When off, generic Webhook integrations in Settings will not fire for this monitor. Email, Slack, and other channels are unaffected.",
-    "webhookAlertsDisabledBadge": "Webhook alerts off"
+    "webhookAlertsDisabledBadge": "Webhook alerts off",
+    "typeApiJson": "API / JSON",
+    "apiJsonHint": "At least one JSONPath assertion is required. Available on Pro and above."
   },
   "incidents": {
     "title": "Incidents",
