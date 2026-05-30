@@ -145,6 +145,7 @@
     "resourcesLogin": "Log in to dashboard",
     "resourcesRegister": "Create free account",
     "resourcesDevTools": "Free developer tools",
+    "resourcesPdfToWord": "PDF to Word converter",
     "resourcesSsl": "Free SSL checker tool",
     "resourcesCompare": "Compare with Better Stack",
     "resourcesAppNote": "Monitors, incidents, and status pages are available after sign-in from your authenticated dashboard.",
@@ -152,12 +153,12 @@
     "jsonLdPageName": "PulseWatch — Uptime & Website Monitoring",
     "jsonLdPageDescription": "Commercial-friendly uptime monitoring for APIs, SaaS, and e-commerce with bilingual support.",
     "toolsCtaTitle": "Free developer tools",
-    "toolsCtaDesc": "Format JSON, escape strings, encode Base64 and URLs, convert timestamps — all in your browser, no signup.",
+    "toolsCtaDesc": "Format JSON, convert PDF to Word, encode Base64 and URLs, convert timestamps — all in your browser, no signup.",
     "toolsCtaButton": "Open free developer tools"
   },
   "homeTools": {
     "title": "Free developer tools",
-    "subtitle": "Format JSON, escape strings, encode data — all in your browser. No signup required.",
+    "subtitle": "Format JSON, convert PDF to Word, escape strings, encode data — all in your browser. No signup required.",
     "transform": "Transform",
     "copy": "Copy",
     "copied": "Copied!",
@@ -173,7 +174,8 @@
       "escape": "String Escape",
       "base64": "Base64",
       "url": "URL",
-      "timestamp": "Timestamp"
+      "timestamp": "Timestamp",
+      "pdfToWord": "PDF to Word"
     },
     "json": {
       "format": "Pretty print",
@@ -217,6 +219,36 @@
     "placeholderBase64": "Hello, world!",
     "placeholderUrl": "hello world & special=chars",
     "placeholderTimestamp": "1717084800000 or 2024-05-30T12:00:00Z"
+  },
+  "pdfToWord": {
+    "badge": "Free local conversion",
+    "title": "PDF to Word",
+    "subtitle": "Extract PDF text into an editable Word document. Conversion runs locally in your browser; files are not uploaded.",
+    "dropTitle": "Choose a PDF file",
+    "dropHint": "Works best with text PDFs under 20MB. Scanned/OCR support is planned.",
+    "privacyTitle": "Privacy",
+    "privacyValue": "Local processing, no uploads",
+    "outputTitle": "Output",
+    "outputValue": "Generates a .docx Word file",
+    "limitTitle": "Best for",
+    "limitValue": "Text-based PDFs",
+    "status": {
+      "reading": "Reading PDF...",
+      "page": "Parsing page {page}/{total}...",
+      "word": "Generating Word document...",
+      "done": "Conversion complete"
+    },
+    "errors": {
+      "notPdf": "Please choose a PDF file.",
+      "tooLarge": "File is too large. Choose a PDF under 20MB.",
+      "noText": "No text was extracted. This PDF may be scanned; OCR is planned for a future version.",
+      "generic": "Conversion failed. Try another PDF."
+    },
+    "warnings": {
+      "lowText": "Only a small amount of text was extracted; this may be an image-based or scanned PDF."
+    },
+    "result": "Parsed {pages} pages and generated {paragraphs} text paragraphs.",
+    "download": "Download Word"
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -586,8 +618,13 @@
     },
     "tools": {
       "title": "Free Developer Tools — JSON, Base64, URL & Timestamp | PulseWatch",
-      "description": "Browser-based JSON formatter, string escape, Base64 and URL encoder, Unix timestamp converter. No signup — all processing stays local.",
-      "keywords": "JSON formatter, JSON minify, Base64 encode, URL encode, Unix timestamp converter, developer tools, 在线 JSON 格式化, Base64 编码"
+      "description": "Browser-based JSON formatter, PDF to Word converter, Base64 and URL encoder, Unix timestamp converter. No signup — all processing stays local.",
+      "keywords": "JSON formatter, PDF to Word, PDF to DOCX, Base64 encode, URL encode, Unix timestamp converter, developer tools"
+    },
+    "pdfToWord": {
+      "title": "PDF to Word Converter | Free Local DOCX Export | PulseWatch",
+      "description": "Free PDF to Word converter that turns PDF text into editable DOCX locally in your browser. No upload required.",
+      "keywords": "PDF to Word, PDF to DOCX, free PDF converter, local PDF conversion, Word converter"
     }
   }
 }

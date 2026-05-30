@@ -18,6 +18,7 @@ export function MarketingNav() {
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
           <Link href="/tools" className="hover:text-white transition-colors">{t('tools')}</Link>
+          <Link href="/tools/pdf-to-word" className="hover:text-white transition-colors">PDF → Word</Link>
           <a href="#features" className="hover:text-white transition-colors">{t('features')}</a>
           <a href="#faq" className="hover:text-white transition-colors">{t('faq')}</a>
           <Link href="/pricing" className="hover:text-white transition-colors">{t('pricing')}</Link>

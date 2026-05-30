@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import {
   ArrowLeftRight,
   Braces,
@@ -12,6 +13,7 @@ import {
   Quote,
   Trash2,
   Check,
+  FileText,
 } from 'lucide-react';
 import {
   base64Decode,
@@ -150,6 +152,13 @@ export function DevToolsPanel() {
               {t(`tabs.${id}`)}
             </button>
           ))}
+          <Link
+            href="/tools/pdf-to-word"
+            className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-medium text-blue-100 transition-colors hover:border-blue-400 hover:bg-blue-500/20 sm:px-5 sm:py-3 sm:text-base"
+          >
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+            {t('tabs.pdfToWord')}
+          </Link>
         </div>
 
         <div className="mt-6 card border-zinc-800 bg-zinc-900/40 p-4 sm:p-6 lg:p-8">

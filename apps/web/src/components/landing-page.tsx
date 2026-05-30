@@ -246,6 +246,11 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
               </Link>
             </li>
             <li>
+              <Link href="/tools/pdf-to-word" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesPdfToWord')}
+              </Link>
+            </li>
+            <li>
               <Link href="/tools/ssl-checker" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
                 {t('resourcesSsl')}
               </Link>

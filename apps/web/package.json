@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "docx": "^9.7.1",
     "lucide-react": "^0.469.0",
     "next": "15.5.18",
     "next-intl": "^3.26.3",
+    "pdfjs-dist": "^6.0.227",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^2.15.0",
