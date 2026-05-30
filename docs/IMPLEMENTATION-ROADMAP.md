@@ -228,6 +228,87 @@ Do not start P5-N+1 in the same task.
 
 ---
 
+## Phase 6 — 安全与完整性监控
+
+**产品规格**：[PRODUCT-SECURITY-MONITORS.md](PRODUCT-SECURITY-MONITORS.md)  
+**交付循环**：沿用 §1（`npm run test:unit` → `go test ./internal/services/...` → deploy API/Web → 生产验证）。
+
+### P6-1 — SSL 到期分级与可配置阈值
+
+| 项 | 内容 |
+|----|------|
+| **Scope** | `config.warnDays`（默认 30）；在 30/14/7/1 天触发 `ssl_warning`（同监控去重）；`check_results.metadata` 写入 issuer/tlsVersion；`ssl` 类型过期时 `IsUp: false` |
+| **Key files** | `http_chain.go`, `scheduler.go`, `probe_dispatch.go`, `alerts.go`, `email.go`, `monitors/new` + `edit`（warnDays 字段）, `messages/en.json`, `zh.json` |
+| **Acceptance** | 创建 `ssl` 监控；模拟临近到期证书（测试 stub 或 staging 主机）；收到分级邮件/Webhook；详情页 metadata 可见天数 |
+| **Test** | `go test ./internal/services/... -run SSL`；`npm run test:unit` |
+| **Deploy** | `redeploy-api.js`（+ web 若 UI） |
+| **Priority** | P0 |
+
+---
+
+### P6-2 — DNS 基线与劫持/漂移检测
+
+| 项 | 内容 |
+|----|------|
+| **Scope** | `runDNSCheck` 比对上次成功 records；变更发 `dns_change`；`config.baselineMode`、`trustedResolvers`；metadata `previous`/`current` |
+| **Key files** | `checks.go`, `scheduler.go`, `alerts.go`, migration 可选 `alert_rules` 文档化 event_type, `monitor-dns-config.tsx`（新建） |
+| **Acceptance** | 创建 DNS 监控记录基线；修改 public DNS 或 mock 后下一次检查触发 `dns_change` Incident；多解析器一致时才告警（配置开启时） |
+| **Test** | `go test ./internal/services/... -run DNS` |
+| **Deploy** | `redeploy-api.js` + `redeploy-web.js` |
+| **Priority** | P0 |
+
+---
+
+### P6-3 — Tamper 监控（指纹 + 重大变更）
+
+| 项 | 内容 |
+|----|------|
+| **Scope** | 新 `monitor_type` `tamper`（migration）；规范化 body SHA-256；`diffPercent` vs `changeThresholdPercent`；事件 `tamper_major_change`；`POST /monitors/:id/baseline` 重捕获 |
+| **Key files** | `checks.go`, `migrations/010_tamper.sql`, `monitors.go`, `alerts.go`, `monitor-tamper-config.tsx`, `monitors/new`, `monitors/[id]/edit` |
+| **Acceptance** | 基线捕获后修改页面 > 阈值触发告警；metadata 含 hash/diff；误报可 Ack |
+| **Test** | `go test ./internal/services/... -run Tamper` |
+| **Deploy** | `redeploy-api.js` + `redeploy-web.js` |
+| **Priority** | P1 |
+
+---
+
+### P6-4 — 内容策略与合规（blocklist）
+
+| 项 | 内容 |
+|----|------|
+| **Scope** | `config.policyCategories`（gambling/adult）；org 级或监控级 blocklist；命中 `tamper_policy_violation`；创建监控合规 checkbox + 隐私链接 |
+| **Key files** | `checks.go`, `PRODUCT-SECURITY-MONITORS.md` §4, settings/legal 文案, `messages/*.json` |
+| **Acceptance** | 测试页含 blocklist 词触发告警；UI 显示匹配片段（截断）；用户可标记误报抑制 |
+| **Test** | 单元测试 blocklist 匹配；无真实第三方 API 密钥入库 |
+| **Deploy** | `redeploy-api.js` + `redeploy-web.js` |
+| **Priority** | P1 |
+
+---
+
+### P6-5 — 安全监控 UI 与告警事件
+
+| 项 | 内容 |
+|----|------|
+| **Scope** | 类型选择器补全 `domain`/`pagespeed`/`tamper`；DNS/SSL/Tamper 专用配置组件；告警规则 event 下拉扩展 |
+| **Key files** | `monitors/new/page.tsx`, `monitors/[id]/edit/page.tsx`, `monitor-dns-config.tsx`, `monitor-tamper-config.tsx`, `alert-rules` UI, i18n |
+| **Acceptance** | 375px 可创建 DNS+SSL 监控；Tamper 配置 sensitivity 与 categories；Settings 通知 toggles |
+| **Test** | `npm run test:unit`；浏览器 `/zh/monitors/new` |
+| **Deploy** | `redeploy-web.js`（依赖 P6-1~4 API 时先 API） |
+| **Priority** | P1 |
+
+---
+
+### Phase 6 建议节奏
+
+| 周次 | 任务 |
+|------|------|
+| W1 | P6-1 |
+| W2 | P6-2 + P6-5（DNS 部分） |
+| W3–4 | P6-3 |
+| W5 | P6-4 + P6-5（Tamper UI） |
+
+---
+
 ## 3. 建议自动化节奏
 
 | 周次 | 任务 | 并行？ |

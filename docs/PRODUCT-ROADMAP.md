@@ -64,7 +64,17 @@ flowchart LR
 | Opsgenie 集成 | P5C | P5-14 |
 | UR/BS 对比落地页 | P5C | P5-15 |
 
-**Phase 6（预览，未排期）**：浏览器 Playwright 合成、PDF SLA 白标、状态页 React SDK、异常 Insight 告警、SOC2、AI Post-mortem 摘要。
+**Phase 6 — 安全与完整性监控**（已排期 backlog）：SSL 分级、DNS 劫持/漂移、网页篡改与内容策略 — 详见 [PRODUCT-SECURITY-MONITORS.md](PRODUCT-SECURITY-MONITORS.md)、[ISSUES.md §Phase 6](ISSUES.md)。
+
+| 差距 | backlog ID |
+|------|------------|
+| SSL 30/14/7/1 分级 + 链/配置 | P6-1 |
+| DNS 基线比对 + 劫持语义 | P6-2 |
+| Tamper fingerprint + major change | P6-3 |
+| 涉黄涉赌 blocklist + 合规 | P6-4 |
+| 安全监控 UI + 告警事件 | P6-5 |
+
+**Phase 7+（预览）**：浏览器 Playwright 合成、PDF SLA 白标、状态页 React SDK、异常 Insight 告警、SOC2、AI Post-mortem 摘要。
 
 ---
 

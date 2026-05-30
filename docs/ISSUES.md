@@ -77,6 +77,21 @@
 
 ---
 
+## Phase 6 — 安全与完整性监控 🔜
+
+**产品规格** → [PRODUCT-SECURITY-MONITORS.md](PRODUCT-SECURITY-MONITORS.md)  
+**实施步骤与验收** → [IMPLEMENTATION-ROADMAP.md §Phase 6](IMPLEMENTATION-ROADMAP.md#phase-6--安全与完整性监控)
+
+| ID | 任务 | 优先级 | 状态 |
+|----|------|:------:|------|
+| P6-1 | SSL 到期分级告警 + 可配置 warnDays + metadata 持久化 | P0 | 🔜 |
+| P6-2 | DNS 基线/漂移检测 + `dns_change` 事件 + 可选受信解析器 | P0 | 🔜 |
+| P6-3 | Tamper 监控：body/selector fingerprint + diff % 重大变更 | P1 | 🔜 |
+| P6-4 | 内容策略：blocklist + 合规文案 + `tamper_policy_violation` | P1 | 🔜 |
+| P6-5 | 安全监控 UI（DNS/SSL/domain/tamper 配置 + 告警事件类型） | P1 | 🔜 |
+
+---
+
 ## 环境变量
 
 | 变量 | 用途 |
