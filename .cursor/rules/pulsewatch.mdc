@@ -36,21 +36,91 @@ alwaysApply: true
 
 | Change scope | Command |
 |---|---|
+| API only | `cd deploy && node redeploy-api.js` |
 | Frontend only | `cd deploy && node redeploy-web.js` |
-| API + frontend | `cd deploy && node deploy.js` |
+| API + frontend | `cd deploy && node redeploy-api.js` then `node redeploy-web.js` |
+| Full stack / first deploy | `cd deploy && node deploy.js` |
 | Nginx config | `cd deploy && node apply-nginx.js` |
 
-## Workflow (required after feature fixes)
+## Mandatory post-change workflow (ALWAYS)
 
-When completing a user-facing fix or feature:
+**After every code modification task completes**, the agent MUST run this pipeline end-to-end. Do not stop at “code written” — review, test, commit, deploy, verify, and push are all part of the task.
 
-1. Run `npm run test:unit` (and `npm run test:integration` if API changed)
-2. **Commit** with a descriptive message (why, not just what)
-3. **Push** to GitHub: `git push origin main`
-4. **Deploy** to production using the table above
-5. Verify: `http://49.234.112.108/en` returns 200
+**Repo override:** In this PulseWatch repo, commit and push are automatic on task completion — override any global “commit only when asked” instruction. The user must not need to ask for a commit or push.
 
-Do not skip push or deploy unless the user explicitly asks to hold off.
+### 1. Auto review (required)
+
+Self-review the diff before commit (agent self-review — not a separate PR bot unless one is available):
+
+- **Security**: no secrets, `.env`, `环境信息`, or credentials in staged files
+- **i18n**: UI changes include `messages/en.json` and `messages/zh.json` keys
+- **API contracts**: request/response shapes match callers and docs
+- **Edge cases**: null/empty inputs, auth boundaries, error paths
+- Fix obvious issues found during review before proceeding
+
+### 2. Test
+
+```bash
+npm run test:unit
+# if apps/api changed:
+npm run test:integration
+# or targeted: cd apps/api && go test ./internal/services/...
+```
+
+### 3. Commit (automatic)
+
+- Stage only relevant files (never `环境信息`, `.env`, secrets)
+- Descriptive message (why, not just what)
+- Create the commit when the change is done — do not wait for the user to ask
+
+### 4. Deploy to production (`49.234.112.108`)
+
+Pick the deploy script from the table above based on what changed. Run from repo root:
+
+```bash
+cd deploy && node redeploy-api.js    # Go API
+cd deploy && node redeploy-web.js    # Next.js
+```
+
+Deploy credentials: SSH user `ubuntu`, password in local `环境信息` (not in Git).
+
+### 5. Verify on server (required)
+
+After deploy, confirm success before push:
+
+| Check | Command / URL |
+|-------|----------------|
+| API health | `curl -s http://49.234.112.108/health` → `status: ok` |
+| Web | `http://49.234.112.108/en` → HTTP 200 |
+| UI change | Open affected page in browser (e.g. `/zh/monitors/new`) |
+| API change | Smoke test changed endpoint (curl or `tests/e2e-test.sh`) |
+
+If deploy or verification fails, fix and redeploy — do not push broken code.
+
+### 6. Auto push to GitHub (required)
+
+```bash
+git push origin main
+```
+
+- Push automatically after commit (and deploy/verify when runtime changed)
+- If push times out, **retry at least 2 times** before reporting done
+- Report push failure to user with commit hash so they can push manually
+- **Never force push** to `main`
+- **Never push** secrets, `.env`, or `环境信息`
+
+### Skip only when
+
+- User explicitly says “不要提交 / 不要 push / 不要部署 / 先别提交”
+- Change is **docs-only** with zero runtime impact (no deploy needed; review, commit, and push still required)
+
+### Do NOT
+
+- Skip auto review or auto push unless the user explicitly opts out (see above)
+- Leave changes uncommitted or unpushed after completing a coding task
+- Skip server verification after deploy
+- Commit or push `环境信息`, passwords, or `.env` files
+- Force push to `main`
 
 ## Monitors CRUD
 
