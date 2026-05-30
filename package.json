@@ -17,6 +17,7 @@
     "miniprogram:validate": "node scripts/validate-miniprogram.js"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "ssh2": "^1.17.0"
   }
 }
