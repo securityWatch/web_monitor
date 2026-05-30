@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 
 interface Incident {
@@ -44,14 +45,14 @@ export default function IncidentsPage() {
       ) : (
         <div className="space-y-3">
           {incidents.map((inc) => (
-            <div key={inc.id} className="card flex flex-wrap items-center justify-between gap-4">
+            <Link key={inc.id} href={`/incidents/${inc.id}`} className="card flex flex-wrap items-center justify-between gap-4 transition-colors hover:border-zinc-600">
               <div>
                 <p className="font-medium">{inc.monitorName}</p>
                 <p className="text-sm text-zinc-500">{t('started')}: {new Date(inc.startedAt).toLocaleString()}</p>
                 {inc.message && <p className="mt-1 text-sm text-zinc-400">{inc.message}</p>}
               </div>
               <span className={inc.status === 'open' ? 'badge-down' : 'badge-up'}>{inc.status}</span>
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -84,7 +84,11 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	}
 
 	chType := strings.ToLower(req.Type)
-	valid := map[string]bool{"email": true, "webhook": true, "slack": true, "discord": true, "pagerduty": true}
+	valid := map[string]bool{
+		"email": true, "webhook": true, "slack": true, "discord": true,
+		"pagerduty": true, "teams": true, "sms": true,
+		"dingtalk": true, "feishu": true, "wecom": true,
+	}
 	if !valid[chType] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid channel type"})
 		return

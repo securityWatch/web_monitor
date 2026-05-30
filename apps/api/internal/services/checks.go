@@ -29,12 +29,18 @@ func RunCheck(ctx context.Context, monitorType, targetURL string, config json.Ra
 	case "http", "keyword", "ssl":
 		httpCfg := ParseHTTPConfig(cfg)
 		return executeHTTPMonitor(ctx, targetURL, httpCfg, monitorType, start)
+	case "pagespeed":
+		httpCfg := ParseHTTPConfig(cfg)
+		out := executeHTTPMonitor(ctx, targetURL, httpCfg, "http", start)
+		return evaluatePageSpeed(out, cfg, start)
 	case "tcp":
 		return runTCPCheck(ctx, targetURL, start)
 	case "ping":
 		return runPingCheck(ctx, targetURL, start)
 	case "dns":
 		return runDNSCheck(ctx, targetURL, config, start)
+	case "domain":
+		return runDomainCheck(ctx, targetURL, config, start)
 	default:
 		return CheckOutcome{IsUp: false, ResponseMs: int(time.Since(start).Milliseconds()), ErrorMessage: "unknown monitor type"}
 	}
@@ -169,4 +175,48 @@ func NormalizeURL(raw string) (string, error) {
 		raw = "https://" + raw
 	}
 	return raw, nil
+}
+
+func evaluatePageSpeed(out CheckOutcome, cfg map[string]interface{}, start time.Time) CheckOutcome {
+	if !out.IsUp {
+		return out
+	}
+	maxTTFB := 2000
+	if v, ok := cfg["maxTtfbMs"].(float64); ok && v > 0 {
+		maxTTFB = int(v)
+	}
+	ttfb := 0
+	if v, ok := out.Metadata["ttfbMs"].(int); ok {
+		ttfb = v
+	} else if v, ok := out.Metadata["ttfbMs"].(float64); ok {
+		ttfb = int(v)
+	}
+	out.Metadata["pageSpeed"] = true
+	// Estimate Core Web Vitals from TTFB + response timing (MVP without headless browser)
+	bodyMs := out.ResponseMs - ttfb
+	if bodyMs < 0 {
+		bodyMs = 0
+	}
+	fcpMs := ttfb + 80
+	lcpMs := ttfb + bodyMs/2
+	if lcpMs < fcpMs {
+		lcpMs = fcpMs + 120
+	}
+	out.Metadata["fcpMs"] = fcpMs
+	out.Metadata["lcpMs"] = lcpMs
+
+	maxLCP := 2500
+	if v, ok := cfg["maxLcpMs"].(float64); ok && v > 0 {
+		maxLCP = int(v)
+	}
+	if lcpMs > maxLCP {
+		out.IsUp = false
+		out.ErrorMessage = fmt.Sprintf("LCP %dms exceeds threshold %dms", lcpMs, maxLCP)
+		return out
+	}
+	if ttfb > maxTTFB {
+		out.IsUp = false
+		out.ErrorMessage = fmt.Sprintf("TTFB %dms exceeds threshold %dms", ttfb, maxTTFB)
+	}
+	return out
 }

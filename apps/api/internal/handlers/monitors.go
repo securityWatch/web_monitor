@@ -153,11 +153,11 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 	if req.IntervalSeconds == 0 {
 		req.IntervalSeconds = minInterval
 	}
-	if req.IntervalSeconds < minInterval {
-		req.IntervalSeconds = minInterval
+	if strings.ToLower(req.Type) == "domain" && req.IntervalSeconds < 86400 {
+		req.IntervalSeconds = 86400
 	}
 
-	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true}
+	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true}
 	if !validTypes[strings.ToLower(req.Type)] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid monitor type"})
 		return
@@ -169,6 +169,16 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 	} else if strings.ToLower(req.Type) == "dns" {
 		target = strings.TrimPrefix(strings.TrimPrefix(req.TargetURL, "dns://"), "http://")
 		target = strings.Split(target, "/")[0]
+	} else if strings.ToLower(req.Type) == "domain" {
+		target = strings.TrimPrefix(strings.TrimPrefix(strings.ToLower(req.TargetURL), "domain://"), "http://")
+		target = strings.Split(target, "/")[0]
+	} else if strings.ToLower(req.Type) == "pagespeed" {
+		var err error
+		target, err = services.NormalizeURL(req.TargetURL)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	} else {
 		var err error
 		target, err = services.NormalizeURL(req.TargetURL)
@@ -178,11 +188,21 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		}
 	}
 
+	if req.IntervalSeconds < minInterval && strings.ToLower(req.Type) != "domain" {
+		req.IntervalSeconds = minInterval
+	}
+
 	if req.Config == nil {
 		req.Config = json.RawMessage(`{}`)
 	}
 	if req.Regions == nil {
 		req.Regions = json.RawMessage(`["us-east"]`)
+	}
+	regions := services.ParseRegions(req.Regions)
+	maxRegions := services.PlanMaxRegions(planTier)
+	if len(regions) > maxRegions {
+		c.JSON(http.StatusForbidden, gin.H{"error": "region limit exceeded", "code": "REGION_QUOTA_EXCEEDED", "maxRegions": maxRegions})
+		return
 	}
 
 	id := uuid.New().String()
@@ -235,6 +255,7 @@ func (h *MonitorHandler) Update(c *gin.Context) {
 		IntervalSeconds *int            `json:"intervalSeconds"`
 		Status          *string         `json:"status"`
 		Config          json.RawMessage `json:"config"`
+		Regions         json.RawMessage `json:"regions"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -253,7 +274,25 @@ func (h *MonitorHandler) Update(c *gin.Context) {
 		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET target_url = $1, updated_at = now() WHERE id = $2 AND org_id = $3`, target, id, orgID)
 	}
 	if req.IntervalSeconds != nil {
-		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET interval_seconds = $1, updated_at = now() WHERE id = $2 AND org_id = $3`, *req.IntervalSeconds, id, orgID)
+		var planTier string
+		_ = h.db.QueryRow(c.Request.Context(), `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+		minInterval := services.PlanMinInterval(planTier)
+		interval := *req.IntervalSeconds
+		if interval < minInterval {
+			c.JSON(http.StatusForbidden, gin.H{"error": "interval below plan minimum", "code": "INTERVAL_QUOTA", "minInterval": minInterval})
+			return
+		}
+		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET interval_seconds = $1, updated_at = now() WHERE id = $2 AND org_id = $3`, interval, id, orgID)
+	}
+	if req.Regions != nil {
+		var planTier string
+		_ = h.db.QueryRow(c.Request.Context(), `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+		regions := services.ParseRegions(req.Regions)
+		if len(regions) > services.PlanMaxRegions(planTier) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "region limit exceeded", "code": "REGION_QUOTA_EXCEEDED"})
+			return
+		}
+		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET regions = $1, updated_at = now() WHERE id = $2 AND org_id = $3`, req.Regions, id, orgID)
 	}
 	if req.Status != nil {
 		_, _ = h.db.Exec(c.Request.Context(), `UPDATE monitors SET status = $1::monitor_status, updated_at = now() WHERE id = $2 AND org_id = $3`, *req.Status, id, orgID)
@@ -433,4 +472,59 @@ func (h *MonitorHandler) fetchMonitor(c *gin.Context, orgID, id string) (*models
 		return nil, err
 	}
 	return &m, nil
+}
+
+func (h *MonitorHandler) Batch(c *gin.Context) {
+	orgID := c.Param("orgId")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	if GetRole(c) == "viewer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+	var req struct {
+		IDs    []string `json:"ids" binding:"required"`
+		Action string   `json:"action" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ctx := c.Request.Context()
+	affected := 0
+	for _, id := range req.IDs {
+		switch req.Action {
+		case "pause":
+			res, _ := h.db.Exec(ctx, `UPDATE monitors SET status = 'paused', updated_at = now() WHERE id = $1 AND org_id = $2`, id, orgID)
+			affected += int(res.RowsAffected())
+		case "resume":
+			res, _ := h.db.Exec(ctx, `UPDATE monitors SET status = 'pending', updated_at = now() WHERE id = $1 AND org_id = $2`, id, orgID)
+			affected += int(res.RowsAffected())
+		case "delete":
+			res, _ := h.db.Exec(ctx, `DELETE FROM monitors WHERE id = $1 AND org_id = $2`, id, orgID)
+			affected += int(res.RowsAffected())
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"affected": affected})
+}
+
+func (h *MonitorHandler) GetArtifacts(c *gin.Context) {
+	orgID := c.Param("orgId")
+	id := c.Param("id")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	svc := services.NewScreenshotService(h.db, nil)
+	arts, err := svc.ListForMonitor(c.Request.Context(), orgID, id, 20)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if arts == nil {
+		arts = []map[string]interface{}{}
+	}
+	c.JSON(http.StatusOK, gin.H{"artifacts": arts})
 }

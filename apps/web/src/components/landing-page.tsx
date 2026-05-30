@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { MarketingNav } from '@/components/marketing-nav';
+import { HomeDevTools } from '@/components/home-dev-tools';
 import { Link } from '@/i18n/navigation';
 import { Activity, Bell, Globe, LineChart, Shield, Zap, Code, Sparkles } from 'lucide-react';
 
@@ -54,6 +55,8 @@ export function LandingPageClient({ foundingCount }: { foundingCount: number }) 
           </div>
         </div>
       </section>
+
+      <HomeDevTools />
 
       <section id="features" className="border-t border-zinc-800 bg-zinc-950/50 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">

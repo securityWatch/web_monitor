@@ -39,4 +39,5 @@ deploy/node_modules/
 # Binaries
 *.exe
 apps/api/pulsewatch-api
+apps/api/pulsewatch-probe
 

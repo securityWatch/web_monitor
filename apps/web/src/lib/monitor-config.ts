@@ -109,6 +109,41 @@ export function parseHttpConfig(raw: unknown): HttpMonitorConfig {
   };
 }
 
+export interface MonitorAlertConfig {
+  webhookEnabled: boolean;
+}
+
+export const defaultAlertConfig = (): MonitorAlertConfig => ({ webhookEnabled: true });
+
+export function parseAlertConfig(raw: unknown): MonitorAlertConfig {
+  if (!raw || typeof raw !== 'object') return defaultAlertConfig();
+  const obj = raw as Record<string, unknown>;
+  const alerts = obj.alerts;
+  if (!alerts || typeof alerts !== 'object') return defaultAlertConfig();
+  const a = alerts as Record<string, unknown>;
+  return {
+    webhookEnabled: typeof a.webhookEnabled === 'boolean' ? a.webhookEnabled : true,
+  };
+}
+
+export function mergeMonitorConfigForSave(
+  existingRaw: unknown,
+  httpPayload: HttpMonitorConfig | undefined,
+  alertConfig: MonitorAlertConfig,
+): Record<string, unknown> {
+  const base: Record<string, unknown> =
+    existingRaw && typeof existingRaw === 'object' && !Array.isArray(existingRaw)
+      ? { ...(existingRaw as Record<string, unknown>) }
+      : {};
+
+  if (httpPayload) {
+    Object.assign(base, httpPayload);
+  }
+
+  base.alerts = { webhookEnabled: alertConfig.webhookEnabled };
+  return base;
+}
+
 export function buildHttpConfigPayload(cfg: HttpMonitorConfig, type: string): HttpMonitorConfig | undefined {
   if (type !== 'http' && type !== 'keyword' && type !== 'ssl') return undefined;
   const statuses = resolveExpectedStatusesList(cfg);

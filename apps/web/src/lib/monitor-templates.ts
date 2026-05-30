@@ -63,4 +63,22 @@ export const MONITOR_TEMPLATES: MonitorTemplate[] = [
     intervalSeconds: 300,
     config: {},
   },
+  {
+    id: 'domain-expiry',
+    name: 'Domain Expiry',
+    nameZh: '域名到期监控',
+    type: 'domain',
+    targetUrl: 'example.com',
+    intervalSeconds: 86400,
+    config: { warnDays: 30 },
+  },
+  {
+    id: 'page-speed',
+    name: 'Page Speed (TTFB)',
+    nameZh: '页面速度 TTFB',
+    type: 'pagespeed',
+    targetUrl: 'https://example.com',
+    intervalSeconds: 300,
+    config: { maxTtfbMs: 2000 },
+  },
 ];

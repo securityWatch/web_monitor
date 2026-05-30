@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 import { MonitorHttpConfig } from '@/components/monitor-http-config';
-import { HttpMonitorConfig, buildHttpConfigPayload, defaultHttpConfig, parseHttpConfig } from '@/lib/monitor-config';
+import { HttpMonitorConfig, buildHttpConfigPayload, defaultAlertConfig, defaultHttpConfig, mergeMonitorConfigForSave, parseAlertConfig, parseHttpConfig } from '@/lib/monitor-config';
 
 interface Monitor {
   id: string;
@@ -27,6 +27,8 @@ export default function EditMonitorPage() {
   const [form, setForm] = useState({ name: '', targetUrl: '', intervalSeconds: 300 });
   const [type, setType] = useState('http');
   const [httpConfig, setHttpConfig] = useState<HttpMonitorConfig>(defaultHttpConfig());
+  const [alertConfig, setAlertConfig] = useState(defaultAlertConfig());
+  const [rawConfig, setRawConfig] = useState<unknown>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +39,9 @@ export default function EditMonitorPage() {
       .then((m) => {
         setForm({ name: m.name, targetUrl: m.targetUrl, intervalSeconds: m.intervalSeconds });
         setType(m.type);
+        setRawConfig(m.config ?? {});
         setHttpConfig(parseHttpConfig(m.config));
+        setAlertConfig(parseAlertConfig(m.config));
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Error'))
       .finally(() => setLoading(false));
@@ -49,10 +53,11 @@ export default function EditMonitorPage() {
     setSaving(true);
     setError('');
     try {
-      const config = buildHttpConfigPayload(httpConfig, type);
+      const httpPayload = buildHttpConfigPayload(httpConfig, type);
+      const config = mergeMonitorConfigForSave(rawConfig, httpPayload, alertConfig);
       await apiFetch(`/api/v1/orgs/${orgId}/monitors/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ ...form, config: config || {} }),
+        body: JSON.stringify({ ...form, config }),
       });
       router.push(`/monitors/${id}`);
     } catch (err) {
@@ -93,6 +98,21 @@ export default function EditMonitorPage() {
             <option value={60}>1 {t('minutes')}</option>
             <option value={30}>30 {t('seconds')}</option>
           </select>
+        </div>
+        <div className="rounded-lg border border-zinc-800 p-4">
+          <p className="mb-2 text-sm font-medium text-zinc-300">{t('alertSettingsTitle')}</p>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={alertConfig.webhookEnabled}
+              onChange={(e) => setAlertConfig({ webhookEnabled: e.target.checked })}
+              className="mt-0.5 rounded"
+            />
+            <span>
+              <span className="block text-sm text-zinc-300">{t('webhookAlertsEnabled')}</span>
+              <span className="block text-xs text-zinc-500">{t('webhookAlertsHint')}</span>
+            </span>
+          </label>
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         <div className="flex gap-3">

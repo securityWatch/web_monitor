@@ -6,7 +6,7 @@ import { useRouter } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth, ApiError } from '@/lib/api';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { MonitorHttpConfig } from '@/components/monitor-http-config';
-import { HttpMonitorConfig, buildHttpConfigPayload, defaultHttpConfig, parseHttpConfig } from '@/lib/monitor-config';
+import { HttpMonitorConfig, buildHttpConfigPayload, defaultAlertConfig, defaultHttpConfig, mergeMonitorConfigForSave, parseHttpConfig } from '@/lib/monitor-config';
 import { MONITOR_TEMPLATES } from '@/lib/monitor-templates';
 import { useLocale } from 'next-intl';
 
@@ -17,6 +17,7 @@ export default function NewMonitorPage() {
   const auth = getStoredAuth();
   const [form, setForm] = useState({ name: '', targetUrl: '', type: 'http', intervalSeconds: 300, regions: 'us-east,eu-west' });
   const [httpConfig, setHttpConfig] = useState<HttpMonitorConfig>(defaultHttpConfig());
+  const [alertConfig, setAlertConfig] = useState(defaultAlertConfig());
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [hbInfo, setHbInfo] = useState<{ token?: string; url?: string } | null>(null);
@@ -27,7 +28,8 @@ export default function NewMonitorPage() {
     setLoading(true);
     setError('');
     try {
-      const config = buildHttpConfigPayload(httpConfig, form.type);
+      const httpPayload = buildHttpConfigPayload(httpConfig, form.type);
+      const config = mergeMonitorConfigForSave({}, httpPayload, alertConfig);
       const regions = form.regions.split(/[,，\s]+/).filter(Boolean);
       const m = await apiFetch<{ id: string; heartbeatToken?: string }>(`/api/v1/orgs/${auth!.organization.id}/monitors`, {
         method: 'POST',
@@ -36,7 +38,7 @@ export default function NewMonitorPage() {
           type: form.type,
           targetUrl: form.type === 'heartbeat' ? 'heartbeat://ping' : form.targetUrl,
           intervalSeconds: form.intervalSeconds,
-          config: config || {},
+          config,
           regions,
         }),
       });
@@ -123,6 +125,21 @@ export default function NewMonitorPage() {
             <option value={60}>1 {t('minutes')}</option>
             <option value={30}>30 {t('seconds')}</option>
           </select>
+        </div>
+        <div className="rounded-lg border border-zinc-800 p-4">
+          <p className="mb-2 text-sm font-medium text-zinc-300">{t('alertSettingsTitle')}</p>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={alertConfig.webhookEnabled}
+              onChange={(e) => setAlertConfig({ webhookEnabled: e.target.checked })}
+              className="mt-0.5 rounded"
+            />
+            <span>
+              <span className="block text-sm text-zinc-300">{t('webhookAlertsEnabled')}</span>
+              <span className="block text-xs text-zinc-500">{t('webhookAlertsHint')}</span>
+            </span>
+          </label>
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? '...' : t('createTitle')}</button>

@@ -91,6 +91,32 @@ func PlanMinInterval(planTier string) int {
 	}
 }
 
+func PlanMaxRegions(planTier string) int {
+	switch planTier {
+	case "pro":
+		return 5
+	case "team":
+		return 10
+	case "business":
+		return 20
+	default:
+		return 2
+	}
+}
+
+func PlanScreenshotRetentionDays(planTier string) int {
+	switch planTier {
+	case "pro":
+		return 7
+	case "team":
+		return 30
+	case "business":
+		return 90
+	default:
+		return 0
+	}
+}
+
 func PlanMonitorQuota(planTier string) int {
 	switch planTier {
 	case "pro":

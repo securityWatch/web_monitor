@@ -78,8 +78,16 @@ export default function PricingPage() {
           ))}
         </div>
 
+        <div id="compare" className="mt-20 text-center">
+          <h2 className="text-2xl font-bold">与竞品对比</h2>
+          <p className="mt-2 text-zinc-400">看看 PulseWatch 如何补齐 UptimeRobot / Better Stack 差距</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-4">
+            <Link href="/compare/uptimerobot" className="btn-secondary">vs UptimeRobot</Link>
+            <Link href="/compare/better-stack" className="btn-secondary">vs Better Stack</Link>
+          </div>
+        </div>
+
         <div className="mt-20">
-          <h2 className="text-center text-2xl font-bold">常见问题</h2>
           <div className="mx-auto mt-8 max-w-2xl space-y-4">
             {FAQ.map((f) => (
               <details key={f.q} className="card group">

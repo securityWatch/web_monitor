@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -228,7 +230,207 @@ func (h *StatusPageHandler) PublicGet(c *gin.Context) {
 		"slug":         page.Slug,
 		"components":   components,
 		"updatedAt":    page.UpdatedAt,
+		"incidents":    h.publicIncidents(ctx, page.ID),
+		"announcements": h.publicAnnouncements(ctx, page.ID),
+		"maintenance":  h.activeMaintenance(ctx, page.OrgID),
+		"uptime90d":    h.uptime90d(ctx, page.ID),
 	})
+}
+
+func (h *StatusPageHandler) uptime90d(ctx context.Context, pageID string) []gin.H {
+	rows, err := h.db.Query(ctx, `
+		SELECT date_trunc('day', cr.checked_at)::date as day,
+		       ROUND(100.0 * COUNT(*) FILTER (WHERE cr.is_up) / NULLIF(COUNT(*), 0), 2) as uptime
+		FROM check_results cr
+		JOIN status_page_monitors spm ON spm.monitor_id = cr.monitor_id
+		WHERE spm.status_page_id = $1 AND cr.checked_at > now() - interval '90 days'
+		GROUP BY 1 ORDER BY 1
+	`, pageID)
+	if err != nil {
+		return []gin.H{}
+	}
+	defer rows.Close()
+	var list []gin.H
+	for rows.Next() {
+		var day time.Time
+		var uptime float64
+		if rows.Scan(&day, &uptime) == nil {
+			list = append(list, gin.H{"date": day.Format("2006-01-02"), "uptimePct": uptime})
+		}
+	}
+	if list == nil {
+		list = []gin.H{}
+	}
+	return list
+}
+
+func (h *StatusPageHandler) publicAnnouncements(ctx context.Context, pageID string) []gin.H {
+	rows, err := h.db.Query(ctx, `
+		SELECT title, body, kind, created_at FROM status_announcements
+		WHERE status_page_id = $1 AND is_published = true
+		  AND (starts_at IS NULL OR starts_at <= now())
+		  AND (ends_at IS NULL OR ends_at > now())
+		ORDER BY created_at DESC LIMIT 20
+	`, pageID)
+	if err != nil {
+		return []gin.H{}
+	}
+	defer rows.Close()
+	var list []gin.H
+	for rows.Next() {
+		var title, body, kind string
+		var created time.Time
+		if rows.Scan(&title, &body, &kind, &created) == nil {
+			list = append(list, gin.H{"title": title, "body": body, "kind": kind, "createdAt": created})
+		}
+	}
+	if list == nil {
+		list = []gin.H{}
+	}
+	return list
+}
+
+func (h *StatusPageHandler) activeMaintenance(ctx context.Context, orgID string) *gin.H {
+	var title, note string
+	var starts, ends time.Time
+	err := h.db.QueryRow(ctx, `
+		SELECT title, note, starts_at, ends_at FROM maintenance_windows
+		WHERE org_id = $1 AND starts_at <= now() AND ends_at > now()
+		ORDER BY starts_at LIMIT 1
+	`, orgID).Scan(&title, &note, &starts, &ends)
+	if err != nil {
+		return nil
+	}
+	m := gin.H{"title": title, "note": note, "startsAt": starts, "endsAt": ends, "banner": "Scheduled Maintenance"}
+	return &m
+}
+
+func (h *StatusPageHandler) ListAnnouncements(c *gin.Context) {
+	orgID := c.Param("orgId")
+	pageID := c.Param("pageId")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	rows, err := h.db.Query(c.Request.Context(), `
+		SELECT id, title, body, kind, is_published, created_at FROM status_announcements
+		WHERE status_page_id = $1 ORDER BY created_at DESC
+	`, pageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+	type ann struct {
+		ID          string    `json:"id"`
+		Title       string    `json:"title"`
+		Body        string    `json:"body"`
+		Kind        string    `json:"kind"`
+		IsPublished bool      `json:"isPublished"`
+		CreatedAt   time.Time `json:"createdAt"`
+	}
+	var list []ann
+	for rows.Next() {
+		var a ann
+		if rows.Scan(&a.ID, &a.Title, &a.Body, &a.Kind, &a.IsPublished, &a.CreatedAt) == nil {
+			list = append(list, a)
+		}
+	}
+	if list == nil {
+		list = []ann{}
+	}
+	c.JSON(http.StatusOK, gin.H{"announcements": list})
+}
+
+func (h *StatusPageHandler) CreateAnnouncement(c *gin.Context) {
+	orgID := c.Param("orgId")
+	pageID := c.Param("pageId")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	var req struct {
+		Title       string `json:"title" binding:"required"`
+		Body        string `json:"body"`
+		Kind        string `json:"kind"`
+		IsPublished *bool  `json:"isPublished"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	kind := req.Kind
+	if kind == "" {
+		kind = "info"
+	}
+	pub := true
+	if req.IsPublished != nil {
+		pub = *req.IsPublished
+	}
+	id := uuid.New().String()
+	_, err := h.db.Exec(c.Request.Context(), `
+		INSERT INTO status_announcements (id, status_page_id, title, body, kind, is_published)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, id, pageID, req.Title, req.Body, kind, pub)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"id": id})
+}
+
+func (h *StatusPageHandler) DeleteAnnouncement(c *gin.Context) {
+	orgID := c.Param("orgId")
+	pageID := c.Param("pageId")
+	annID := c.Param("announcementId")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	_, err := h.db.Exec(c.Request.Context(), `
+		DELETE FROM status_announcements WHERE id = $1 AND status_page_id = $2
+	`, annID, pageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
+}
+
+func (h *StatusPageHandler) publicIncidents(ctx context.Context, pageID string) []gin.H {
+	rows, err := h.db.Query(ctx, `
+		SELECT spi.title, spi.impact, spi.created_at, spi.resolved_at
+		FROM status_page_incidents spi
+		WHERE spi.status_page_id = $1 AND spi.is_public = true
+		ORDER BY spi.created_at DESC LIMIT 10
+	`, pageID)
+	if err != nil {
+		return []gin.H{}
+	}
+	defer rows.Close()
+	var list []gin.H
+	for rows.Next() {
+		var title, impact string
+		var createdAt time.Time
+		var resolvedAt *time.Time
+		if rows.Scan(&title, &impact, &createdAt, &resolvedAt) == nil {
+			status := "investigating"
+			if resolvedAt != nil {
+				status = "resolved"
+			}
+			list = append(list, gin.H{
+				"title":     title,
+				"impact":    impact,
+				"status":    status,
+				"createdAt": createdAt,
+				"resolvedAt": resolvedAt,
+			})
+		}
+	}
+	if list == nil {
+		list = []gin.H{}
+	}
+	return list
 }
 
 func (h *StatusPageHandler) PublicSubscribe(c *gin.Context) {

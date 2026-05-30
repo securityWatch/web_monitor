@@ -149,6 +149,7 @@ func runSingleHTTP(ctx context.Context, url, method, body string, headers map[st
 
 	if !statusAllowed(res.statusCode, allowedStatuses) {
 		code := res.statusCode
+		attachBodySnippet(metadata, res.body)
 		return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("expected status one of [%s], got %d", formatExpectedStatuses(allowedStatuses), res.statusCode), Metadata: metadata}
 	}
 
@@ -222,15 +223,18 @@ func evaluateHTTPBody(body []byte, code, elapsed int, keyword string, keywordMus
 	if checkKeyword && keyword != "" {
 		found := strings.Contains(string(body), keyword)
 		if keywordMustContain && !found {
+			attachBodySnippet(metadata, body)
 			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "keyword not found", Metadata: metadata}
 		}
 		if !keywordMustContain && found {
+			attachBodySnippet(metadata, body)
 			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "keyword found (should not contain)", Metadata: metadata}
 		}
 	}
 
 	for _, assert := range jsonAssertions {
 		if err := evaluateJSONAssertion(body, assert); err != nil {
+			attachBodySnippet(metadata, body)
 			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: err.Error(), Metadata: metadata}
 		}
 	}
@@ -376,4 +380,16 @@ func stepLabel(step HTTPStep, index int) string {
 
 func elapsedMs(start time.Time) int {
 	return int(time.Since(start).Milliseconds())
+}
+
+func attachBodySnippet(metadata map[string]interface{}, body []byte) {
+	if len(body) == 0 || metadata == nil {
+		return
+	}
+	const limit = 4096
+	if len(body) > limit {
+		metadata["responseBodySnippet"] = string(body[:limit])
+	} else {
+		metadata["responseBodySnippet"] = string(body)
+	}
 }

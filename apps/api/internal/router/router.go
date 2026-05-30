@@ -42,7 +42,10 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	authSvc := services.NewAuthService(db, cfg)
 	oauthSvc := services.NewOAuthService(authSvc, cfg)
 	totpSvc := services.NewTOTPService(db)
-	alertSvc := services.NewAlertService(db, emailSvc)
+	twilioSvc := services.NewTwilioService(cfg)
+	oncallSvc := services.NewOnCallService(db)
+	incidentSvc := services.NewIncidentService(db)
+	alertSvc := services.NewAlertService(db, emailSvc, twilioSvc, oncallSvc)
 	billingSvc := services.NewBillingService(cfg)
 	hbSvc := services.NewHeartbeatService(db)
 
@@ -51,7 +54,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	meH := handlers.NewMeHandler(db, authSvc, totpSvc)
 	monitorH := handlers.NewMonitorHandler(db)
 	dashH := handlers.NewDashboardHandler(db)
-	incH := handlers.NewIncidentHandler(db)
+	incH := handlers.NewIncidentHandler(db, incidentSvc)
+	oncallH := handlers.NewOnCallHandler(db)
 	alertH := handlers.NewAlertHandler(db, alertSvc)
 	statusH := handlers.NewStatusPageHandler(db, emailSvc, cfg.WebURL)
 	maintH := handlers.NewMaintenanceHandler(db)
@@ -63,6 +67,9 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	toolsH := handlers.NewToolsHandler()
 	auditH := handlers.NewAuditHandler(db)
 	openAPIH := handlers.NewOpenAPIHandler()
+	probeDispatch := services.NewProbeDispatch(db)
+	probeH := handlers.NewProbeHandler(probeDispatch, cfg.ProbeSecret)
+	ssoH := handlers.NewSSOHandler(db)
 
 	rateLimit := middleware.NewRateLimiter(120, time.Minute)
 
@@ -75,6 +82,12 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r.POST("/api/v1/heartbeat/:token", hbH.Ping)
 	r.POST("/api/v1/billing/webhook", billingH.Webhook)
 	r.GET("/api/v1/public/ssl-check", toolsH.SSLCheck)
+
+	internal := r.Group("/api/internal/probe")
+	{
+		internal.POST("/claim", probeH.Claim)
+		internal.POST("/complete", probeH.Complete)
+	}
 
 	v1 := r.Group("/api/v1")
 	{
@@ -91,6 +104,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 		auth.GET("/oauth/:provider", oauthH.Start)
 		auth.GET("/oauth/:provider/callback", oauthH.Callback)
 		auth.GET("/providers", authH.OAuthProviders)
+		auth.GET("/sso/start", ssoH.LoginStart)
 
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware(cfg.JWTSecret, db))
@@ -115,12 +129,24 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 			{
 				org.GET("/dashboard", dashH.Get)
 				org.GET("/incidents", incH.List)
+				org.GET("/incidents/:incidentId", incH.Get)
+				org.PATCH("/incidents/:incidentId", incH.Update)
+				org.POST("/incidents/:incidentId/notes", incH.AddNote)
+
+				org.GET("/on-call/schedules", oncallH.ListSchedules)
+				org.POST("/on-call/schedules", oncallH.CreateSchedule)
+				org.GET("/on-call/schedules/:scheduleId/rotations", oncallH.GetRotations)
+				org.GET("/on-call/alerts", oncallH.PendingAlerts)
+				org.POST("/on-call/alerts/:alertId/ack", oncallH.Ack)
+
+				org.PATCH("/monitors/batch", monitorH.Batch)
 				org.GET("/monitors", monitorH.List)
 				org.POST("/monitors", monitorH.Create)
 				org.GET("/monitors/:id", monitorH.Get)
 				org.PATCH("/monitors/:id", monitorH.Update)
 				org.DELETE("/monitors/:id", monitorH.Delete)
 				org.GET("/monitors/:id/checks", monitorH.GetChecks)
+				org.GET("/monitors/:id/artifacts", monitorH.GetArtifacts)
 				org.GET("/monitors/:id/stats", monitorH.GetStats)
 
 				org.GET("/alert-channels", alertH.ListChannels)
@@ -134,6 +160,12 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.GET("/status-pages/:pageId", statusH.Get)
 				org.PATCH("/status-pages/:pageId", statusH.Update)
 				org.DELETE("/status-pages/:pageId", statusH.Delete)
+				org.GET("/status-pages/:pageId/announcements", statusH.ListAnnouncements)
+				org.POST("/status-pages/:pageId/announcements", statusH.CreateAnnouncement)
+				org.DELETE("/status-pages/:pageId/announcements/:announcementId", statusH.DeleteAnnouncement)
+
+				org.GET("/sso", ssoH.Get)
+				org.PUT("/sso", ssoH.Upsert)
 
 				org.GET("/maintenance-windows", maintH.List)
 				org.POST("/maintenance-windows", maintH.Create)
@@ -157,7 +189,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 		}
 	}
 
-	scheduler := services.NewScheduler(db, cfg, emailSvc, alertSvc)
+	scheduler := services.NewScheduler(db, cfg, emailSvc, alertSvc, incidentSvc)
 	scheduler.Start()
 
 	return r

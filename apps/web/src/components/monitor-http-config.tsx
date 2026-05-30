@@ -74,7 +74,7 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
           </button>
           <span
             role="tooltip"
-            className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-72 -translate-x-1/2 rounded-md border border-zinc-700 bg-zinc-800 p-2.5 text-xs leading-relaxed text-zinc-300 shadow-lg group-hover:block group-focus-within:block"
+            className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-80 -translate-x-1/2 whitespace-pre-line rounded-md border border-zinc-700 bg-zinc-800 p-2.5 text-xs leading-relaxed text-zinc-300 shadow-lg group-hover:block group-focus-within:block"
           >
             {t('enableRequestChainHelp')}
           </span>

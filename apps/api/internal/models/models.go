@@ -69,15 +69,19 @@ type CheckResult struct {
 }
 
 type Incident struct {
-	ID          string     `json:"id"`
-	OrgID       string     `json:"orgId"`
-	MonitorID   string     `json:"monitorId"`
-	MonitorName string     `json:"monitorName,omitempty"`
-	StartedAt   time.Time  `json:"startedAt"`
-	ResolvedAt  *time.Time `json:"resolvedAt"`
-	Status      string     `json:"status"`
-	Severity    string     `json:"severity"`
-	Message     *string    `json:"message"`
+	ID             string     `json:"id"`
+	OrgID          string     `json:"orgId"`
+	MonitorID      string     `json:"monitorId"`
+	MonitorName    string     `json:"monitorName,omitempty"`
+	Title          string     `json:"title,omitempty"`
+	StartedAt      time.Time  `json:"startedAt"`
+	ResolvedAt     *time.Time `json:"resolvedAt"`
+	Status         string     `json:"status"`
+	WorkflowStatus string     `json:"workflowStatus,omitempty"`
+	Severity       string     `json:"severity"`
+	Message        *string    `json:"message"`
+	AssigneeID     *string    `json:"assigneeId,omitempty"`
+	PostMortem     *string    `json:"postMortem,omitempty"`
 }
 
 type DashboardStats struct {

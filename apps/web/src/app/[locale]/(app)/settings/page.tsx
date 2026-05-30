@@ -9,6 +9,7 @@ import { TeamSettings } from '@/components/team-settings';
 import { MaintenanceWindows } from '@/components/maintenance-windows';
 import { APIKeysSettings } from '@/components/api-keys-settings';
 import { TotpSettings } from '@/components/totp-settings';
+import { OnCallSettings } from '@/components/oncall-settings';
 import { AuditLogs } from '@/components/audit-logs';
 import { EmailVerificationBanner } from '@/components/email-verification-banner';
 
@@ -17,7 +18,7 @@ export default function SettingsPage() {
   const tc = useTranslations('common');
   const locale = useLocale();
   const auth = getStoredAuth();
-  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'team' | 'maintenance' | 'apikeys' | 'billing' | 'audit'>('profile');
+  const [tab, setTab] = useState<'profile' | 'security' | 'notifications' | 'integrations' | 'team' | 'maintenance' | 'apikeys' | 'billing' | 'audit' | 'oncall'>('profile');
   const [displayName, setDisplayName] = useState(auth?.user.displayName || '');
   const [passwords, setPasswords] = useState({ current: '', newPass: '' });
   const [notify, setNotify] = useState({ incidents: true, weekly: true, product: false, ssl: true });
@@ -55,6 +56,7 @@ export default function SettingsPage() {
     { id: 'maintenance' as const, label: '维护窗口' },
     { id: 'apikeys' as const, label: 'API Keys' },
     { id: 'audit' as const, label: '审计日志' },
+    { id: 'oncall' as const, label: 'On-Call' },
     { id: 'billing' as const, label: t('billing') },
   ];
 
@@ -122,6 +124,8 @@ export default function SettingsPage() {
       {tab === 'apikeys' && <APIKeysSettings />}
 
       {tab === 'audit' && <AuditLogs />}
+
+      {tab === 'oncall' && <OnCallSettings />}
 
       {tab === 'billing' && (
         <div className="card space-y-4">

@@ -19,6 +19,7 @@ import { parseCheckMetadata } from '@/lib/check-metadata';
 import { TimingBreakdown } from '@/components/check-timing-breakdown';
 
 import { formatMs, formatUptime } from '@/lib/utils';
+import { parseAlertConfig } from '@/lib/monitor-config';
 
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 
@@ -33,6 +34,8 @@ interface Monitor {
   id: string; name: string; type: string; targetUrl: string; status: string;
 
   intervalSeconds: number; lastCheckedAt?: string; lastResponseMs?: number;
+
+  config?: unknown;
 
 }
 
@@ -236,6 +239,8 @@ export default function MonitorDetailPage() {
 
   }));
 
+  const webhookDisabled = !parseAlertConfig(monitor.config).webhookEnabled;
+
 
 
   return (
@@ -249,6 +254,12 @@ export default function MonitorDetailPage() {
           <h1 className="text-2xl font-bold">{monitor.name}</h1>
 
           <p className="font-mono text-sm text-zinc-500">{monitor.targetUrl}</p>
+
+          {webhookDisabled && (
+            <span className="mt-2 inline-block rounded-full border border-zinc-700 bg-zinc-900 px-2.5 py-0.5 text-xs text-zinc-400">
+              {t('webhookAlertsDisabledBadge')}
+            </span>
+          )}
 
         </div>
 
@@ -297,15 +308,13 @@ export default function MonitorDetailPage() {
 
 
       {latestCheck && !latestCheck.isUp && latestCheck.errorMessage && (
-
         <div className="rounded-lg border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
-
           <p className="font-medium">{t('lastError')}</p>
-
           <p className="mt-1 font-mono text-xs">{latestCheck.errorMessage}</p>
-
+          {latestMeta.responseBodySnippet && (
+            <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/30 p-2 text-xs text-zinc-300">{latestMeta.responseBodySnippet}</pre>
+          )}
         </div>
-
       )}
 
 

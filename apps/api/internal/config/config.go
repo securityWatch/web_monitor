@@ -30,6 +30,15 @@ type Config struct {
 	StripeSecretKey     string
 	StripeProPriceID    string
 	StripeWebhookSecret string
+	TwilioAccountSID    string
+	TwilioAuthToken     string
+	TwilioFromNumber    string
+	ProbeSecret         string
+	ProbeDispatch       bool
+	S3Endpoint          string
+	S3Bucket            string
+	S3AccessKey         string
+	S3SecretKey         string
 }
 
 func Load() *Config {
@@ -61,6 +70,15 @@ func Load() *Config {
 		StripeSecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
 		StripeProPriceID:    getEnv("STRIPE_PRO_PRICE_ID", ""),
 		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
+		TwilioAccountSID:    getEnv("TWILIO_ACCOUNT_SID", ""),
+		TwilioAuthToken:     getEnv("TWILIO_AUTH_TOKEN", ""),
+		TwilioFromNumber:    getEnv("TWILIO_FROM_NUMBER", ""),
+		ProbeSecret:         getEnv("PROBE_SECRET", ""),
+		ProbeDispatch:       getEnv("PROBE_DISPATCH", "false") == "true",
+		S3Endpoint:          getEnv("S3_ENDPOINT", ""),
+		S3Bucket:            getEnv("S3_BUCKET", ""),
+		S3AccessKey:         getEnv("S3_ACCESS_KEY", ""),
+		S3SecretKey:         getEnv("S3_SECRET_KEY", ""),
 	}
 }
 

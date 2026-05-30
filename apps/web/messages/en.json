@@ -34,6 +34,7 @@
   },
   "nav": {
     "features": "Features",
+    "tools": "Dev Tools",
     "pricing": "Pricing",
     "docs": "Docs",
     "login": "Log in",
@@ -44,7 +45,24 @@
     "settings": "Settings",
     "logout": "Log out",
     "addMonitor": "Add monitor",
-    "statusPages": "Status pages"
+    "statusPages": "Status pages",
+    "mobileNav": "Main navigation"
+  },
+  "commandPalette": {
+    "title": "Command palette",
+    "placeholder": "Search monitors or jump to…",
+    "dashboard": "Dashboard",
+    "monitors": "Monitors",
+    "incidents": "Incidents",
+    "onCall": "On-call",
+    "settings": "Settings"
+  },
+  "onCall": {
+    "title": "On-call",
+    "subtitle": "Acknowledge alerts and manage rotation",
+    "pendingAlerts": "Pending alerts",
+    "noPending": "No alerts awaiting acknowledgement",
+    "ack": "Acknowledge"
   },
   "landing": {
     "heroTitle": "Website monitoring that developers actually enjoy",
@@ -79,6 +97,64 @@
     "monitors": "{count} monitors",
     "getStarted": "Get started",
     "finalCta": "Start monitoring in 3 minutes"
+  },
+  "homeTools": {
+    "title": "Free developer tools",
+    "subtitle": "Format JSON, escape strings, encode data — all in your browser. No signup required.",
+    "transform": "Transform",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "swap": "Swap",
+    "clear": "Clear",
+    "input": "Input",
+    "output": "Output",
+    "outputHint": "Result appears here",
+    "outputPlaceholder": "Click Transform to generate output…",
+    "privacyNote": "All processing happens locally in your browser — nothing is sent to our servers.",
+    "tabs": {
+      "json": "JSON",
+      "escape": "String Escape",
+      "base64": "Base64",
+      "url": "URL",
+      "timestamp": "Timestamp"
+    },
+    "json": {
+      "format": "Pretty print",
+      "minify": "Minify",
+      "validate": "Validate"
+    },
+    "escape": {
+      "escape": "Escape",
+      "unescape": "Unescape"
+    },
+    "base64": {
+      "encode": "Encode",
+      "decode": "Decode"
+    },
+    "url": {
+      "encode": "Encode",
+      "decode": "Decode"
+    },
+    "timestamp": {
+      "toDate": "To date",
+      "toTimestamp": "To timestamp",
+      "unitms": "Milliseconds",
+      "units": "Seconds"
+    },
+    "hints": {
+      "json": "Paste raw JSON",
+      "escape": "Plain text or JSON string literal",
+      "base64": "Text or Base64 string",
+      "url": "Text or percent-encoded string",
+      "timestamp": "Unix timestamp or date string"
+    },
+    "placeholders": {
+      "json": "{\"name\":\"PulseWatch\",\"uptime\":99.98}",
+      "escape": "Hello \"world\"\\nNew line",
+      "base64": "Hello, world!",
+      "url": "hello world & special=chars",
+      "timestamp": "1717084800000 or 2024-05-30T12:00:00Z"
+    }
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -138,6 +214,10 @@
     "emptyCta": "Add your first monitor",
     "filterStatus": "Filter by status",
     "searchPlaceholder": "Search by name or URL...",
+    "select": "Select",
+    "batchPause": "Pause {count} selected",
+    "batchDelete": "Delete {count} selected",
+    "batchDeleteConfirm": "Delete {count} monitors?",
     "createTitle": "Add monitor",
     "editTitle": "Edit monitor",
     "saveChanges": "Save changes",
@@ -169,8 +249,8 @@
     "expectedStatusPlaceholder": "200, 201, 204",
     "expectedStatusHint": "Comma-separated HTTP status codes. Check passes if response matches any of them.",
     "enableRequestChain": "Enable multi-step request chain",
-    "enableRequestChainHelpTitle": "About multi-step request chains",
-    "enableRequestChainHelp": "Use when a check needs login, a token, or other setup before probing an API. Runs up to 5 ordered requests. Extract values from each step (e.g. token) and reference them as {{varName}} in later URLs, headers, or bodies. Step 1 URL is optional — it uses the monitor target URL above.",
+    "enableRequestChainHelpTitle": "When to use request chains",
+    "enableRequestChainHelp": "What it solves\nProtected APIs often return 401/403 on a direct probe, causing false DOWN alerts.\n\nUse when\n• Login first, then health-check (session / JWT)\n• Exchange a token before calling the API\n• Multi-hop flows (e.g. create, then poll status)\n\nHow it works\nUp to 5 ordered steps. Extract values from each response and reference them as {{varName}} in later URLs, headers, or body.",
     "requestChainHint": "Run requests in order. Use {{varName}} in URL, headers, or body. Extract values from each step for the next.",
     "chainDemoTitle": "Example: login + authenticated request",
     "chainDemoDesc": "Step 1 logs in and extracts a token; step 2 calls a protected API with {{token}}. Click to auto-fill.",
@@ -216,7 +296,11 @@
     "checkLogMeta": "{total} records · page {page}/{totalPages}",
     "pageInfo": "Page {page} of {totalPages}",
     "prevPage": "Previous",
-    "nextPage": "Next"
+    "nextPage": "Next",
+    "alertSettingsTitle": "Alert settings",
+    "webhookAlertsEnabled": "Send Webhook alerts for this monitor",
+    "webhookAlertsHint": "When off, generic Webhook integrations in Settings will not fire for this monitor. Email, Slack, and other channels are unaffected.",
+    "webhookAlertsDisabledBadge": "Webhook alerts off"
   },
   "incidents": {
     "title": "Incidents",
@@ -254,17 +338,38 @@
     "foundingMember": "Founding Member",
     "integrationsTab": "Integrations",
     "integrations": {
-      "desc": "Configure Webhook, Slack, or Discord to receive alerts when monitors go down or recover.",
+      "desc": "Configure Webhook, Slack, Discord, Teams, DingTalk, Feishu, or WeCom to receive alerts when monitors go down or recover.",
       "addChannel": "Add channel",
       "channelType": "Channel type",
       "typeWebhook": "Webhook",
       "typeSlack": "Slack",
       "typeDiscord": "Discord",
+      "typeTeams": "Microsoft Teams",
+      "typeDingTalk": "DingTalk",
+      "typeFeishu": "Feishu / Lark",
+      "typeWeCom": "WeCom (Enterprise WeChat)",
       "typePagerDuty": "PagerDuty",
+      "typeOpsgenie": "Opsgenie",
+      "typeSms": "SMS",
+      "typeVoice": "Voice call",
+      "opsgenieKey": "Opsgenie API Key",
+      "voiceHint": "Business plan. TTS phone call on DOWN (15 min rate limit).",
       "channelName": "Name",
       "channelNamePlaceholder": "e.g. Production alerts",
       "webhookUrl": "Webhook URL",
-      "webhookHint": "Slack/Discord: use Incoming Webhook URL from your workspace settings.",
+      "webhookHint": "Slack/Discord/Teams: use Incoming Webhook URL from your workspace settings.",
+      "dingtalkHint": "DingTalk group robot: Custom → Robot → Webhook. Paste the full URL (includes access_token). Enable signing in robot security settings and paste the SEC secret below.",
+      "feishuHint": "Feishu/Lark group bot: Settings → Bots → Add bot → Custom bot. Copy the webhook URL. Enable signature verification and paste the secret below.",
+      "wecomHint": "WeCom group robot: Group chat → ··· → Group bot → Add. Copy webhook URL (includes key). WeCom robots do not support HMAC signing; configure IP allowlist in WeCom admin if required.",
+      "signSecret": "Signing secret",
+      "signSecretPlaceholder": "SEC… or bot secret from platform",
+      "signEnabled": "Enable HMAC signing",
+      "signHint": "Required when the robot has signature verification enabled on DingTalk or Feishu.",
+      "signEnabledBadge": "signing on",
+      "pagerDutyKey": "PagerDuty Routing Key",
+      "smsPhone": "Phone (E.164, e.g. +86138…)",
+      "smsHint": "Requires TWILIO_* env vars on the server.",
+      "delayMinutes": "Alert delay (minutes — notify after DOWN for N minutes)",
       "existingChannels": "Configured channels",
       "noChannels": "No integration channels yet. Email alerts use your account email by default.",
       "sendTest": "Send test",
@@ -287,6 +392,41 @@
     "allOperational": "All systems operational",
     "degraded": "Some systems experiencing issues",
     "poweredBy": "Powered by PulseWatch"
+  },
+  "compare": {
+    "uptimerobot": {
+      "title": "PulseWatch vs UptimeRobot",
+      "subtitle": "Modern incident workflow, CN IM alerts, and founding pricing — without losing core uptime features.",
+      "feature": "Feature",
+      "cta": "Start free — Founding $1/mo",
+      "pricing": "See pricing",
+      "features": {
+        "multiRegion": "Multi-region probes",
+        "incidents": "Incident command center",
+        "statusPage": "Public status pages",
+        "cnIm": "DingTalk / Feishu / WeCom",
+        "onCall": "On-call rotation + escalation",
+        "apiKeys": "API keys",
+        "terraform": "Terraform provider",
+        "founding": "Founding member pricing"
+      }
+    },
+    "betterstack": {
+      "title": "PulseWatch vs Better Stack",
+      "subtitle": "Team incident tools at a fraction of the cost, with CN-ready alerting.",
+      "feature": "Feature",
+      "cta": "Start free",
+      "pricing": "Compare plans",
+      "features": {
+        "incidents": "Incident workflow",
+        "screenshots": "Failure screenshots",
+        "onCall": "On-call schedules",
+        "statusPage": "Status pages",
+        "founding": "Founding pricing",
+        "cnIm": "CN IM integrations",
+        "selfHost": "Self-hosted option"
+      }
+    }
   },
   "meta": {
     "title": "PulseWatch — Website Monitoring",

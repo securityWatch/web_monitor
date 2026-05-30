@@ -34,6 +34,7 @@
   },
   "nav": {
     "features": "功能",
+    "tools": "开发工具",
     "pricing": "定价",
     "docs": "文档",
     "login": "登录",
@@ -44,7 +45,24 @@
     "settings": "设置",
     "logout": "退出登录",
     "addMonitor": "添加监控",
-    "statusPages": "状态页"
+    "statusPages": "状态页",
+    "mobileNav": "主导航"
+  },
+  "commandPalette": {
+    "title": "命令面板",
+    "placeholder": "搜索监控或跳转…",
+    "dashboard": "仪表盘",
+    "monitors": "监控",
+    "incidents": "事件",
+    "onCall": "值班",
+    "settings": "设置"
+  },
+  "onCall": {
+    "title": "值班",
+    "subtitle": "确认告警并管理轮值",
+    "pendingAlerts": "待确认告警",
+    "noPending": "暂无待确认告警",
+    "ack": "确认"
   },
   "landing": {
     "heroTitle": "开发者真正爱用的网站监控",
@@ -79,6 +97,64 @@
     "monitors": "{count} 个监控",
     "getStarted": "立即开始",
     "finalCta": "3 分钟内开始监控"
+  },
+  "homeTools": {
+    "title": "免费开发者小工具",
+    "subtitle": "JSON 格式化、字符串转义、编码转换 — 全部在浏览器本地运行，无需注册。",
+    "transform": "转换",
+    "copy": "复制",
+    "copied": "已复制！",
+    "swap": "交换",
+    "clear": "清空",
+    "input": "输入",
+    "output": "输出",
+    "outputHint": "结果将显示在此",
+    "outputPlaceholder": "点击「转换」生成结果…",
+    "privacyNote": "所有处理均在浏览器本地完成 — 不会发送到服务器。",
+    "tabs": {
+      "json": "JSON",
+      "escape": "字符串转义",
+      "base64": "Base64",
+      "url": "URL",
+      "timestamp": "时间戳"
+    },
+    "json": {
+      "format": "格式化",
+      "minify": "压缩",
+      "validate": "校验"
+    },
+    "escape": {
+      "escape": "转义",
+      "unescape": "反转义"
+    },
+    "base64": {
+      "encode": "编码",
+      "decode": "解码"
+    },
+    "url": {
+      "encode": "编码",
+      "decode": "解码"
+    },
+    "timestamp": {
+      "toDate": "转日期",
+      "toTimestamp": "转时间戳",
+      "unitms": "毫秒",
+      "units": "秒"
+    },
+    "hints": {
+      "json": "粘贴原始 JSON",
+      "escape": "纯文本或 JSON 字符串字面量",
+      "base64": "文本或 Base64 字符串",
+      "url": "文本或 URL 编码字符串",
+      "timestamp": "Unix 时间戳或日期字符串"
+    },
+    "placeholders": {
+      "json": "{\"name\":\"PulseWatch\",\"uptime\":99.98}",
+      "escape": "Hello \"world\"\\n换行符",
+      "base64": "你好，世界！",
+      "url": "hello world & 特殊=字符",
+      "timestamp": "1717084800000 或 2024-05-30T12:00:00Z"
+    }
   },
   "auth": {
     "loginTitle": "欢迎回来",
@@ -138,6 +214,10 @@
     "emptyCta": "添加第一个监控",
     "filterStatus": "按状态筛选",
     "searchPlaceholder": "按名称或 URL 搜索...",
+    "select": "选择",
+    "batchPause": "暂停 {count} 项",
+    "batchDelete": "删除 {count} 项",
+    "batchDeleteConfirm": "确定删除 {count} 个监控？",
     "createTitle": "添加监控",
     "editTitle": "编辑监控",
     "saveChanges": "保存修改",
@@ -169,8 +249,8 @@
     "expectedStatusPlaceholder": "200, 201, 204",
     "expectedStatusHint": "多个状态码用英文逗号分隔，响应匹配其中任意一个即视为成功。",
     "enableRequestChain": "启用多步请求链",
-    "enableRequestChainHelpTitle": "多步请求链说明",
-    "enableRequestChainHelp": "适用于需要先登录、获取 token 再探测 API 等场景。开启后按顺序执行最多 5 步请求；可从每一步响应提取变量（如 token），在后续步骤的 URL、请求头或请求体中用 {{变量名}} 引用。第 1 步 URL 可留空，将使用上方「目标 URL」。",
+    "enableRequestChainHelpTitle": "何时使用多步请求链",
+    "enableRequestChainHelp": "解决什么问题\n受保护的 API 若直接探测，常返回 401/403，会被误判为服务宕机。\n\n适用场景\n• 先登录再探活（Session / JWT）\n• 先换 Token 再调业务接口\n• 多跳依赖（如创建资源后查询状态）\n\n怎么用\n最多 5 步按序执行；从上一步响应提取变量，在后续 URL、请求头或请求体中用 {{变量名}} 引用。",
     "requestChainHint": "按顺序执行多个请求。可在 URL、请求头、请求体中使用 {{变量名}}，从每一步响应中提取变量供下一步使用。",
     "chainDemoTitle": "配置示例：登录 + 带 Token 请求",
     "chainDemoDesc": "典型场景：第 1 步登录获取 token，第 2 步用 {{token}} 访问受保护接口。点击右侧按钮可一键填入。",
@@ -216,7 +296,11 @@
     "checkLogMeta": "共 {total} 条 · 第 {page}/{totalPages} 页",
     "pageInfo": "第 {page} / {totalPages} 页",
     "prevPage": "上一页",
-    "nextPage": "下一页"
+    "nextPage": "下一页",
+    "alertSettingsTitle": "告警设置",
+    "webhookAlertsEnabled": "为此监控发送 Webhook 告警",
+    "webhookAlertsHint": "关闭后，设置中的 Webhook 集成不会对此监控触发。邮件、Slack 等其他渠道不受影响。",
+    "webhookAlertsDisabledBadge": "Webhook 告警已关闭"
   },
   "incidents": {
     "title": "故障",
@@ -254,17 +338,38 @@
     "foundingMember": "创始会员",
     "integrationsTab": "集成",
     "integrations": {
-      "desc": "配置 Webhook、Slack 或 Discord，在监控故障或恢复时接收告警。",
+      "desc": "配置 Webhook、Slack、Discord、Teams、钉钉、飞书或企业微信，在监控故障或恢复时接收告警。",
       "addChannel": "添加渠道",
       "channelType": "渠道类型",
       "typeWebhook": "Webhook",
       "typeSlack": "Slack",
       "typeDiscord": "Discord",
+      "typeTeams": "Microsoft Teams",
+      "typeDingTalk": "钉钉",
+      "typeFeishu": "飞书 / Lark",
+      "typeWeCom": "企业微信",
       "typePagerDuty": "PagerDuty",
+      "typeOpsgenie": "Opsgenie",
+      "typeSms": "SMS",
+      "typeVoice": "语音电话",
+      "opsgenieKey": "Opsgenie API Key",
+      "voiceHint": "Business 套餐。DOWN 时 TTS 电话（15 分钟限速）。",
       "channelName": "名称",
       "channelNamePlaceholder": "例如：生产环境告警",
       "webhookUrl": "Webhook 地址",
-      "webhookHint": "Slack/Discord：在 workspace 设置中创建 Incoming Webhook 并粘贴 URL。",
+      "webhookHint": "Slack/Discord/Teams：在 workspace 设置中创建 Incoming Webhook 并粘贴 URL。",
+      "dingtalkHint": "钉钉群机器人：群设置 → 智能群助手 → 添加机器人 → 自定义。复制完整 Webhook URL（含 access_token）。若开启加签，在下方填写 SEC 开头的密钥并启用加签。",
+      "feishuHint": "飞书群机器人：群设置 → 群机器人 → 添加机器人 → 自定义。复制 Webhook 地址。若开启签名校验，填写密钥并启用加签。",
+      "wecomHint": "企业微信群机器人：群聊 → ··· → 群机器人 → 添加。复制 Webhook 地址（含 key）。企业微信机器人不支持 HMAC 加签；若企业开启 IP 白名单，请将 PulseWatch 服务器 IP 加入白名单。",
+      "signSecret": "加签密钥",
+      "signSecretPlaceholder": "SEC… 或机器人密钥",
+      "signEnabled": "启用加签",
+      "signHint": "钉钉/飞书机器人在安全设置中开启「加签」或「签名校验」时需填写。",
+      "signEnabledBadge": "已启用加签",
+      "pagerDutyKey": "PagerDuty Routing Key",
+      "smsPhone": "手机号 (E.164，如 +86138…)",
+      "smsHint": "需配置服务端 TWILIO_* 环境变量",
+      "delayMinutes": "告警延迟（分钟，DOWN 持续 N 分钟后通知）",
       "existingChannels": "已配置渠道",
       "noChannels": "暂无集成渠道。邮件告警默认发送到您的账户邮箱。",
       "sendTest": "发送测试",
@@ -287,6 +392,41 @@
     "allOperational": "所有系统运行正常",
     "degraded": "部分系统异常",
     "poweredBy": "由 PulseWatch 提供"
+  },
+  "compare": {
+    "uptimerobot": {
+      "title": "PulseWatch vs UptimeRobot",
+      "subtitle": "现代事件工作流、国内 IM 告警与创始会员定价。",
+      "feature": "功能",
+      "cta": "免费开始 — 创始会员 $1/月",
+      "pricing": "查看定价",
+      "features": {
+        "multiRegion": "多区域探针",
+        "incidents": "事件指挥台",
+        "statusPage": "公开状态页",
+        "cnIm": "钉钉 / 飞书 / 企微",
+        "onCall": "值班轮值与升级",
+        "apiKeys": "API Keys",
+        "terraform": "Terraform Provider",
+        "founding": "创始会员定价"
+      }
+    },
+    "betterstack": {
+      "title": "PulseWatch vs Better Stack",
+      "subtitle": "更低成本的团队事件工具，国内告警就绪。",
+      "feature": "功能",
+      "cta": "免费开始",
+      "pricing": "对比套餐",
+      "features": {
+        "incidents": "事件工作流",
+        "screenshots": "故障截图",
+        "onCall": "值班排班",
+        "statusPage": "状态页",
+        "founding": "创始定价",
+        "cnIm": "国内 IM 集成",
+        "selfHost": "自托管"
+      }
+    }
   },
   "meta": {
     "title": "PulseWatch — 网站监控",

@@ -20,6 +20,7 @@ interface PublicStatus {
   slug: string;
   components: Component[];
   updatedAt: string;
+  incidents?: { title: string; impact: string; status: string; createdAt: string }[];
 }
 
 export default function PublicStatusPage() {
@@ -98,6 +99,18 @@ export default function PublicStatusPage() {
           <div className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
             <CheckCircle className="h-4 w-4" />
             订阅已确认，故障时将收到邮件通知
+          </div>
+        )}
+
+        {data.incidents && data.incidents.filter((i) => i.status !== 'resolved').length > 0 && (
+          <div className="mt-6 space-y-2">
+            <h2 className="text-sm font-medium text-zinc-400">进行中事件</h2>
+            {data.incidents.filter((i) => i.status !== 'resolved').map((inc, idx) => (
+              <div key={idx} className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+                <p className="font-medium text-amber-200">{inc.title}</p>
+                <p className="text-xs text-amber-200/70">{inc.impact} · {new Date(inc.createdAt).toLocaleString()}</p>
+              </div>
+            ))}
           </div>
         )}
 

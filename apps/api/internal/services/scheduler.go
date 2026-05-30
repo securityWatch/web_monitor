@@ -13,15 +13,17 @@ import (
 )
 
 type Scheduler struct {
-	db     *pgxpool.Pool
-	cfg    *config.Config
-	email  *EmailService
-	alerts *AlertService
-	stop   chan struct{}
+	db        *pgxpool.Pool
+	cfg       *config.Config
+	email     *EmailService
+	alerts    *AlertService
+	incidents *IncidentService
+	probes    *ProbeDispatch
+	stop      chan struct{}
 }
 
-func NewScheduler(db *pgxpool.Pool, cfg *config.Config, email *EmailService, alerts *AlertService) *Scheduler {
-	return &Scheduler{db: db, cfg: cfg, email: email, alerts: alerts, stop: make(chan struct{})}
+func NewScheduler(db *pgxpool.Pool, cfg *config.Config, email *EmailService, alerts *AlertService, incidents *IncidentService) *Scheduler {
+	return &Scheduler{db: db, cfg: cfg, email: email, alerts: alerts, incidents: incidents, probes: NewProbeDispatch(db), stop: make(chan struct{})}
 }
 
 func (s *Scheduler) Start() {
@@ -43,7 +45,11 @@ func (s *Scheduler) loop() {
 		case <-ticker.C:
 			ctx := context.Background()
 			s.tick(ctx)
+			if s.cfg.ProbeDispatch {
+				s.probes.AggregatePending(ctx, s)
+			}
 			s.processPendingAlerts(ctx)
+			s.processOnCallEscalation(ctx)
 		}
 	}
 }
@@ -77,6 +83,15 @@ func (s *Scheduler) tick(ctx context.Context) {
 		if IsInMaintenance(ctx, s.db, orgID, id) {
 			nextRun := time.Now().UTC().Add(time.Duration(interval) * time.Second)
 			_, _ = s.db.Exec(ctx, `UPDATE monitors SET next_run_at = $1, updated_at = now() WHERE id = $2`, nextRun, id)
+			continue
+		}
+		if s.cfg.ProbeDispatch && mType != "heartbeat" {
+			nextRun := time.Now().UTC().Add(time.Duration(interval) * time.Second)
+			if err := s.probes.EnqueueRun(ctx, id, orgID, name, mType, target, interval, status, config, regions, lastHB, planTier); err != nil {
+				log.Printf("probe enqueue: %v", err)
+			} else {
+				_, _ = s.db.Exec(ctx, `UPDATE monitors SET next_run_at = $1, updated_at = now() WHERE id = $2`, nextRun, id)
+			}
 			continue
 		}
 		s.runCheck(ctx, id, orgID, name, mType, target, interval, status, config, regions, lastHB, planTier)
@@ -236,17 +251,22 @@ func (s *Scheduler) fireDownAlert(ctx context.Context, monitorID, orgID, name, d
 		log.Printf("[FLAP] Suppressing alerts for %s due to flapping", name)
 		return
 	}
-	var incidentID string
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO incidents (id, org_id, monitor_id, started_at, status, severity, message)
-		VALUES ($1, $2, $3, now(), 'open', 'critical', $4)
-		RETURNING id
-	`, uuid.New().String(), orgID, monitorID, detail).Scan(&incidentID)
+	incidentID, merged, err := s.incidents.CreateOrMerge(ctx, orgID, monitorID, name, detail)
 	if err != nil {
 		log.Printf("create incident: %v", err)
+		return
 	}
 	_, _ = s.db.Exec(ctx, `UPDATE monitors SET pending_down_at = NULL WHERE id = $1`, monitorID)
-	s.alerts.NotifyStatusChange(ctx, orgID, monitorID, name, "down", detail)
+	if !merged {
+		s.incidents.SyncStatusPage(ctx, orgID, incidentID, name+" — service disruption")
+		s.alerts.CreateOnCallAlert(ctx, orgID, incidentID)
+		s.alerts.NotifyStatusChange(ctx, orgID, monitorID, name, "down", detail)
+		var planTier, target, mType string
+		_ = s.db.QueryRow(ctx, `SELECT o.plan_tier, m.target_url, m.type FROM monitors m JOIN organizations o ON o.id = m.org_id WHERE m.id = $1`, monitorID).Scan(&planTier, &target, &mType)
+		if mType == "http" || mType == "keyword" {
+			go NewScreenshotService(s.db, s.cfg).CaptureOnDown(context.Background(), orgID, monitorID, "", target, detail, planTier)
+		}
+	}
 }
 
 func (s *Scheduler) handleRecovery(ctx context.Context, monitorID, orgID, name string) {
@@ -258,10 +278,7 @@ func (s *Scheduler) handleRecovery(ctx context.Context, monitorID, orgID, name s
 	if suppressedUntil != nil && time.Now().Before(*suppressedUntil) {
 		return
 	}
-	_, _ = s.db.Exec(ctx, `
-		UPDATE incidents SET status = 'resolved', resolved_at = now()
-		WHERE monitor_id = $1 AND status = 'open'
-	`, monitorID)
+	s.incidents.ResolveByMonitor(ctx, monitorID)
 	s.alerts.NotifyStatusChange(ctx, orgID, monitorID, name, "up", "Monitor recovered")
 }
 

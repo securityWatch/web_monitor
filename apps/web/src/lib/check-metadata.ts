@@ -19,6 +19,7 @@ export interface ChainStepDetail {
 export interface CheckMetadata {
   timings?: CheckTimings;
   chainStepDetails?: ChainStepDetail[];
+  responseBodySnippet?: string;
 }
 
 export function parseCheckMetadata(raw: unknown): CheckMetadata {
@@ -26,6 +27,7 @@ export function parseCheckMetadata(raw: unknown): CheckMetadata {
   const obj = raw as Record<string, unknown>;
   return {
     timings: parseTimings(obj.timings),
+    responseBodySnippet: typeof obj.responseBodySnippet === 'string' ? obj.responseBodySnippet : undefined,
     chainStepDetails: Array.isArray(obj.chainStepDetails)
       ? obj.chainStepDetails.map((s) => {
           const step = s as Record<string, unknown>;

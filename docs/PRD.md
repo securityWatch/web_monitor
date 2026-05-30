@@ -314,3 +314,6 @@ PulseWatch 界面需达到 **Stripe / Linear / Vercel / Better Stack** 级别的
 - [定价与增长策略](PRICING-AND-GROWTH.md)
 - [技术设计规格书](TECHNICAL-DESIGN.md)
 - [路线图与指标](ROADMAP.md)
+- [竞品分析与差距矩阵](COMPETITOR-ANALYSIS.md)
+- [产品路线图 Phase 5+](PRODUCT-ROADMAP.md)
+- [Phase 5 实施自动化计划](IMPLEMENTATION-ROADMAP.md)

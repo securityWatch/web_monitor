@@ -16,16 +16,20 @@ import (
 )
 
 type AlertService struct {
-	db    *pgxpool.Pool
-	email *EmailService
-	http  *http.Client
+	db     *pgxpool.Pool
+	email  *EmailService
+	twilio *TwilioService
+	oncall *OnCallService
+	http   *http.Client
 }
 
-func NewAlertService(db *pgxpool.Pool, email *EmailService) *AlertService {
+func NewAlertService(db *pgxpool.Pool, email *EmailService, twilio *TwilioService, oncall *OnCallService) *AlertService {
 	return &AlertService{
-		db:    db,
-		email: email,
-		http:  &http.Client{Timeout: 15 * time.Second},
+		db:     db,
+		email:  email,
+		twilio: twilio,
+		oncall: oncall,
+		http:   &http.Client{Timeout: 15 * time.Second},
 	}
 }
 
@@ -50,6 +54,14 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 	event := status
 	if status == "up" {
 		event = "recovery"
+	}
+
+	webhookEnabled := true
+	if monitorID != "" {
+		var cfg json.RawMessage
+		if err := a.db.QueryRow(ctx, `SELECT config FROM monitors WHERE id = $1`, monitorID).Scan(&cfg); err == nil {
+			webhookEnabled = MonitorWebhookAlertsEnabled(cfg)
+		}
 	}
 
 	rows, err := a.db.Query(ctx, `
@@ -84,6 +96,9 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 		var channelID, chType string
 		var chConfig json.RawMessage
 		if err := rows.Scan(&channelID, &chType, &chConfig); err != nil {
+			continue
+		}
+		if chType == "webhook" && !webhookEnabled {
 			continue
 		}
 		a.deliver(ctx, orgID, channelID, chType, chConfig, payload, &sentEmail)
@@ -180,6 +195,97 @@ func (a *AlertService) deliver(ctx context.Context, orgID, channelID, chType str
 				errMsg = err.Error()
 			}
 		}
+	case "teams":
+		if url := cfg["url"]; url != "" {
+			color := "E81123"
+			if payload.Event == "recovery" {
+				color = "2DC72D"
+			}
+			card := map[string]interface{}{
+				"@type":      "MessageCard",
+				"@context":   "https://schema.org/extensions",
+				"summary":    fmt.Sprintf("%s is %s", payload.Monitor, payload.Status),
+				"themeColor": color,
+				"sections": []map[string]interface{}{{
+					"activityTitle": fmt.Sprintf("**%s** is **%s**", payload.Monitor, payload.Status),
+					"facts": []map[string]string{
+						{"name": "Detail", "value": payload.Detail},
+						{"name": "Time", "value": payload.Timestamp},
+					},
+				}},
+			}
+			if err := a.postJSON(url, card); err != nil {
+				deliveryStatus = "failed"
+				errMsg = err.Error()
+			}
+		}
+	case "dingtalk":
+		cnCfg := parseCNChannelConfig(chConfig)
+		if err := a.deliverDingTalk(cnCfg, payload); err != nil {
+			deliveryStatus = "failed"
+			errMsg = err.Error()
+		}
+	case "feishu":
+		cnCfg := parseCNChannelConfig(chConfig)
+		if err := a.deliverFeishu(cnCfg, payload); err != nil {
+			deliveryStatus = "failed"
+			errMsg = err.Error()
+		}
+	case "wecom":
+		cnCfg := parseCNChannelConfig(chConfig)
+		if err := a.deliverWeCom(cnCfg, payload); err != nil {
+			deliveryStatus = "failed"
+			errMsg = err.Error()
+		}
+	case "sms":
+		phone := cfg["phone"]
+		if phone == "" && a.oncall != nil {
+			if oc := a.oncall.CurrentOnCall(ctx, orgID, 1); oc != nil && oc.Phone != "" {
+				phone = oc.Phone
+			}
+		}
+		if phone != "" && a.twilio != nil && a.twilio.Enabled() {
+			if err := a.sendSMS(ctx, orgID, phone, fmt.Sprintf("[PulseWatch] %s is %s — %s", payload.Monitor, payload.Status, payload.Detail)); err != nil {
+				deliveryStatus = "failed"
+				errMsg = err.Error()
+			}
+		} else if phone != "" {
+			deliveryStatus = "failed"
+			errMsg = "SMS not configured (set TWILIO_* env)"
+		}
+	case "voice":
+		phone := cfg["phone"]
+		if phone != "" && a.twilio != nil && a.twilio.Enabled() {
+			var tier string
+			_ = a.db.QueryRow(ctx, `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&tier)
+			if tier != "business" {
+				deliveryStatus = "failed"
+				errMsg = "voice alerts require Business plan"
+				break
+			}
+			var recent int
+			_ = a.db.QueryRow(ctx, `
+				SELECT COUNT(*) FROM alert_deliveries ad
+				JOIN alert_channels ac ON ac.id = ad.channel_id
+				WHERE ad.org_id = $1 AND ac.type = 'voice' AND ad.status = 'sent'
+				  AND ad.created_at > now() - interval '15 minutes'
+			`, orgID).Scan(&recent)
+			if recent > 0 {
+				break
+			}
+			tts := fmt.Sprintf("PulseWatch alert. %s is %s.", payload.Monitor, payload.Status)
+			if err := a.twilio.SendVoice(phone, tts); err != nil {
+				deliveryStatus = "failed"
+				errMsg = err.Error()
+			}
+		}
+	case "opsgenie":
+		if key := cfg["apiKey"]; key != "" {
+			if err := a.postOpsgenie(key, payload); err != nil {
+				deliveryStatus = "failed"
+				errMsg = err.Error()
+			}
+		}
 	}
 
 	payloadJSON, _ := json.Marshal(payload)
@@ -192,13 +298,42 @@ func (a *AlertService) deliver(ctx context.Context, orgID, channelID, chType str
 	`, uuid.New().String(), orgID, channelID, deliveryStatus, string(payloadJSON))
 }
 
+func (a *AlertService) NotifyOnCallEscalation(ctx context.Context, orgID, email, phone, msg string) {
+	if phone != "" && a.twilio != nil && a.twilio.Enabled() {
+		_ = a.sendSMS(ctx, orgID, phone, msg)
+	}
+	if email != "" {
+		_ = a.email.SendAlert(email, "On-call escalation", "escalation", msg)
+	}
+}
+
+func (a *AlertService) CreateOnCallAlert(ctx context.Context, orgID, incidentID string) {
+	var scheduleID string
+	err := a.db.QueryRow(ctx, `
+		SELECT id FROM on_call_schedules WHERE org_id = $1 AND enabled = true ORDER BY created_at LIMIT 1
+	`, orgID).Scan(&scheduleID)
+	if err != nil {
+		return
+	}
+	var userID *string
+	if a.oncall != nil {
+		if oc := a.oncall.CurrentOnCall(ctx, orgID, 1); oc != nil {
+			userID = &oc.UserID
+		}
+	}
+	_, _ = a.db.Exec(ctx, `
+		INSERT INTO on_call_alerts (id, org_id, incident_id, schedule_id, user_id, escalation_level)
+		VALUES ($1, $2, $3, $4, $5, 1)
+	`, uuid.New().String(), orgID, incidentID, scheduleID, userID)
+}
+
 func (a *AlertService) postPagerDuty(routingKey string, payload AlertPayload) error {
 	severity := "error"
 	if payload.Event == "recovery" {
 		severity = "info"
 	}
 	body := map[string]interface{}{
-		"routing_key": routingKey,
+		"routing_key":  routingKey,
 		"event_action": "trigger",
 		"payload": map[string]interface{}{
 			"summary":  fmt.Sprintf("%s is %s", payload.Monitor, payload.Status),
@@ -214,6 +349,61 @@ func (a *AlertService) postPagerDuty(routingKey string, payload AlertPayload) er
 		body["event_action"] = "resolve"
 	}
 	return a.postJSON("https://events.pagerduty.com/v2/enqueue", body)
+}
+
+func (a *AlertService) postOpsgenie(apiKey string, payload AlertPayload) error {
+	priority := "P3"
+	if payload.Event != "recovery" {
+		priority = "P2"
+	}
+	body := map[string]interface{}{
+		"message":     fmt.Sprintf("%s is %s", payload.Monitor, payload.Status),
+		"description": payload.Detail,
+		"priority":    priority,
+		"source":      "PulseWatch",
+		"tags":        []string{"pulsewatch"},
+	}
+	if payload.Event == "recovery" {
+		body["message"] = fmt.Sprintf("%s recovered", payload.Monitor)
+	}
+	req, err := http.NewRequest(http.MethodPost, "https://api.opsgenie.com/v2/alerts", bytes.NewReader(mustJSON(body)))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "GenieKey "+apiKey)
+	resp, err := a.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("opsgenie error %d: %s", resp.StatusCode, string(b))
+	}
+	return nil
+}
+
+func mustJSON(v interface{}) []byte {
+	b, _ := json.Marshal(v)
+	return b
+}
+
+func (a *AlertService) sendSMS(ctx context.Context, orgID, phone, body string) error {
+	month := time.Now().UTC().Format("2006-01-02")[:7] + "-01"
+	var count int
+	_ = a.db.QueryRow(ctx, `SELECT sms_count FROM sms_usage WHERE org_id = $1 AND month = $2::date`, orgID, month).Scan(&count)
+	if count >= 500 {
+		return fmt.Errorf("sms quota exceeded")
+	}
+	if err := a.twilio.SendSMS(phone, body); err != nil {
+		return err
+	}
+	_, _ = a.db.Exec(ctx, `
+		INSERT INTO sms_usage (id, org_id, month, sms_count) VALUES ($1, $2, $3::date, 1)
+		ON CONFLICT (org_id, month) DO UPDATE SET sms_count = sms_usage.sms_count + 1
+	`, uuid.New().String(), orgID, month)
+	return nil
 }
 
 func (a *AlertService) postJSON(url string, body interface{}) error {

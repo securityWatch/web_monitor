@@ -4,11 +4,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 
+interface AlertChannelConfig {
+  url?: string;
+  email?: string;
+  routingKey?: string;
+  apiKey?: string;
+  phone?: string;
+  secret?: string;
+  signEnabled?: boolean;
+}
+
 interface AlertChannel {
   id: string;
   name: string;
   type: string;
-  config: { url?: string; email?: string; routingKey?: string };
+  config: AlertChannelConfig;
   enabled: boolean;
 }
 
@@ -16,15 +26,37 @@ const CHANNEL_TYPES = [
   { id: 'webhook', labelKey: 'typeWebhook' },
   { id: 'slack', labelKey: 'typeSlack' },
   { id: 'discord', labelKey: 'typeDiscord' },
+  { id: 'teams', labelKey: 'typeTeams' },
+  { id: 'dingtalk', labelKey: 'typeDingTalk' },
+  { id: 'feishu', labelKey: 'typeFeishu' },
+  { id: 'wecom', labelKey: 'typeWeCom' },
   { id: 'pagerduty', labelKey: 'typePagerDuty' },
+  { id: 'opsgenie', labelKey: 'typeOpsgenie' },
+  { id: 'sms', labelKey: 'typeSms' },
+  { id: 'voice', labelKey: 'typeVoice' },
 ] as const;
+
+const CN_SIGN_TYPES = new Set(['dingtalk', 'feishu']);
+const URL_TYPES = new Set(['webhook', 'slack', 'discord', 'teams', 'dingtalk', 'feishu', 'wecom']);
+
+const emptyForm = () => ({
+  type: 'webhook',
+  name: '',
+  url: '',
+  routingKey: '',
+  apiKey: '',
+  phone: '',
+  secret: '',
+  signEnabled: false,
+  delayMinutes: 0,
+});
 
 export function AlertIntegrations() {
   const t = useTranslations('settings.integrations');
   const tc = useTranslations('common');
   const orgId = getStoredAuth()?.organization.id;
   const [channels, setChannels] = useState<AlertChannel[]>([]);
-  const [form, setForm] = useState({ type: 'webhook', name: '', url: '', routingKey: '', delayMinutes: 0 });
+  const [form, setForm] = useState(emptyForm);
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -41,19 +73,38 @@ export function AlertIntegrations() {
   const create = async () => {
     if (!orgId || !form.name.trim()) return;
     const isPD = form.type === 'pagerduty';
+    const isOG = form.type === 'opsgenie';
+    const isSMS = form.type === 'sms';
+    const isVoice = form.type === 'voice';
+    const needsUrl = URL_TYPES.has(form.type);
     if (isPD && !form.routingKey.trim()) return;
-    if (!isPD && !form.url.trim()) return;
+    if (isOG && !form.apiKey.trim()) return;
+    if ((isSMS || isVoice) && !form.phone.trim()) return;
+    if (needsUrl && !form.url.trim()) return;
+
+    let config: AlertChannelConfig = { url: form.url.trim() };
+    if (isPD) config = { routingKey: form.routingKey.trim() };
+    if (isOG) config = { apiKey: form.apiKey.trim() };
+    if (isSMS || isVoice) config = { phone: form.phone.trim() };
+    if (CN_SIGN_TYPES.has(form.type)) {
+      config = {
+        url: form.url.trim(),
+        secret: form.secret.trim(),
+        signEnabled: form.signEnabled,
+      };
+    }
+
     await apiFetch(`/api/v1/orgs/${orgId}/alert-channels`, {
       method: 'POST',
       body: JSON.stringify({
         name: form.name.trim(),
         type: form.type,
-        config: isPD ? { routingKey: form.routingKey.trim() } : { url: form.url.trim() },
+        config,
         enabled: true,
         delayMinutes: form.delayMinutes,
       }),
     });
-    setForm({ type: 'webhook', name: '', url: '', routingKey: '', delayMinutes: 0 });
+    setForm(emptyForm());
     setMsg(t('channelCreated'));
     load();
   };
@@ -77,6 +128,19 @@ export function AlertIntegrations() {
     if (!orgId) return;
     await apiFetch(`/api/v1/orgs/${orgId}/alert-channels/${id}/test`, { method: 'POST' });
     setMsg(t('testSent'));
+  };
+
+  const channelHintKey = () => {
+    if (form.type === 'dingtalk') return 'dingtalkHint';
+    if (form.type === 'feishu') return 'feishuHint';
+    if (form.type === 'wecom') return 'wecomHint';
+    return 'webhookHint';
+  };
+
+  const channelSummary = (ch: AlertChannel) => {
+    const parts = [ch.config?.url, ch.config?.routingKey, ch.config?.apiKey, ch.config?.phone].filter(Boolean);
+    if (ch.config?.signEnabled) parts.push(t('signEnabledBadge'));
+    return parts.join(' · ') || '—';
   };
 
   if (loading) return <p className="text-zinc-500">{tc('loading')}</p>;
@@ -108,19 +172,55 @@ export function AlertIntegrations() {
         <div>
           {form.type === 'pagerduty' ? (
             <>
-              <label className="mb-1 block text-xs text-zinc-500">PagerDuty Routing Key</label>
+              <label className="mb-1 block text-xs text-zinc-500">{t('pagerDutyKey')}</label>
               <input className="input font-mono text-sm" value={form.routingKey} onChange={(e) => setForm({ ...form, routingKey: e.target.value })} />
+            </>
+          ) : form.type === 'opsgenie' ? (
+            <>
+              <label className="mb-1 block text-xs text-zinc-500">{t('opsgenieKey')}</label>
+              <input className="input font-mono text-sm" value={form.apiKey} onChange={(e) => setForm({ ...form, apiKey: e.target.value })} />
+            </>
+          ) : form.type === 'sms' || form.type === 'voice' ? (
+            <>
+              <label className="mb-1 block text-xs text-zinc-500">{t('smsPhone')}</label>
+              <input className="input font-mono text-sm" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+8613800138000" />
+              <p className="mt-1 text-xs text-zinc-600">{form.type === 'voice' ? t('voiceHint') : t('smsHint')}</p>
             </>
           ) : (
             <>
               <label className="mb-1 block text-xs text-zinc-500">{t('webhookUrl')}</label>
               <input className="input font-mono text-sm" placeholder="https://..." value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-              <p className="mt-1 text-xs text-zinc-600">{t('webhookHint')}</p>
+              <p className="mt-1 text-xs text-zinc-600">{t(channelHintKey())}</p>
             </>
           )}
         </div>
+        {CN_SIGN_TYPES.has(form.type) && (
+          <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">{t('signSecret')}</label>
+              <input
+                className="input font-mono text-sm"
+                type="password"
+                autoComplete="off"
+                placeholder={t('signSecretPlaceholder')}
+                value={form.secret}
+                onChange={(e) => setForm({ ...form, secret: e.target.value })}
+              />
+            </div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                className="rounded border-zinc-600 bg-zinc-900"
+                checked={form.signEnabled}
+                onChange={(e) => setForm({ ...form, signEnabled: e.target.checked })}
+              />
+              {t('signEnabled')}
+            </label>
+            <p className="text-xs text-zinc-600">{t('signHint')}</p>
+          </div>
+        )}
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">告警延迟（分钟，DOWN 持续 N 分钟后通知）</label>
+          <label className="mb-1 block text-xs text-zinc-500">{t('delayMinutes')}</label>
           <input type="number" min={0} className="input w-32" value={form.delayMinutes} onChange={(e) => setForm({ ...form, delayMinutes: Number(e.target.value) })} />
         </div>
         <button type="button" onClick={create} className="btn-primary">{t('addChannel')}</button>
@@ -136,7 +236,7 @@ export function AlertIntegrations() {
               <div key={ch.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-800 p-3">
                 <div>
                   <p className="font-medium">{ch.name} <span className="text-xs text-zinc-500">({ch.type})</span></p>
-                  <p className="mt-1 truncate font-mono text-xs text-zinc-500">{ch.config?.url || ch.config?.routingKey || '—'}</p>
+                  <p className="mt-1 truncate font-mono text-xs text-zinc-500">{channelSummary(ch)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button type="button" className="btn-secondary text-xs" onClick={() => test(ch.id)}>{t('sendTest')}</button>

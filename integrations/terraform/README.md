@@ -39,12 +39,42 @@ resource "null_resource" "monitor" {
 }
 ```
 
-## 正式 Provider
+## 正式 Provider v0.1
 
-完整的 `terraform-provider-pulsewatch` 尚在规划中。当前推荐：
+`integrations/terraform/provider/` 包含最小 API 客户端（`client.go`），支持 `CreateMonitor` / `DeleteMonitor`。
 
-1. 使用 [OpenAPI Generator](https://openapi-generator.tech/) 从 `/api/v1/openapi.json` 生成客户端
-2. 或使用 [RestAPI Provider](https://registry.terraform.io/providers/Mastercard/restapi/latest) 配置 CRUD 端点
+```bash
+cd integrations/terraform/provider
+export PULSEWATCH_API_URL=http://49.234.112.108
+export PULSEWATCH_API_KEY=pw_xxx
+export PULSEWATCH_ORG_ID=your-org-uuid
+go run .
+```
+
+Terraform resource 示例（配合 `terraform` CLI 本地 dev override）：
+
+```hcl
+terraform {
+  required_providers {
+    pulsewatch = {
+      source  = "pulsewatch/pulsewatch"
+      version = "0.1.0"
+    }
+  }
+}
+
+resource "pulsewatch_monitor" "api" {
+  name             = "API Health"
+  type             = "http"
+  target_url       = "https://api.example.com/health"
+  interval_seconds = 300
+  regions          = ["us-east", "ap-southeast"]
+}
+```
+
+完整 HashiCorp plugin 注册将在 v0.2 发布；当前可用 `null_resource` + `client.go` 或 OpenAPI 生成器。
+
+## 旧版 curl 示例
 
 ## API 文档
 
