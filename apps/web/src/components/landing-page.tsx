@@ -131,7 +131,7 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
         </div>
       </section>
 
-      <section id="features" className="border-t border-zinc-800 bg-zinc-950/50 py-24">
+      <section id="features" className="scroll-mt-20 border-t border-zinc-800 bg-zinc-950/50 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="text-center text-3xl font-bold">{t('featuresTitle')}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-zinc-400">{t('featuresSubtitle')}</p>
@@ -165,7 +165,7 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
         </div>
       </section>
 
-      <section id="faq" className="border-t border-zinc-800 bg-zinc-950/30 py-20">
+      <section id="faq" className="scroll-mt-20 border-t border-zinc-800 bg-zinc-950/30 py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
           <h2 className="text-3xl font-bold text-center">{t('faqTitle')}</h2>
           <p className="mt-3 text-center text-zinc-400">{t('faqSubtitle')}</p>
