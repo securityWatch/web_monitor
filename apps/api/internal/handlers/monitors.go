@@ -157,7 +157,7 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		req.IntervalSeconds = 86400
 	}
 
-	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true}
+	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true, "tamper": true}
 	if !validTypes[strings.ToLower(req.Type)] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid monitor type"})
 		return
@@ -172,6 +172,13 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 	} else if strings.ToLower(req.Type) == "domain" {
 		target = strings.TrimPrefix(strings.TrimPrefix(strings.ToLower(req.TargetURL), "domain://"), "http://")
 		target = strings.Split(target, "/")[0]
+	} else if strings.ToLower(req.Type) == "tamper" {
+		var err error
+		target, err = services.NormalizeURL(req.TargetURL)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	} else if strings.ToLower(req.Type) == "pagespeed" {
 		var err error
 		target, err = services.NormalizeURL(req.TargetURL)
@@ -527,4 +534,59 @@ func (h *MonitorHandler) GetArtifacts(c *gin.Context) {
 		arts = []map[string]interface{}{}
 	}
 	c.JSON(http.StatusOK, gin.H{"artifacts": arts})
+}
+
+func (h *MonitorHandler) CaptureBaseline(c *gin.Context) {
+	orgID := c.Param("orgId")
+	id := c.Param("id")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	if GetRole(c) == "viewer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	m, err := h.fetchMonitor(c, orgID, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	cfg := m.Config
+	if cfg == nil {
+		cfg = json.RawMessage(`{}`)
+	}
+
+	var patch map[string]interface{}
+	switch strings.ToLower(m.Type) {
+	case "dns":
+		patch, err = services.CaptureDNSBaseline(ctx, m.TargetURL, cfg)
+	case "tamper":
+		patch, err = services.CaptureTamperBaseline(ctx, m.TargetURL, cfg)
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "baseline capture not supported for this monitor type"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	base := map[string]interface{}{}
+	_ = json.Unmarshal(cfg, &base)
+	for k, v := range patch {
+		base[k] = v
+	}
+	merged, _ := json.Marshal(base)
+	_, err = h.db.Exec(ctx, `UPDATE monitors SET config = $1::jsonb, updated_at = now() WHERE id = $2 AND org_id = $3`, string(merged), id, orgID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	updated, _ := h.fetchMonitor(c, orgID, id)
+	c.JSON(http.StatusOK, gin.H{"monitor": updated, "baseline": patch})
 }

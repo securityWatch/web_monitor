@@ -113,7 +113,74 @@ export interface MonitorAlertConfig {
   webhookEnabled: boolean;
 }
 
+export interface SslMonitorConfig {
+  warnDays?: number;
+}
+
+export interface DnsMonitorConfig {
+  recordType?: string;
+  baselineMode?: 'auto' | 'manual';
+  expectedValue?: string;
+  trustedResolvers?: string;
+}
+
+export interface TamperMonitorConfig {
+  changeThresholdPercent?: number;
+  detectMajorChange?: boolean;
+  policyCategories?: { gambling?: boolean; adult?: boolean };
+  customBlocklist?: string;
+  contentScanConsent?: boolean;
+}
+
+export const defaultSslConfig = (): SslMonitorConfig => ({ warnDays: 30 });
+export const defaultDnsConfig = (): DnsMonitorConfig => ({ recordType: 'A', baselineMode: 'auto' });
+export const defaultTamperConfig = (): TamperMonitorConfig => ({
+  changeThresholdPercent: 10,
+  detectMajorChange: true,
+  policyCategories: {},
+});
+
 export const defaultAlertConfig = (): MonitorAlertConfig => ({ webhookEnabled: true });
+
+export function parseSslConfig(raw: unknown): SslMonitorConfig {
+  if (!raw || typeof raw !== 'object') return defaultSslConfig();
+  const obj = raw as Record<string, unknown>;
+  return { warnDays: typeof obj.warnDays === 'number' ? obj.warnDays : 30 };
+}
+
+export function parseDnsConfig(raw: unknown): DnsMonitorConfig {
+  if (!raw || typeof raw !== 'object') return defaultDnsConfig();
+  const obj = raw as Record<string, unknown>;
+  const resolvers = Array.isArray(obj.trustedResolvers)
+    ? (obj.trustedResolvers as string[]).join(', ')
+    : typeof obj.trustedResolvers === 'string'
+      ? obj.trustedResolvers
+      : '';
+  return {
+    recordType: typeof obj.recordType === 'string' ? obj.recordType : 'A',
+    baselineMode: obj.baselineMode === 'manual' ? 'manual' : 'auto',
+    expectedValue: typeof obj.expectedValue === 'string' ? obj.expectedValue : '',
+    trustedResolvers: resolvers,
+  };
+}
+
+export function parseTamperConfig(raw: unknown): TamperMonitorConfig {
+  if (!raw || typeof raw !== 'object') return defaultTamperConfig();
+  const obj = raw as Record<string, unknown>;
+  const pc = obj.policyCategories as Record<string, boolean> | undefined;
+  const blocklist = Array.isArray(obj.customBlocklist)
+    ? (obj.customBlocklist as string[]).join('\n')
+    : typeof obj.customBlocklist === 'string'
+      ? obj.customBlocklist
+      : '';
+  return {
+    changeThresholdPercent: typeof obj.changeThresholdPercent === 'number' ? obj.changeThresholdPercent : 10,
+    detectMajorChange: obj.detectMajorChange !== false,
+    policyCategories: pc || {},
+    customBlocklist: blocklist,
+    contentScanConsent: obj.contentScanConsent === true,
+  };
+}
 
 export function parseAlertConfig(raw: unknown): MonitorAlertConfig {
   if (!raw || typeof raw !== 'object') return defaultAlertConfig();
@@ -130,6 +197,11 @@ export function mergeMonitorConfigForSave(
   existingRaw: unknown,
   httpPayload: HttpMonitorConfig | undefined,
   alertConfig: MonitorAlertConfig,
+  security?: {
+    ssl?: SslMonitorConfig;
+    dns?: DnsMonitorConfig;
+    tamper?: TamperMonitorConfig;
+  },
 ): Record<string, unknown> {
   const base: Record<string, unknown> =
     existingRaw && typeof existingRaw === 'object' && !Array.isArray(existingRaw)
@@ -138,6 +210,38 @@ export function mergeMonitorConfigForSave(
 
   if (httpPayload) {
     Object.assign(base, httpPayload);
+  }
+
+  if (security?.ssl?.warnDays) {
+    base.warnDays = security.ssl.warnDays;
+  }
+
+  if (security?.dns) {
+    const d = security.dns;
+    if (d.recordType) base.recordType = d.recordType;
+    if (d.baselineMode) base.baselineMode = d.baselineMode;
+    if (d.expectedValue?.trim()) base.expectedValue = d.expectedValue.trim();
+    else delete base.expectedValue;
+    const resolvers = (d.trustedResolvers || '')
+      .split(/[,，\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (resolvers.length > 0) base.trustedResolvers = resolvers;
+    else delete base.trustedResolvers;
+  }
+
+  if (security?.tamper) {
+    const tm = security.tamper;
+    if (tm.changeThresholdPercent != null) base.changeThresholdPercent = tm.changeThresholdPercent;
+    base.detectMajorChange = tm.detectMajorChange !== false;
+    base.policyCategories = tm.policyCategories || {};
+    base.contentScanConsent = !!tm.contentScanConsent;
+    const keywords = (tm.customBlocklist || '')
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (keywords.length > 0) base.customBlocklist = keywords;
+    else delete base.customBlocklist;
   }
 
   base.alerts = { webhookEnabled: alertConfig.webhookEnabled };

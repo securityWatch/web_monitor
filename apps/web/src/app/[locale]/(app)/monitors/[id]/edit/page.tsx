@@ -6,7 +6,27 @@ import { useParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 import { MonitorHttpConfig } from '@/components/monitor-http-config';
-import { HttpMonitorConfig, buildHttpConfigPayload, defaultAlertConfig, defaultHttpConfig, mergeMonitorConfigForSave, parseAlertConfig, parseHttpConfig } from '@/lib/monitor-config';
+import { MonitorSslConfig } from '@/components/monitor-ssl-config';
+import { MonitorDnsConfig } from '@/components/monitor-dns-config';
+import { MonitorTamperConfig } from '@/components/monitor-tamper-config';
+import {
+  HttpMonitorConfig,
+  buildHttpConfigPayload,
+  defaultAlertConfig,
+  defaultDnsConfig,
+  defaultHttpConfig,
+  defaultSslConfig,
+  defaultTamperConfig,
+  DnsMonitorConfig,
+  mergeMonitorConfigForSave,
+  parseAlertConfig,
+  parseDnsConfig,
+  parseHttpConfig,
+  parseSslConfig,
+  parseTamperConfig,
+  SslMonitorConfig,
+  TamperMonitorConfig,
+} from '@/lib/monitor-config';
 
 interface Monitor {
   id: string;
@@ -27,6 +47,9 @@ export default function EditMonitorPage() {
   const [form, setForm] = useState({ name: '', targetUrl: '', intervalSeconds: 300 });
   const [type, setType] = useState('http');
   const [httpConfig, setHttpConfig] = useState<HttpMonitorConfig>(defaultHttpConfig());
+  const [sslConfig, setSslConfig] = useState<SslMonitorConfig>(defaultSslConfig());
+  const [dnsConfig, setDnsConfig] = useState<DnsMonitorConfig>(defaultDnsConfig());
+  const [tamperConfig, setTamperConfig] = useState<TamperMonitorConfig>(defaultTamperConfig());
   const [alertConfig, setAlertConfig] = useState(defaultAlertConfig());
   const [rawConfig, setRawConfig] = useState<unknown>({});
   const [loading, setLoading] = useState(true);
@@ -41,11 +64,21 @@ export default function EditMonitorPage() {
         setType(m.type);
         setRawConfig(m.config ?? {});
         setHttpConfig(parseHttpConfig(m.config));
+        setSslConfig(parseSslConfig(m.config));
+        setDnsConfig(parseDnsConfig(m.config));
+        setTamperConfig(parseTamperConfig(m.config));
         setAlertConfig(parseAlertConfig(m.config));
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Error'))
       .finally(() => setLoading(false));
   }, [orgId, id]);
+
+  const securityPayload = () => {
+    if (type === 'ssl') return { ssl: sslConfig };
+    if (type === 'dns') return { dns: dnsConfig };
+    if (type === 'tamper') return { tamper: tamperConfig };
+    return undefined;
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +87,7 @@ export default function EditMonitorPage() {
     setError('');
     try {
       const httpPayload = buildHttpConfigPayload(httpConfig, type);
-      const config = mergeMonitorConfigForSave(rawConfig, httpPayload, alertConfig);
+      const config = mergeMonitorConfigForSave(rawConfig, httpPayload, alertConfig, securityPayload());
       await apiFetch(`/api/v1/orgs/${orgId}/monitors/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ ...form, config }),
@@ -91,6 +124,9 @@ export default function EditMonitorPage() {
           <p className="mt-1 text-xs text-zinc-500">{t('typeReadonly')}</p>
         </div>
         <MonitorHttpConfig type={type} config={httpConfig} onChange={setHttpConfig} />
+        {type === 'ssl' && <MonitorSslConfig config={sslConfig} onChange={setSslConfig} />}
+        {type === 'dns' && <MonitorDnsConfig config={dnsConfig} onChange={setDnsConfig} />}
+        {type === 'tamper' && <MonitorTamperConfig monitorId={id} config={tamperConfig} onChange={setTamperConfig} />}
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
           <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>

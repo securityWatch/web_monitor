@@ -21,6 +21,7 @@ type stepResult struct {
 	body       []byte
 	headers    http.Header
 	timings    HTTPTimings
+	tls        *tls.ConnectionState
 }
 
 func executeHTTPMonitor(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, monitorType string, start time.Time) CheckOutcome {
@@ -117,11 +118,16 @@ func runHTTPChain(ctx context.Context, targetURL string, cfg HTTPMonitorConfig, 
 	setPrimaryTimings(metadata, last.timings)
 	outcome := evaluateHTTPBody(last.body, code, elapsedMs(start), cfg.Keyword, cfg.KeywordMustContain, cfg.JSONAssertions, monitorType, metadata)
 	if monitorType == "ssl" {
-		if tlsMeta := sslMetaFromTimingsRequest(ctx, last.url, timeout); tlsMeta != nil {
+		if tlsMeta := sslMetaFromTLS(last.tls); tlsMeta != nil {
+			for k, v := range tlsMeta {
+				outcome.Metadata[k] = v
+			}
+		} else if tlsMeta := sslMetaFromTimingsRequest(ctx, last.url, timeout); tlsMeta != nil {
 			for k, v := range tlsMeta {
 				outcome.Metadata[k] = v
 			}
 		}
+		return applySSLMonitorOutcome(outcome, monitorType)
 	}
 	return outcome
 }
@@ -140,7 +146,7 @@ func runSingleHTTP(ctx context.Context, url, method, body string, headers map[st
 	}
 
 	if monitorType == "ssl" {
-		if tlsMeta := sslMetaFromTimingsRequest(ctx, url, timeout); tlsMeta != nil {
+		if tlsMeta := sslMetaFromTLS(res.tls); tlsMeta != nil {
 			for k, v := range tlsMeta {
 				metadata[k] = v
 			}
@@ -153,7 +159,7 @@ func runSingleHTTP(ctx context.Context, url, method, body string, headers map[st
 		return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("expected status one of [%s], got %d", formatExpectedStatuses(allowedStatuses), res.statusCode), Metadata: metadata}
 	}
 
-	return evaluateHTTPBody(res.body, res.statusCode, elapsedMs(start), keyword, keywordMustContain, jsonAssertions, monitorType, metadata)
+	return applySSLMonitorOutcome(evaluateHTTPBody(res.body, res.statusCode, elapsedMs(start), keyword, keywordMustContain, jsonAssertions, monitorType, metadata), monitorType)
 }
 
 func newHTTPClient(timeout time.Duration) *http.Client {
@@ -211,6 +217,7 @@ func doHTTPRequest(ctx context.Context, client *http.Client, method, url, body s
 		body:       respBody,
 		headers:    resp.Header,
 		timings:    collector.result(reqStart, bodyEnd),
+		tls:        resp.TLS,
 	}, nil
 }
 
@@ -355,20 +362,41 @@ func sslMetaFromTimingsRequest(ctx context.Context, url string, timeout time.Dur
 	}
 	defer resp.Body.Close()
 	_, _ = io.ReadAll(io.LimitReader(resp.Body, 4096))
-	if resp.TLS == nil || len(resp.TLS.PeerCertificates) == 0 {
+	_ = collector.result(reqStart, time.Now())
+	return sslMetaFromTLS(resp.TLS)
+}
+
+func sslMetaFromTLS(state *tls.ConnectionState) map[string]interface{} {
+	if state == nil || len(state.PeerCertificates) == 0 {
 		return nil
 	}
-	cert := resp.TLS.PeerCertificates[0]
-	daysLeft := int(time.Until(cert.NotAfter).Hours() / 24)
-	meta := map[string]interface{}{
-		"sslDaysLeft":  daysLeft,
-		"sslExpiresAt": cert.NotAfter.Format(time.RFC3339),
+	cert := state.PeerCertificates[0]
+	meta := map[string]interface{}{}
+	issuer := cert.Issuer.CommonName
+	if issuer == "" && len(cert.Issuer.Organization) > 0 {
+		issuer = cert.Issuer.Organization[0]
 	}
-	if daysLeft < 30 {
-		meta["sslWarning"] = true
-	}
-	_ = collector.result(reqStart, time.Now())
+	enrichSSLMeta(meta, cert.NotAfter, issuer, state.Version)
 	return meta
+}
+
+func applySSLMonitorOutcome(out CheckOutcome, monitorType string) CheckOutcome {
+	if monitorType != "ssl" {
+		return out
+	}
+	days, ok := intFromMeta(out.Metadata, "sslDaysLeft")
+	if !ok {
+		out.IsUp = false
+		if out.ErrorMessage == "" {
+			out.ErrorMessage = "unable to read SSL certificate"
+		}
+		return out
+	}
+	if days < 0 {
+		out.IsUp = false
+		out.ErrorMessage = "SSL certificate expired"
+	}
+	return out
 }
 
 func stepLabel(step HTTPStep, index int) string {

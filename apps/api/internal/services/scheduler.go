@@ -19,11 +19,14 @@ type Scheduler struct {
 	alerts    *AlertService
 	incidents *IncidentService
 	probes    *ProbeDispatch
+	security  *SecurityEvents
 	stop      chan struct{}
 }
 
 func NewScheduler(db *pgxpool.Pool, cfg *config.Config, email *EmailService, alerts *AlertService, incidents *IncidentService) *Scheduler {
-	return &Scheduler{db: db, cfg: cfg, email: email, alerts: alerts, incidents: incidents, probes: NewProbeDispatch(db), stop: make(chan struct{})}
+	s := &Scheduler{db: db, cfg: cfg, email: email, alerts: alerts, incidents: incidents, probes: NewProbeDispatch(db), stop: make(chan struct{})}
+	s.security = NewSecurityEvents(db, alerts, incidents)
+	return s
 }
 
 func (s *Scheduler) Start() {
@@ -202,11 +205,7 @@ func (s *Scheduler) runCheck(ctx context.Context, id, orgID, name, mType, target
 		// first check still down — pending_down_at already set
 	}
 
-	if sslDays, ok := outcome.Metadata["sslDaysLeft"].(int); ok && sslDays <= 30 {
-		if !IsInMaintenance(ctx, s.db, orgID, id) {
-			s.alerts.NotifySSLWarning(ctx, orgID, name, sslDays)
-		}
-	}
+	s.security.AfterCheck(ctx, id, orgID, name, mType, config, outcome)
 
 	s.checkResponseAnomaly(ctx, id, orgID, name, outcome.ResponseMs)
 }

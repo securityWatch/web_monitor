@@ -72,8 +72,9 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 		  AND (ar.monitor_id IS NULL OR ar.monitor_id = $2)
 		  AND (
 		    ar.event_type = 'all'
-		    OR (ar.event_type = 'down' AND $3 IN ('down', 'ssl_warning'))
-		    OR (ar.event_type = 'up' AND $3 = 'up')
+		    OR ar.event_type = $3
+		    OR (ar.event_type = 'down' AND $3 = 'down')
+		    OR (ar.event_type = 'up' AND $3 IN ('up', 'recovery'))
 		  )
 	`, orgID, monitorID, status)
 	if err != nil {
@@ -109,16 +110,39 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 	}
 }
 
+func (a *AlertService) NotifySecurityEvent(ctx context.Context, orgID, monitorID, name, eventType, detail string) {
+	a.NotifyStatusChange(ctx, orgID, monitorID, name, eventType, detail)
+}
+
+func (a *AlertService) NotifySSLWarning(ctx context.Context, orgID, name string, daysLeft int) {
+	detail := fmt.Sprintf("SSL certificate expires in %d days", daysLeft)
+	a.NotifyStatusChange(ctx, orgID, "", name, "ssl_warning", detail)
+}
+
 func (a *AlertService) fallbackOwnerEmail(ctx context.Context, orgID, name, status, detail string) {
 	var email string
-	_ = a.db.QueryRow(ctx, `
-		SELECT u.email FROM users u
-		JOIN organization_members om ON om.user_id = u.id AND om.role = 'owner'
-		WHERE om.org_id = $1 AND u.notify_incidents = true LIMIT 1
-	`, orgID).Scan(&email)
-	if email != "" {
-		_ = a.email.SendAlert(email, name, status, detail)
+	var notifyIncidents, notifySSL bool = true, true
+
+	if status == "ssl_warning" {
+		_ = a.db.QueryRow(ctx, `
+			SELECT u.email, u.notify_ssl FROM users u
+			JOIN organization_members om ON om.user_id = u.id AND om.role = 'owner'
+			WHERE om.org_id = $1 LIMIT 1
+		`, orgID).Scan(&email, &notifySSL)
+		if !notifySSL || email == "" {
+			return
+		}
+	} else {
+		_ = a.db.QueryRow(ctx, `
+			SELECT u.email, u.notify_incidents FROM users u
+			JOIN organization_members om ON om.user_id = u.id AND om.role = 'owner'
+			WHERE om.org_id = $1 LIMIT 1
+		`, orgID).Scan(&email, &notifyIncidents)
+		if !notifyIncidents || email == "" {
+			return
+		}
 	}
+	_ = a.email.SendAlert(email, name, status, detail)
 }
 
 func (a *AlertService) deliver(ctx context.Context, orgID, channelID, chType string, chConfig json.RawMessage, payload AlertPayload, sentEmail *bool) {
@@ -449,9 +473,4 @@ func (a *AlertService) SendTest(ctx context.Context, orgID, channelID string) er
 		Event:     "test",
 	}, &sent)
 	return nil
-}
-
-func (a *AlertService) NotifySSLWarning(ctx context.Context, orgID, name string, daysLeft int) {
-	detail := fmt.Sprintf("SSL certificate expires in %d days", daysLeft)
-	a.NotifyStatusChange(ctx, orgID, "", name, "ssl_warning", detail)
 }

@@ -22,6 +22,44 @@ export interface CheckMetadata {
   responseBodySnippet?: string;
 }
 
+export interface SecurityCheckMetadata {
+  sslDaysLeft?: number;
+  sslExpiresAt?: string;
+  issuer?: string;
+  tlsVersion?: string;
+  records?: string[];
+  recordType?: string;
+  dnsChanged?: boolean;
+  bodyHash?: string;
+  diffPercent?: number;
+  diffSummary?: string;
+  matchedKeywords?: string[];
+}
+
+export function parseSecurityMetadata(raw: unknown): SecurityCheckMetadata {
+  if (!raw || typeof raw !== 'object') return {};
+  const obj = raw as Record<string, unknown>;
+  const records = Array.isArray(obj.records)
+    ? (obj.records as unknown[]).map(String)
+    : undefined;
+  const matched = Array.isArray(obj.matchedKeywords)
+    ? (obj.matchedKeywords as unknown[]).map(String)
+    : undefined;
+  return {
+    sslDaysLeft: typeof obj.sslDaysLeft === 'number' ? obj.sslDaysLeft : undefined,
+    sslExpiresAt: typeof obj.sslExpiresAt === 'string' ? obj.sslExpiresAt : undefined,
+    issuer: typeof obj.issuer === 'string' ? obj.issuer : undefined,
+    tlsVersion: typeof obj.tlsVersion === 'string' ? obj.tlsVersion : undefined,
+    records,
+    recordType: typeof obj.recordType === 'string' ? obj.recordType : undefined,
+    dnsChanged: obj.dnsChanged === true || obj.changed === true,
+    bodyHash: typeof obj.bodyHash === 'string' ? obj.bodyHash : undefined,
+    diffPercent: typeof obj.diffPercent === 'number' ? obj.diffPercent : undefined,
+    diffSummary: typeof obj.diffSummary === 'string' ? obj.diffSummary : undefined,
+    matchedKeywords: matched,
+  };
+}
+
 export function parseCheckMetadata(raw: unknown): CheckMetadata {
   if (!raw || typeof raw !== 'object') return {};
   const obj = raw as Record<string, unknown>;

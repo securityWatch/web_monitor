@@ -14,7 +14,9 @@ import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Search } from 'lucide-r
 
 import { apiFetch, getStoredAuth } from '@/lib/api';
 
-import { parseCheckMetadata } from '@/lib/check-metadata';
+import { parseCheckMetadata, parseSecurityMetadata } from '@/lib/check-metadata';
+
+import { MonitorSecurityStatus } from '@/components/monitor-security-status';
 
 import { TimingBreakdown } from '@/components/check-timing-breakdown';
 
@@ -228,6 +230,7 @@ export default function MonitorDetailPage() {
 
 
   const latestMeta = parseCheckMetadata(latestCheck?.metadata);
+  const securityMeta = parseSecurityMetadata(latestCheck?.metadata);
 
   const latestResponseMs = monitor.lastResponseMs ?? latestCheck?.responseMs;
 
@@ -332,6 +335,10 @@ export default function MonitorDetailPage() {
         <div className="card"><p className="text-sm text-zinc-500">{t('rangeErrorRate')}</p><p className={`mt-1 font-mono ${(summary?.errorRate ?? 0) > 0 ? 'text-red-400' : ''}`}>{formatUptime(summary?.errorRate ?? 0)}</p></div>
 
       </div>
+
+
+
+      <MonitorSecurityStatus type={monitor.type} meta={securityMeta} />
 
 
 

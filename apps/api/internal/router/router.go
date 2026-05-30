@@ -147,6 +147,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.DELETE("/monitors/:id", monitorH.Delete)
 				org.GET("/monitors/:id/checks", monitorH.GetChecks)
 				org.GET("/monitors/:id/artifacts", monitorH.GetArtifacts)
+				org.POST("/monitors/:id/baseline", monitorH.CaptureBaseline)
 				org.GET("/monitors/:id/stats", monitorH.GetStats)
 
 				org.GET("/alert-channels", alertH.ListChannels)

@@ -51,6 +51,14 @@ func (e *EmailService) SendAlert(to, monitorName, status, detail string) error {
 		subject = fmt.Sprintf("[PulseWatch] ⚠️ SSL warning: %s", monitorName)
 		heading = "SSL Certificate Warning"
 		color = "#f59e0b"
+	case "dns_change":
+		subject = fmt.Sprintf("[PulseWatch] ⚠️ DNS change: %s", monitorName)
+		heading = "DNS Record Change"
+		color = "#f59e0b"
+	case "tamper_major_change", "tamper_policy_violation":
+		subject = fmt.Sprintf("[PulseWatch] ⚠️ Content alert: %s", monitorName)
+		heading = "Content Integrity Alert"
+		color = "#f59e0b"
 	case "test":
 		subject = "[PulseWatch] Test alert"
 		heading = "Test Alert"

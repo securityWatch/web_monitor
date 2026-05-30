@@ -260,11 +260,7 @@ func (s *Scheduler) aggregateProbeRun(ctx context.Context, runID, id, orgID, nam
 		s.handleRecovery(ctx, id, orgID, name)
 	}
 
-	if sslDays, ok := outcome.Metadata["sslDaysLeft"].(float64); ok && int(sslDays) <= 30 {
-		if !IsInMaintenance(ctx, s.db, orgID, id) {
-			s.alerts.NotifySSLWarning(ctx, orgID, name, int(sslDays))
-		}
-	}
+	s.security.AfterCheck(ctx, id, orgID, name, mType, config, outcome)
 	s.checkResponseAnomaly(ctx, id, orgID, name, outcome.ResponseMs)
 	_, _ = s.db.Exec(ctx, `UPDATE probe_runs SET status = 'done' WHERE id = $1`, runID)
 }
