@@ -4,61 +4,56 @@
 
 ### Services (local dev)
 
-| Service | Port | Required for E2E |
-|---------|------|------------------|
-| PostgreSQL 16 | 5432 | Yes |
-| Go API | 4000 | Yes |
-| Next.js web | 3000 | Yes |
-| Redis | 6379 | No (unused in code) |
+| Service | Port | Agent responsibility |
+|---------|------|----------------------|
+| PostgreSQL 16 | **6541**（服务器 systemd）/ `.env` 中配置 | **不要**由 Agent 启动；假定已由 systemd 运行 |
+| Go API | 4000 | 启动（`go run` 或 systemd `pulsewatch-api`） |
+| Next.js web | 3000 | 启动（`next dev` 或 systemd `pulsewatch-web`） |
+| Redis | 6379 | 不需要（代码未使用） |
 
-### First-time startup (per session)
+### PostgreSQL（systemd，勿用 Docker）
 
-1. Copy env if missing: `cp .env.example .env`
-2. Database: `sudo docker compose up -d postgres` (wait for `pg_isready -U pulsewatch`)
-3. Dev servers — **do not** run `npm run dev` after sourcing `.env` without fixing ports: `.env` sets `PORT=4000`, which Next.js will inherit and bind on 4000, conflicting with the API.
+- 数据库由宿主机 **systemd 管理的 PostgreSQL** 提供，**不要**执行 `docker compose up postgres` 或单独拉起 Postgres 容器。
+- 连接信息在仓库根目录 **`.env`**（自 `.env.example` 复制）及 `apps/api/internal/config/config.go` 默认值；生产/服务器详见 **`DEPLOYMENT.md`**（例如 `127.0.0.1:6541`，库名 `pulsewatch`）。
+- 集成测试可使用 `TEST_DATABASE_URL`（见 `DEPLOYMENT.md`），未设置时回退到 `DATABASE_URL`。
+- 确认数据库可用（示例）：`systemctl status postgresql`（或本机实际单元名），并按 `.env` 中的端口做连通性检查。
 
-   Recommended:
+### Dev servers（API + Web）
 
-   ```bash
-   export GOTOOLCHAIN=auto
-   set -a && source .env && set +a
-   npx concurrently "cd apps/api && go run ./cmd/server" "PORT=3000 npm run dev -w @pulsewatch/web"
-   ```
+**不要**在 `source .env` 后直接跑 `npm run dev`：`.env` 的 `PORT=4000` 会被 Next.js 继承，与 API 争用 4000。
 
-   Or use tmux session `pulsewatch-dev` with the same command.
+```bash
+export GOTOOLCHAIN=auto
+set -a && source .env && set +a
+npx concurrently "cd apps/api && go run ./cmd/server" "PORT=3000 npm run dev -w @pulsewatch/web"
+```
 
-4. Smoke: `curl -s http://127.0.0.1:4000/health` → `"status":"ok"`; `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/en` → `200`
+Smoke：`curl -s http://127.0.0.1:4000/health` → `"status":"ok"`；`curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/en` → `200`
+
+生产环境 API/Web 由 **systemd**（`pulsewatch-api`、`pulsewatch-web`）+ **Nginx :80** 提供，见 `DEPLOYMENT.md`。
 
 ### Go toolchain
 
-`apps/api/go.mod` requires **Go 1.25**. The VM may ship an older `go`; set `export GOTOOLCHAIN=auto` (already in agent `~/.bashrc` on this image) so the toolchain downloads 1.25 on first use.
-
-### Docker
-
-Docker requires `sudo` in this environment (`docker compose` / `docker` commands). Storage driver: `fuse-overlayfs` in `/etc/docker/daemon.json`.
+`apps/api/go.mod` 需要 **Go 1.25**。设置 `export GOTOOLCHAIN=auto`，以便自动下载工具链。
 
 ### Lint / test / build
-
-See root `package.json`:
 
 | Task | Command |
 |------|---------|
 | Web ESLint | `npm run lint -w @pulsewatch/web` |
 | Go unit tests | `npm run test:unit` |
-| Go integration (needs Postgres) | `npm run test:integration` |
-| Full E2E (API + web running, ~45s) | `API_URL=http://127.0.0.1:4000 WEB_URL=http://127.0.0.1:3000 bash tests/e2e-test.sh` |
+| Go integration（需已运行的 Postgres） | `npm run test:integration` |
+| E2E（API + web 已起，约 45s） | `API_URL=http://127.0.0.1:4000 WEB_URL=http://127.0.0.1:3000 bash tests/e2e-test.sh` |
 | Build API + web | `npm run build` |
 
 ### Browser API calls in dev
 
-The web client uses same-origin `/api/*` in the browser (`apps/web/src/lib/api.ts`). Local dev relies on Next.js `rewrites` in `apps/web/next.config.ts` to proxy to `http://127.0.0.1:4000`. Production uses Nginx instead.
-
-If browser auth calls fail but `curl` to `:4000` works, ensure both services are on the correct ports (API 4000, web 3000) and that `CORS_ORIGINS` in `.env` includes `http://localhost:3000` and `http://127.0.0.1:3000`.
+浏览器走同源 `/api/*`（`apps/web/src/lib/api.ts`）；本地通过 `apps/web/next.config.ts` 的 `rewrites` 代理到 `127.0.0.1:4000`。生产由 Nginx 反代。
 
 ### Deploy / secrets
 
-Production deploy and SSH credentials are documented in `DEPLOYMENT.md` and local `环境信息` (not in Git). Cloud agents typically do not deploy unless explicitly asked.
+见 `DEPLOYMENT.md` 与本地 `环境信息`（不入库）。Cloud Agent 除非明确要求，否则不要部署到生产。
 
 ### Product conventions
 
-See `.cursor/rules/pulsewatch.mdc` for stack, i18n (`en`/`zh`), and mandatory post-change workflow when modifying application code.
+见 `.cursor/rules/pulsewatch.mdc`（栈、i18n、改代码后的提交流程）。
