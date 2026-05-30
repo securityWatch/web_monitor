@@ -36,11 +36,19 @@ func (h *MonitorHandler) AIDraft(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	var planTier string
+	_ = h.db.QueryRow(c.Request.Context(), `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+	if err := services.CheckAIQuota(c.Request.Context(), h.db, orgID, planTier, "monitor_draft"); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error(), "code": "AI_QUOTA_EXCEEDED"})
+		return
+	}
 	draft, err := services.BuildMonitorDraftWithAI(c.Request.Context(), req.Prompt)
 	if err != nil {
+		services.RecordAIUsage(c.Request.Context(), h.db, orgID, "monitor_draft", "error", err.Error())
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
 		return
 	}
+	services.RecordAIUsage(c.Request.Context(), h.db, orgID, "monitor_draft", "ok", "")
 	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true, "tamper": true}
 	if !validTypes[strings.ToLower(draft.Type)] {
 		draft.Type = "http"
@@ -60,6 +68,12 @@ func (h *MonitorHandler) AIVisualExplain(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
+	var planTier string
+	_ = h.db.QueryRow(c.Request.Context(), `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+	if err := services.CheckAIQuota(c.Request.Context(), h.db, orgID, planTier, "visual_explain"); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error(), "code": "AI_QUOTA_EXCEEDED"})
+		return
+	}
 	var checkedAt *time.Time
 	var isUp *bool
 	var errMsg *string
@@ -75,17 +89,38 @@ func (h *MonitorHandler) AIVisualExplain(c *gin.Context) {
 		SELECT COUNT(*) FROM check_artifacts
 		WHERE org_id = $1 AND monitor_id = $2 AND kind = 'screenshot' AND (expires_at IS NULL OR expires_at > now())
 	`, orgID, id).Scan(&artifactCount)
+	artifactRows, _ := h.db.Query(c.Request.Context(), `
+		SELECT kind, content_type, storage_url, created_at FROM check_artifacts
+		WHERE org_id = $1 AND monitor_id = $2 AND (expires_at IS NULL OR expires_at > now())
+		ORDER BY created_at DESC LIMIT 5
+	`, orgID, id)
+	var artifactHints []string
+	if artifactRows != nil {
+		defer artifactRows.Close()
+		for artifactRows.Next() {
+			var kind, ct, url string
+			var created time.Time
+			if artifactRows.Scan(&kind, &ct, &url, &created) == nil {
+				if len(url) > 180 {
+					url = url[:180]
+				}
+				artifactHints = append(artifactHints, fmt.Sprintf("%s %s %s %s", created.Format(time.RFC3339), kind, ct, url))
+			}
+		}
+	}
 	errText := ""
 	if errMsg != nil {
 		errText = *errMsg
 	}
-	input := fmt.Sprintf("Monitor: %s\nType: %s\nTarget: %s\nStatus: %s\nLatest check: %v\nLatest isUp: %v\nError: %s\nMetadata JSON: %s\nScreenshot artifacts available: %d",
-		m.Name, m.Type, m.TargetURL, m.Status, checkedAt, isUp, errText, string(meta), artifactCount)
+	input := fmt.Sprintf("Monitor: %s\nType: %s\nTarget: %s\nStatus: %s\nLatest check: %v\nLatest isUp: %v\nError: %s\nMetadata JSON: %s\nScreenshot artifacts available: %d\nRecent artifact hints:\n%s",
+		m.Name, m.Type, m.TargetURL, m.Status, checkedAt, isUp, errText, string(meta), artifactCount, strings.Join(artifactHints, "\n"))
 	explanation, err := services.ExplainVisualTamperWithAI(c.Request.Context(), input)
 	if err != nil {
+		services.RecordAIUsage(c.Request.Context(), h.db, orgID, "visual_explain", "error", err.Error())
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
 		return
 	}
+	services.RecordAIUsage(c.Request.Context(), h.db, orgID, "visual_explain", "ok", "")
 	c.JSON(http.StatusOK, gin.H{"explanation": explanation})
 }
 

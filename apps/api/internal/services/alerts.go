@@ -56,18 +56,25 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 		event = "recovery"
 	}
 	if event != "recovery" && event != "test" && deepSeekConfigured() {
-		if ai, err := ExplainAlertWithAI(ctx, name, status, detail); err == nil && ai.Summary != "" {
-			if len(ai.NextSteps) > 3 {
-				ai.NextSteps = ai.NextSteps[:3]
+		var planTier string
+		_ = a.db.QueryRow(ctx, `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+		if err := CheckAIQuota(ctx, a.db, orgID, planTier, "alert_explain"); err == nil {
+			if ai, err := ExplainAlertWithAI(ctx, name, status, detail); err == nil && ai.Summary != "" {
+				RecordAIUsage(ctx, a.db, orgID, "alert_explain", "ok", status)
+				if len(ai.NextSteps) > 3 {
+					ai.NextSteps = ai.NextSteps[:3]
+				}
+				extra := fmt.Sprintf("\n\nAI: %s", ai.Summary)
+				if ai.LikelyCause != "" {
+					extra += "\nLikely cause: " + ai.LikelyCause
+				}
+				if len(ai.NextSteps) > 0 {
+					extra += "\nNext steps: " + strings.Join(ai.NextSteps, "; ")
+				}
+				detail += extra
+			} else if err != nil {
+				RecordAIUsage(ctx, a.db, orgID, "alert_explain", "error", err.Error())
 			}
-			extra := fmt.Sprintf("\n\nAI: %s", ai.Summary)
-			if ai.LikelyCause != "" {
-				extra += "\nLikely cause: " + ai.LikelyCause
-			}
-			if len(ai.NextSteps) > 0 {
-				extra += "\nNext steps: " + strings.Join(ai.NextSteps, "; ")
-			}
-			detail += extra
 		}
 	}
 

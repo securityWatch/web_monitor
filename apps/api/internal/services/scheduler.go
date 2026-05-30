@@ -13,14 +13,15 @@ import (
 )
 
 type Scheduler struct {
-	db        *pgxpool.Pool
-	cfg       *config.Config
-	email     *EmailService
-	alerts    *AlertService
-	incidents *IncidentService
-	probes    *ProbeDispatch
-	security  *SecurityEvents
-	stop      chan struct{}
+	db                *pgxpool.Pool
+	cfg               *config.Config
+	email             *EmailService
+	alerts            *AlertService
+	incidents         *IncidentService
+	probes            *ProbeDispatch
+	security          *SecurityEvents
+	stop              chan struct{}
+	lastAIWeeklyCheck time.Time
 }
 
 func NewScheduler(db *pgxpool.Pool, cfg *config.Config, email *EmailService, alerts *AlertService, incidents *IncidentService) *Scheduler {
@@ -52,6 +53,7 @@ func (s *Scheduler) loop() {
 				s.probes.AggregatePending(ctx, s)
 			}
 			s.processPendingAlerts(ctx)
+			s.processAIWeeklyReports(ctx)
 			s.processOnCallEscalation(ctx)
 		}
 	}
@@ -241,6 +243,49 @@ func (s *Scheduler) processPendingAlerts(ctx context.Context) {
 			continue
 		}
 		s.fireDownAlert(ctx, id, orgID, name, "Monitor is down")
+	}
+}
+
+func (s *Scheduler) processAIWeeklyReports(ctx context.Context) {
+	if s.email == nil || !deepSeekConfigured() || time.Since(s.lastAIWeeklyCheck) < time.Hour {
+		return
+	}
+	s.lastAIWeeklyCheck = time.Now()
+	rows, err := s.db.Query(ctx, `
+		SELECT o.id, o.plan_tier, u.email
+		FROM organizations o
+		JOIN organization_members om ON om.org_id = o.id AND om.role = 'owner'
+		JOIN users u ON u.id = om.user_id AND u.notify_weekly = true
+		WHERE NOT EXISTS (
+			SELECT 1 FROM audit_logs al
+			WHERE al.org_id = o.id AND al.action = 'ai.weekly_report.sent'
+			  AND al.created_at > now() - interval '7 days'
+		)
+		LIMIT 25
+	`)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var orgID, planTier, email string
+		if rows.Scan(&orgID, &planTier, &email) != nil || email == "" {
+			continue
+		}
+		if CheckAIQuota(ctx, s.db, orgID, planTier, "weekly_report_auto") != nil {
+			continue
+		}
+		report, err := GenerateAISecurityReport(ctx, BuildAISecurityReportInput(ctx, s.db, orgID))
+		if err != nil {
+			RecordAIUsage(ctx, s.db, orgID, "weekly_report_auto", "error", err.Error())
+			continue
+		}
+		if err := s.email.Send(ctx, email, "[PulseWatch] AI weekly reliability report", FormatAISecurityReportHTML(report)); err != nil {
+			RecordAIUsage(ctx, s.db, orgID, "weekly_report_auto", "error", err.Error())
+			continue
+		}
+		RecordAIUsage(ctx, s.db, orgID, "weekly_report_auto", "ok", "")
+		LogAudit(ctx, s.db, orgID, "", "ai.weekly_report.sent", "", map[string]interface{}{"email": email})
 	}
 }
 

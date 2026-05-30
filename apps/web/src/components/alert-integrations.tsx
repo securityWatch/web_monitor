@@ -42,6 +42,7 @@ const URL_TYPES = new Set(['webhook', 'slack', 'discord', 'teams', 'dingtalk', '
 const emptyForm = () => ({
   type: 'webhook',
   name: '',
+  eventType: 'all',
   url: '',
   routingKey: '',
   apiKey: '',
@@ -102,6 +103,7 @@ export function AlertIntegrations() {
         config,
         enabled: true,
         delayMinutes: form.delayMinutes,
+        eventType: form.eventType,
       }),
     });
     setForm(emptyForm());
@@ -219,6 +221,19 @@ export function AlertIntegrations() {
             <p className="text-xs text-zinc-600">{t('signHint')}</p>
           </div>
         )}
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">{t('eventType')}</label>
+          <select className="input" value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })}>
+            <option value="all">{t('eventAll')}</option>
+            <option value="down">{t('eventDown')}</option>
+            <option value="up">{t('eventUp')}</option>
+            <option value="ssl_warning">{t('eventSslWarning')}</option>
+            <option value="dns_change">{t('eventDnsChange')}</option>
+            <option value="tamper_major_change">{t('eventTamperMajor')}</option>
+            <option value="tamper_policy_violation">{t('eventTamperPolicy')}</option>
+            <option value="tamper_ai_content_violation">{t('eventTamperAI')}</option>
+          </select>
+        </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">{t('delayMinutes')}</label>
           <input type="number" min={0} className="input w-32" value={form.delayMinutes} onChange={(e) => setForm({ ...form, delayMinutes: Number(e.target.value) })} />

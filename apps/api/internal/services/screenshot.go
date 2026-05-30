@@ -40,6 +40,11 @@ func (s *ScreenshotService) CaptureOnDown(ctx context.Context, orgID, monitorID,
 	if err != nil {
 		log.Printf("screenshot artifact: %v", err)
 	}
+	diagnostic := base64.StdEncoding.EncodeToString([]byte(FormatCaptureLabel(targetURL, errMsg)))
+	_, _ = s.db.Exec(ctx, `
+		INSERT INTO check_artifacts (id, org_id, monitor_id, check_id, kind, storage_url, content_type, expires_at)
+		VALUES ($1, $2, $3, NULLIF($4,''), 'diagnostic', $5, 'text/plain', $6)
+	`, uuid.New().String(), orgID, monitorID, checkID, "data:text/plain;base64,"+diagnostic, expires)
 }
 
 func renderErrorPNG(url, errMsg string) []byte {

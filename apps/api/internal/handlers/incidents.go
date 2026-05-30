@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -42,52 +40,21 @@ func (h *IncidentHandler) AISummary(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
+	var planTier string
+	_ = h.db.QueryRow(ctx, `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+	if err := services.CheckAIQuota(ctx, h.db, orgID, planTier, "incident_summary"); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error(), "code": "AI_QUOTA_EXCEEDED"})
+		return
+	}
 
-	rows, _ := h.db.Query(ctx, `
-		SELECT kind, message, created_at FROM incident_timeline
-		WHERE incident_id = $1 ORDER BY created_at ASC LIMIT 100
-	`, incidentID)
-	var timeline []string
-	if rows != nil {
-		defer rows.Close()
-		for rows.Next() {
-			var kind, msg string
-			var created time.Time
-			if rows.Scan(&kind, &msg, &created) == nil {
-				timeline = append(timeline, fmt.Sprintf("%s %s: %s", created.Format(time.RFC3339), kind, msg))
-			}
-		}
-	}
-	msg := ""
-	if inc.Message != nil {
-		msg = *inc.Message
-	}
-	input := fmt.Sprintf("Incident: %s\nMonitor: %s\nStatus: %s\nSeverity: %s\nStarted: %s\nResolved: %v\nMessage: %s\nTimeline:\n%s",
-		inc.Title, inc.MonitorName, inc.Status, inc.Severity, inc.StartedAt.Format(time.RFC3339), inc.ResolvedAt, msg, strings.Join(timeline, "\n"))
-	summary, err := services.GenerateAIIncidentSummary(ctx, input)
+	summary, err := h.incidents.GenerateAndStoreAISummary(ctx, incidentID, orgID, &userID)
 	if err != nil {
+		services.RecordAIUsage(ctx, h.db, orgID, "incident_summary", "error", err.Error())
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
 		return
 	}
-	postMortem := formatIncidentPostMortem(summary)
-	_, _ = h.db.Exec(ctx, `UPDATE incidents SET post_mortem = $1 WHERE id = $2 AND org_id = $3`, postMortem, incidentID, orgID)
-	h.incidents.AddTimeline(ctx, incidentID, "ai_summary", "AI incident summary generated", &userID)
-	c.JSON(http.StatusOK, gin.H{"summary": summary, "postMortem": postMortem})
-}
-
-func formatIncidentPostMortem(s services.AIIncidentSummary) string {
-	parts := []string{
-		"Summary: " + s.Summary,
-		"Impact: " + s.Impact,
-		"Likely cause: " + s.LikelyCause,
-	}
-	if len(s.ActionItems) > 0 {
-		parts = append(parts, "Action items: "+strings.Join(s.ActionItems, "; "))
-	}
-	if s.CustomerUpdate != "" {
-		parts = append(parts, "Customer update: "+s.CustomerUpdate)
-	}
-	return strings.Join(parts, "\n")
+	services.RecordAIUsage(ctx, h.db, orgID, "incident_summary", "ok", "")
+	c.JSON(http.StatusOK, gin.H{"summary": summary, "postMortem": services.FormatIncidentPostMortem(summary)})
 }
 
 func (h *IncidentHandler) verifyOrgAccess(c *gin.Context, orgID, userID string) bool {
@@ -251,6 +218,11 @@ func (h *IncidentHandler) Update(c *gin.Context) {
 	if req.Status != nil && *req.Status == "resolved" {
 		_, _ = h.db.Exec(ctx, `UPDATE incidents SET status = 'resolved', resolved_at = now(), workflow_status = 'resolved' WHERE id = $1 AND org_id = $2`, incidentID, orgID)
 		h.incidents.AddTimeline(ctx, incidentID, "resolved", "Incident resolved manually", &userID)
+		if _, err := h.incidents.GenerateAndStoreAISummary(ctx, incidentID, orgID, &userID); err != nil {
+			services.RecordAIUsage(ctx, h.db, orgID, "incident_summary_auto", "error", err.Error())
+		} else {
+			services.RecordAIUsage(ctx, h.db, orgID, "incident_summary_auto", "ok", "")
+		}
 		_, _ = h.db.Exec(ctx, `UPDATE status_page_incidents SET resolved_at = now() WHERE incident_id = $1 AND resolved_at IS NULL`, incidentID)
 	}
 
