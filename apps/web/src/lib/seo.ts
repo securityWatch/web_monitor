@@ -33,7 +33,12 @@ export const publicMarketingPaths = [
   '/compare/better-stack',
   '/compare/uptimerobot',
   '/tools',
+  '/tools/image-compress',
+  '/tools/pdf-tools',
   '/tools/pdf-to-word',
+  '/tools/qr-code',
+  '/tools/jwt-decoder',
+  '/tools/cron-parser',
   '/tools/ssl-checker',
 ] as const;
 

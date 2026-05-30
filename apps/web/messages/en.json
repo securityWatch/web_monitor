@@ -153,12 +153,12 @@
     "jsonLdPageName": "PulseWatch — Uptime & Website Monitoring",
     "jsonLdPageDescription": "Commercial-friendly uptime monitoring for APIs, SaaS, and e-commerce with bilingual support.",
     "toolsCtaTitle": "Free developer tools",
-    "toolsCtaDesc": "Format JSON, convert PDF to Word, encode Base64 and URLs, convert timestamps — all in your browser, no signup.",
+    "toolsCtaDesc": "Format JSON, handle PDFs, compress images, generate QR codes, decode JWTs, and parse cron expressions — all in your browser.",
     "toolsCtaButton": "Open free developer tools"
   },
   "homeTools": {
     "title": "Free developer tools",
-    "subtitle": "Format JSON, convert PDF to Word, escape strings, encode data — all in your browser. No signup required.",
+    "subtitle": "Format JSON, handle PDFs, compress images, generate QR codes, decode JWTs, and parse cron expressions — all in your browser.",
     "transform": "Transform",
     "copy": "Copy",
     "copied": "Copied!",
@@ -175,7 +175,12 @@
       "base64": "Base64",
       "url": "URL",
       "timestamp": "Timestamp",
-      "pdfToWord": "PDF to Word"
+      "pdfToWord": "PDF to Word",
+      "imageCompress": "Image Compress",
+      "pdfTools": "PDF Merge/Split",
+      "qrCode": "QR Code",
+      "jwtDecoder": "JWT Decoder",
+      "cronParser": "Cron Parser"
     },
     "json": {
       "format": "Pretty print",
@@ -249,6 +254,66 @@
     },
     "result": "Parsed {pages} pages and generated {paragraphs} text paragraphs.",
     "download": "Download Word"
+  },
+  "extraTools": {
+    "image": {
+      "badge": "Local image processing",
+      "title": "Image Compress / WebP Converter",
+      "subtitle": "Compress images locally, resize max width, and export WebP, JPEG, or PNG.",
+      "choose": "Choose image",
+      "hint": "Common image formats supported. Nothing is uploaded.",
+      "format": "Output format",
+      "quality": "Quality (10-100)",
+      "maxWidth": "Max width",
+      "notImage": "Please choose an image file.",
+      "failed": "Image conversion failed.",
+      "saved": "{before} → {after}, about {pct}% smaller",
+      "download": "Download image"
+    },
+    "pdf": {
+      "badge": "Local PDF organizer",
+      "title": "PDF Merge / Split",
+      "subtitle": "Merge multiple PDFs locally, or extract selected pages from one PDF.",
+      "choose": "Choose PDF files",
+      "hint": "Select multiple files for merge; extract uses the first PDF.",
+      "mode": "Mode",
+      "merge": "Merge",
+      "extract": "Extract pages",
+      "range": "Page range (e.g. 1-3,5)",
+      "run": "Process",
+      "processing": "Processing PDF...",
+      "done": "Done",
+      "noFile": "Choose PDF files first.",
+      "failed": "PDF processing failed.",
+      "result": "Generated a {pages}-page PDF.",
+      "download": "Download PDF"
+    },
+    "qr": {
+      "badge": "QR generator",
+      "title": "QR Code Generator",
+      "subtitle": "Enter a URL, text, or contact details and generate a downloadable PNG QR code locally.",
+      "content": "Content",
+      "size": "Size",
+      "download": "Download QR code"
+    },
+    "jwt": {
+      "badge": "Local decode",
+      "title": "JWT Decoder",
+      "subtitle": "Decode JWT header and payload locally in your browser. Signature is not verified.",
+      "placeholder": "Paste JWT token...",
+      "header": "Header",
+      "payload": "Payload",
+      "privacy": "Local decode only. Do not share sensitive tokens with third parties."
+    },
+    "cron": {
+      "badge": "Schedule helper",
+      "title": "Cron Expression Parser",
+      "subtitle": "Validate 5-field cron expressions and preview the next 5 run times.",
+      "expression": "Cron expression",
+      "summary": "Summary",
+      "next": "Next runs",
+      "note": "Supports *, */n, lists, and simple ranges."
+    }
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -625,6 +690,31 @@
       "title": "PDF to Word Converter | Free Local DOCX Export | PulseWatch",
       "description": "Free PDF to Word converter that turns PDF text into editable DOCX locally in your browser. No upload required.",
       "keywords": "PDF to Word, PDF to DOCX, free PDF converter, local PDF conversion, Word converter"
+    },
+    "imageCompress": {
+      "title": "Image Compress and WebP Converter | PulseWatch",
+      "description": "Free image compressor and WebP converter that runs locally in your browser. No uploads.",
+      "keywords": "image compressor, WebP converter, compress image online, local image compression"
+    },
+    "pdfTools": {
+      "title": "PDF Merge and Split Tool | PulseWatch",
+      "description": "Free PDF merge, split, and page extraction tool that runs locally in your browser.",
+      "keywords": "merge PDF, split PDF, extract PDF pages, PDF tools"
+    },
+    "qrCode": {
+      "title": "QR Code Generator | PulseWatch",
+      "description": "Free QR code generator for URLs and text. Create downloadable PNG QR codes locally.",
+      "keywords": "QR code generator, free QR code, URL QR code"
+    },
+    "jwtDecoder": {
+      "title": "JWT Decoder | PulseWatch",
+      "description": "Free JWT decoder that parses header and payload locally without uploading tokens.",
+      "keywords": "JWT decoder, decode JWT, token parser, JWT payload"
+    },
+    "cronParser": {
+      "title": "Cron Expression Parser | PulseWatch",
+      "description": "Free cron expression parser with field summary and next run previews.",
+      "keywords": "cron parser, cron expression, schedule parser"
     }
   }
 }
