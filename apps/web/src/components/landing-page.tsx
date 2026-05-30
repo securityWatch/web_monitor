@@ -17,7 +17,7 @@ import {
   Users,
 } from 'lucide-react';
 
-const FAQ_COUNT = 9;
+const FAQ_COUNT = 8;
 
 export async function LandingPage({ foundingCount }: { foundingCount: number }) {
   const t = await getTranslations('landing');

@@ -21,7 +21,7 @@ The live site is currently served over **HTTP** at `http://49.234.112.108` (no H
 | Canonical + hreflang (`en`, `zh`, `x-default`) | `buildPageMetadata` | Avoid duplicate-language issues; help Google/Baidu pair locales |
 | `robots.txt` | `apps/web/src/app/robots.ts` | Allow crawlers; point to sitemap |
 | `sitemap.xml` | `apps/web/src/app/sitemap.ts` | Home, login, register, pricing, compare pages, dev tools, SSL tool (× en/zh) |
-| JSON-LD | `apps/web/src/components/landing-json-ld.tsx` | `Organization`, `WebSite`, `WebPage`, `FAQPage` (9 Q&A) |
+| JSON-LD | `apps/web/src/components/landing-json-ld.tsx` | `Organization`, `WebSite`, `WebPage`, `FAQPage` (8 Q&A) |
 | `lang` on `<html>` | `apps/web/src/app/[locale]/layout.tsx` | `en` or `zh-CN` for Baidu/Google language hints |
 | Server-rendered landing copy | `apps/web/src/components/landing-page.tsx` | Indexable H1/H2, FAQ `<details>`, internal links |
 
@@ -33,7 +33,7 @@ After the hero (CTA preserved), the homepage includes:
 - **Use cases** — API, e-commerce, SaaS, 国内/出海团队
 - **Feature grid** — keyword-rich subtitles (existing + SEO subtitle)
 - **Trust / downtime cost** — factual framing, link to comparison page (not fake reviews)
-- **FAQ** — 9 questions (visible + JSON-LD aligned)
+- **FAQ** — 8 questions (visible + JSON-LD aligned; no infra/storage stack details)
 - **Resources** — links to `/login`, `/register`, free developer tools (`/tools`), SSL tool, compare pages
 
 Free developer tools live on a dedicated page at `/en/tools` and `/zh/tools` (linked from homepage CTA and nav). The homepage shows a compact card only—full tool UI is not embedded on the landing page.
