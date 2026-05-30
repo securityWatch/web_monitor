@@ -1,7 +1,7 @@
 # PulseWatch — 路线图与指标
 
-**文档版本**：v1.1  
-**关联文档**：[产品需求文档（PRD）](PRD.md) | [技术设计规格书](TECHNICAL-DESIGN.md)
+**文档版本**：v1.2  
+**关联文档**：[产品需求文档（PRD）](PRD.md) | [技术设计规格书](TECHNICAL-DESIGN.md) | [差距清单](GAP-BACKLOG.md)
 
 ---
 
@@ -9,30 +9,34 @@
 
 ### G.1 Phase 1 — MVP（8–12 周）
 
-**必须交付（P0）**：
+**必须交付（P0）** — 与代码对照见 [GAP-BACKLOG.md](GAP-BACKLOG.md)：
 
-- [ ] Email + Google/GitHub 注册登录
-- [ ] **Premium UI 脚手架**：Next.js + Tailwind + shadcn/ui 设计系统、暗色模式
-- [ ] **Landing Page**：Hero、社会证明、Live Demo、定价预览、**Founding Member CTA（$1/mo Pro + 名额计数器）**
-- [ ] **用户管理 MVP**：Personal Org 自动创建、Profile/密码/Email 设置
-- [ ] **RBAC 基础**：Owner 单用户；Member/Viewer 角色模型预留（Team 套餐 Phase 2 启用邀请）
-- [ ] **Monitors 管理页**：列表、搜索、筛选、创建 Wizard、详情页
-- [ ] HTTP/HTTPS、TCP、Ping、Keyword、SSL 到期监控
-- [ ] 2 探针区域；Free 5 分钟 / 付费档仅 Pro 手动开通
-- [ ] 邮件 + Webhook 告警
-- [ ] 仪表盘：uptime %、响应时间图、Incident 列表
-- [ ] 1 个品牌状态页
-- [ ] Stripe Pro 订阅（**Founding Price $1/mo** + 标准 Price $12/mo 双轨）
-- [ ] **Founding Member 基础设施**：`organizations.founding_member` 字段、徽章 UI、Stripe metadata
-- [ ] SSL Checker 工具页
-- [ ] 90 天数据保留（ClickHouse + 降采样）
-- [ ] **无障碍基线**：WCAG 2.1 AA 核心流程、axe-core CI
+- [x] Email + 密码注册登录；Google/GitHub OAuth（需 env）
+- [x] **Premium UI**：Next.js 15 + Tailwind 4 暗色主题（自定义组件，非 shadcn 包）
+- [x] **Landing Page**：Hero、定价、Founding CTA；Live Demo 为静态预览（🔶）
+- [x] **用户管理 MVP**：Personal Org、Profile/密码/Email
+- [x] **RBAC 基础**：Owner/Member/Viewer；团队邀请已扩展（超出原 MVP 范围）
+- [x] **Monitors**：列表、筛选、Wizard、详情、编辑 PATCH config
+- [x] HTTP/TCP/Ping/Keyword/SSL + 扩展类型（DNS、Heartbeat 等）
+- [x] 多区域检查与 N-of-M（真地理探针需 `PROBE_DISPATCH` + worker，🔶）
+- [x] 邮件 + Webhook + 多集成渠道（部分需 env）
+- [x] Dashboard、Incidents、事件协作
+- [x] 状态页（自定义域字段有，全自动 DNS/证书需运维，🔶）
+- [x] Stripe 双价轨（需 `STRIPE_*`，🔶）
+- [x] Founding Member 字段与徽章
+- [x] SSL Checker 工具页
+- [ ] **90 天数据保留 + 降采样** — PostgreSQL 分区表已用，**自动 TTL/降采样未实现**
+- [x] 登录失败 lockout（5 次 / 15 分钟，email + IP）
+- [x] Session 列表与撤销（Security 设置页）
+- [ ] **无障碍**：核心流程可访问；**axe Playwright CI 未门禁**（🔶）
 
-**明确不做（MVP 排除）**：
+**原 MVP 排除项中已部分交付**（文档以 [ISSUES.md](ISSUES.md) 为准）：SMS、DNS、2FA、⌘K、团队、PagerDuty/Slack 等 — 见 Phase 2–5。
 
-- SMS、PagerDuty、DNS 监控、API JSON、2FA、Terraform、移动 App
-- 团队邀请与多成员协作（Phase 2 Team 套餐）
-- ⌘K 命令面板、自定义表格列
+**仍不在范围或未完成**：
+
+- API JSON 监控类型（PRD Pro+）
+- 官方 Terraform Provider（仅示例 client）
+- 真 Chromium 故障截图 + S3
 
 ### G.1.1 早期获客定价阶段（Phase 1 同步启动）
 
@@ -138,7 +142,7 @@ gantt
 |------|--------|
 | 1–2 | 架构脚手架、设计系统（shadcn/ui + 主题 Token）、Auth、Landing Page 骨架 |
 | 3–4 | Monitor CRUD、PostgreSQL RBAC 表、Monitors 列表/创建 Wizard UI |
-| 5–6 | 探针 Agent v1、调度器、CheckResult 写入 ClickHouse |
+| 5–6 | 探针 Agent v1、调度器、CheckResult 写入 **PostgreSQL 分区表** |
 | 7–8 | 告警引擎、Dashboard 图表、Incident 状态机、Settings 页（Profile/Security） |
 | 9–10 | 状态页、Stripe（**Founding + 标准双 Price**）、SSL 工具、Landing（**Founding CTA + 名额计数器**）、响应式 Mobile |
 | 11–12 | 多区域聚合、降采样、Onboarding 优化、无障碍测试、Beta 与 Product Hunt |

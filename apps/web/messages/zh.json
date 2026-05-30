@@ -242,7 +242,8 @@
     "passwordMismatch": "两次密码不一致",
     "loginError": "邮箱或密码错误",
     "registerSuccess": "账户创建成功",
-    "forgotSuccess": "若该邮箱存在，重置链接已发送"
+    "forgotSuccess": "若该邮箱存在，重置链接已发送",
+    "accountLocked": "登录失败次数过多，请约 {minutes} 分钟后重试。"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -479,6 +480,18 @@
       "testSent": "测试告警已发送",
       "channelCreated": "渠道已创建",
       "deleteConfirm": "确定删除此告警渠道？"
+    },
+    "sessions": {
+      "title": "活跃会话",
+      "desc": "已登录您账户的设备。如有陌生设备请撤销。",
+      "loading": "加载中…",
+      "empty": "暂无活跃会话。",
+      "currentDevice": "当前设备",
+      "otherDevice": "其他设备",
+      "revoke": "撤销",
+      "revokeOthers": "登出其他设备",
+      "revoked": "已撤销该会话。",
+      "revokedOthers": "已登出其他设备。"
     }
   },
   "statusPages": {

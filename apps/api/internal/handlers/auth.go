@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -61,6 +62,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	resp, err := h.auth.Login(c.Request.Context(), req.Email, req.Password, c.GetHeader("User-Agent"), c.ClientIP())
 	if err != nil {
+		var locked *services.AccountLockedError
+		if errors.As(err, &locked) {
+			c.JSON(http.StatusLocked, gin.H{
+				"error":             "too many failed login attempts",
+				"code":              "ACCOUNT_LOCKED",
+				"retryAfterSeconds": int(locked.RetryAfter.Seconds()) + 1,
+			})
+			return
+		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials", "code": "UNAUTHORIZED"})
 		return
 	}

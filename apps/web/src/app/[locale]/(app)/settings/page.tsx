@@ -9,6 +9,7 @@ import { TeamSettings } from '@/components/team-settings';
 import { MaintenanceWindows } from '@/components/maintenance-windows';
 import { APIKeysSettings } from '@/components/api-keys-settings';
 import { TotpSettings } from '@/components/totp-settings';
+import { SessionSettings } from '@/components/session-settings';
 import { OnCallSettings } from '@/components/oncall-settings';
 import { AuditLogs } from '@/components/audit-logs';
 import { EmailVerificationBanner } from '@/components/email-verification-banner';
@@ -95,6 +96,7 @@ export default function SettingsPage() {
             <button onClick={changePassword} className="btn-primary">{t('changePassword')}</button>
           </div>
           <TotpSettings />
+          <SessionSettings />
         </div>
       )}
 

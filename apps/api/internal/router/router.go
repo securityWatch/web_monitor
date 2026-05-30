@@ -123,6 +123,9 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 			protected.POST("/me/totp/setup", meH.TotpSetup)
 			protected.POST("/me/totp/enable", meH.TotpEnable)
 			protected.POST("/me/totp/disable", meH.TotpDisable)
+			protected.GET("/me/sessions", meH.ListSessions)
+			protected.DELETE("/me/sessions/:id", meH.RevokeSession)
+			protected.POST("/me/sessions/revoke-others", meH.RevokeOtherSessions)
 			protected.POST("/invites/accept", inviteH.Accept)
 
 			org := protected.Group("/orgs/:orgId")
