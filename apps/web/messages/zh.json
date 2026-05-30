@@ -212,7 +212,7 @@
       "url": "hello world & 特殊=字符",
       "timestamp": "1717084800000 或 2024-05-30T12:00:00Z"
     },
-    "placeholderJson": "{\"name\":\"PulseWatch\",\"uptime\":99.98}",
+    "placeholderJson": "'{'\"name\":\"PulseWatch\",\"uptime\":99.98'}'",
     "placeholderEscape": "Hello \"world\"\\n换行符",
     "placeholderBase64": "你好，世界！",
     "placeholderUrl": "hello world & 特殊=字符",
@@ -534,16 +534,16 @@
   "meta": {
     "title": "PulseWatch",
     "description": "商用友好的可用性监控，智能洞察与快速告警。",
-    "keywords": "网站监控, 可用性监控,  uptime监控, API监控, SSL证书监控, 状态页, 宕机告警, 网站宕机检测"
-  },
-  "meta.home": {
-    "title": "PulseWatch — 网站与可用性监控 | 免费 15 个监控",
-    "description": "监控网站、API 与 SSL 证书，分钟级告警。免费 15 个监控，支持商用。中英双语、状态页、事件管理与开发者友好定价。",
-    "keywords": "网站监控, 可用性监控, 宕机检测, SSL到期监控, 状态页, API健康检查, 网站宕机告警, uptime monitoring, website monitoring"
-  },
-  "meta.tools": {
-    "title": "免费开发者小工具 — JSON、Base64、URL 与时间戳 | PulseWatch",
-    "description": "浏览器内 JSON 格式化、字符串转义、Base64/URL 编码、Unix 时间戳转换。无需注册，全部本地处理。",
-    "keywords": "JSON 格式化, JSON 压缩, Base64 编码, URL 编码, Unix 时间戳转换, 开发者工具, JSON formatter, Base64 encode"
+    "keywords": "网站监控, 可用性监控,  uptime监控, API监控, SSL证书监控, 状态页, 宕机告警, 网站宕机检测",
+    "home": {
+      "title": "PulseWatch — 网站与可用性监控 | 免费 15 个监控",
+      "description": "监控网站、API 与 SSL 证书，分钟级告警。免费 15 个监控，支持商用。中英双语、状态页、事件管理与开发者友好定价。",
+      "keywords": "网站监控, 可用性监控, 宕机检测, SSL到期监控, 状态页, API健康检查, 网站宕机告警, uptime monitoring, website monitoring"
+    },
+    "tools": {
+      "title": "免费开发者小工具 — JSON、Base64、URL 与时间戳 | PulseWatch",
+      "description": "浏览器内 JSON 格式化、字符串转义、Base64/URL 编码、Unix 时间戳转换。无需注册，全部本地处理。",
+      "keywords": "JSON 格式化, JSON 压缩, Base64 编码, URL 编码, Unix 时间戳转换, 开发者工具, JSON formatter, Base64 encode"
+    }
   }
 }

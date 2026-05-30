@@ -212,7 +212,7 @@
       "url": "hello world & special=chars",
       "timestamp": "1717084800000 or 2024-05-30T12:00:00Z"
     },
-    "placeholderJson": "{\"name\":\"PulseWatch\",\"uptime\":99.98}",
+    "placeholderJson": "'{'\"name\":\"PulseWatch\",\"uptime\":99.98'}'",
     "placeholderEscape": "Hello \"world\"\\nNew line",
     "placeholderBase64": "Hello, world!",
     "placeholderUrl": "hello world & special=chars",
@@ -534,16 +534,16 @@
   "meta": {
     "title": "PulseWatch",
     "description": "Commercial-friendly uptime monitoring with smart insights and fast alerts.",
-    "keywords": "uptime monitoring, website monitoring, API monitoring, SSL monitoring, status page, incident management, availability monitoring"
-  },
-  "meta.home": {
-    "title": "PulseWatch — Uptime & Website Monitoring | Free Tier",
-    "description": "Monitor websites, APIs, and SSL certificates with 60-second alerts. Free for 15 monitors. English & 中文. Status pages, incidents, and developer-friendly pricing.",
-    "keywords": "uptime monitoring, website monitoring, uptime checker, SSL expiry monitor, status page, API health check, website downtime alert, 网站监控, 可用性监控"
-  },
-  "meta.tools": {
-    "title": "Free Developer Tools — JSON, Base64, URL & Timestamp | PulseWatch",
-    "description": "Browser-based JSON formatter, string escape, Base64 and URL encoder, Unix timestamp converter. No signup — all processing stays local.",
-    "keywords": "JSON formatter, JSON minify, Base64 encode, URL encode, Unix timestamp converter, developer tools, 在线 JSON 格式化, Base64 编码"
+    "keywords": "uptime monitoring, website monitoring, API monitoring, SSL monitoring, status page, incident management, availability monitoring",
+    "home": {
+      "title": "PulseWatch — Uptime & Website Monitoring | Free Tier",
+      "description": "Monitor websites, APIs, and SSL certificates with 60-second alerts. Free for 15 monitors. English & 中文. Status pages, incidents, and developer-friendly pricing.",
+      "keywords": "uptime monitoring, website monitoring, uptime checker, SSL expiry monitor, status page, API health check, website downtime alert, 网站监控, 可用性监控"
+    },
+    "tools": {
+      "title": "Free Developer Tools — JSON, Base64, URL & Timestamp | PulseWatch",
+      "description": "Browser-based JSON formatter, string escape, Base64 and URL encoder, Unix timestamp converter. No signup — all processing stays local.",
+      "keywords": "JSON formatter, JSON minify, Base64 encode, URL encode, Unix timestamp converter, developer tools, 在线 JSON 格式化, Base64 编码"
+    }
   }
 }
