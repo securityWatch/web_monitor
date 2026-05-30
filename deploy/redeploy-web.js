@@ -6,13 +6,15 @@ const path = require('path');
 const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
 const ROOT = path.join(__dirname, '..');
 
-execSync('npm run build', {
-  cwd: path.join(ROOT, 'apps/web'),
-  stdio: 'inherit',
-});
+if (!process.env.SKIP_WEB_BUILD) {
+  execSync('npm run build', {
+    cwd: path.join(ROOT, 'apps/web'),
+    stdio: 'inherit',
+  });
+}
 
 const webTar = path.join(__dirname, 'web-bundle.tar.gz');
-execSync(`tar -czf "${webTar}" -C "${path.join(ROOT, 'apps/web')}" .next/standalone .next/static public`, { shell: true, stdio: 'inherit' });
+execSync(`tar -hczf "${webTar}" -C "${path.join(ROOT, 'apps/web')}" .next/standalone .next/static public`, { shell: true, stdio: 'inherit' });
 
 const c = new Client();
 c.on('ready', () => {
