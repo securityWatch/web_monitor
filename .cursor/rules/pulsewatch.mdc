@@ -111,15 +111,7 @@ If deploy or verification fails, fix and redeploy — do not push broken code.
 
 ### 6. Auto push to GitHub (required)
 
-```bash
-git push origin main
-```
-
-- **MUST** push immediately after commit (and deploy/verify when runtime changed)
-- If push times out or fails on network, **retry at least 3 times** before reporting done
-- Report push failure to user with commit hash so they can push manually
-- **Never force push** to `main`
-- **Never push** secrets, `.env`, or `环境信息`
+见 [git-auto-commit-push.mdc](git-auto-commit-push.mdc)。`main` 上：`git push origin main`；功能分支上 push 当前分支。运行时变更须在 deploy/verify 后 push。
 
 ### Skip only when
 
