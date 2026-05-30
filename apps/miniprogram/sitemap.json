@@ -1,0 +1,9 @@
+{
+  "desc": "PulseWatch 小程序 sitemap",
+  "rules": [
+    {
+      "action": "disallow",
+      "page": "*"
+    }
+  ]
+}

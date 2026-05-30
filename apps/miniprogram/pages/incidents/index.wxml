@@ -1,0 +1,39 @@
+<view class="container">
+  <view class="filters">
+    <text
+      class="filter-btn {{filter === 'all' ? 'active' : ''}}"
+      data-filter="all"
+      bindtap="setFilter"
+    >全部</text>
+    <text
+      class="filter-btn {{filter === 'open' ? 'active' : ''}}"
+      data-filter="open"
+      bindtap="setFilter"
+    >进行中</text>
+    <text
+      class="filter-btn {{filter === 'resolved' ? 'active' : ''}}"
+      data-filter="resolved"
+      bindtap="setFilter"
+    >已恢复</text>
+  </view>
+
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+
+  <view wx:elif="{{incidents.length === 0}}" class="empty">暂无事件记录</view>
+
+  <block wx:else>
+    <view wx:for="{{incidents}}" wx:key="id" class="card">
+      <view class="row-top">
+        <text class="card-title">{{item.title || item.monitorName}}</text>
+        <text class="badge badge-{{item.status === 'open' ? 'open' : 'resolved'}}">{{item.statusLabel}}</text>
+      </view>
+      <text class="card-sub">{{item.monitorName}}</text>
+      <view class="row-meta">
+        <text>{{item.severityLabel}}</text>
+        <text>开始 {{item.startedText}}</text>
+      </view>
+      <text wx:if="{{item.message}}" class="message">{{item.message}}</text>
+    </view>
+  </block>
+</view>

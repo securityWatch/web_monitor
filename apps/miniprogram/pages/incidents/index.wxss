@@ -1,0 +1,42 @@
+.filters {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+}
+
+.filter-btn {
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  background: #1a1a1a;
+  color: #94a3b8;
+}
+
+.filter-btn.active {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+
+.row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #64748b;
+}
+
+.message {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #cbd5e1;
+  line-height: 1.5;
+}

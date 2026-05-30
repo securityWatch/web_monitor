@@ -59,11 +59,19 @@ PulseWatch 定位在 UptimeRobot 商用限制与 Better Stack 全栈复杂度之
 | 价格锁定 | — | ✅ 终身 | ✅ 终身 | ✅ 终身 |
 | 身份标识 | — | Founding Member 徽章 | Founding Member 徽章 | Founding Member 徽章 |
 
+### 客户端
+
+| 客户端 | 路径 | 说明 |
+|--------|------|------|
+| Web | `apps/web/` | Next.js 15 主站（en/zh） |
+| 微信小程序 | `apps/miniprogram/` | 国内部署 MVP，见 [小程序 README](apps/miniprogram/README.md) |
+
 ### 技术栈
 
 | 层级 | 技术选型 |
 |------|----------|
 | 前端 | Next.js 15 + React + Tailwind + shadcn/ui |
+| 小程序 | 原生微信小程序（WXML/WXSS/JS） |
 | API | Go (Fiber/Chi) 或 Node (Fastify) |
 | 认证 | Auth.js / Clerk / 自研 JWT + OAuth |
 | 关系库 | PostgreSQL 16 |

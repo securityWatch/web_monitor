@@ -1,0 +1,40 @@
+<view class="container">
+  <view class="header">
+    <text class="title">监控概览</text>
+    <view class="summary-pills">
+      <text class="pill pill-up">正常 {{summary.up}}</text>
+      <text class="pill pill-down">故障 {{summary.down}}</text>
+      <text class="pill">共 {{summary.total}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+
+  <view wx:elif="{{monitors.length === 0}}" class="empty">
+    <text>暂无监控项</text>
+    <text class="empty-sub">请在 Web 端创建监控</text>
+  </view>
+
+  <block wx:else>
+    <view
+      wx:for="{{monitors}}"
+      wx:key="id"
+      class="card monitor-card"
+      data-id="{{item.id}}"
+      bindtap="openDetail"
+    >
+      <view class="row-top">
+        <text class="card-title">{{item.name}}</text>
+        <text class="badge badge-{{item.status}}">{{item.statusLabel}}</text>
+      </view>
+      <text class="card-sub url">{{item.targetUrl}}</text>
+      <view class="row-meta">
+        <text>上次检测 {{item.lastCheckText}}</text>
+        <text>{{item.responseText}}</text>
+        <text>24h {{item.uptimeText}}</text>
+      </view>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,88 @@
+.profile .email {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-top: 8rpx;
+}
+
+.display-name {
+  display: block;
+  margin-top: 4rpx;
+  color: #94a3b8;
+  font-size: 26rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 24rpx;
+  color: #64748b;
+  margin-bottom: 4rpx;
+}
+
+.org-name {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-top: 8rpx;
+}
+
+.api-row {
+  margin-top: 12rpx;
+  padding: 16rpx;
+  background: #1a1a1a;
+  border-radius: 12rpx;
+}
+
+.api-url {
+  display: block;
+  font-size: 24rpx;
+  color: #34d399;
+  word-break: break-all;
+}
+
+.copy-hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #64748b;
+}
+
+.hint {
+  display: block;
+  margin-top: 12rpx;
+}
+
+.stub-text {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.stub-link {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #64748b;
+  word-break: break-all;
+}
+
+.logout-btn {
+  margin-top: 32rpx;
+  background: transparent;
+  border: 1rpx solid #333;
+  color: #f87171;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+}
+
+.version {
+  display: block;
+  text-align: center;
+  margin-top: 32rpx;
+  font-size: 22rpx;
+  color: #475569;
+}

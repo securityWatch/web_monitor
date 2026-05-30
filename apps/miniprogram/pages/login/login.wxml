@@ -1,0 +1,39 @@
+<view class="login-page">
+  <view class="brand">
+    <text class="logo">PulseWatch</text>
+    <text class="tagline">网站监控 · 随时掌握服务状态</text>
+  </view>
+
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+
+  <view class="form card">
+    <view class="field">
+      <text class="label">邮箱</text>
+      <input
+        class="input"
+        type="text"
+        placeholder="your@email.com"
+        value="{{email}}"
+        bindinput="onEmailInput"
+      />
+    </view>
+    <view class="field">
+      <text class="label">密码</text>
+      <input
+        class="input"
+        password
+        placeholder="请输入密码"
+        value="{{password}}"
+        bindinput="onPasswordInput"
+      />
+    </view>
+    <button class="btn-primary submit" loading="{{loading}}" disabled="{{loading}}" bindtap="onSubmit">
+      登录
+    </button>
+  </view>
+
+  <view class="hint">
+    <text>使用 PulseWatch Web 端相同账号登录</text>
+    <text class="hint-sub">启用双因素认证的账号请先在 Web 端登录</text>
+  </view>
+</view>

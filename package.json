@@ -13,7 +13,8 @@
     "test": "cd apps/api && go test ./... && bash tests/e2e-test.sh",
     "test:unit": "cd apps/api && go test ./internal/services/...",
     "test:integration": "cd apps/api && go test ./internal/handlers/...",
-    "start:web": "npm run start -w @pulsewatch/web"
+    "start:web": "npm run start -w @pulsewatch/web",
+    "miniprogram:validate": "node scripts/validate-miniprogram.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

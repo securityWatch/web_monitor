@@ -1,0 +1,61 @@
+<view class="container">
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+
+  <block wx:elif="{{monitor}}">
+    <view class="card">
+      <view class="row-top">
+        <text class="card-title">{{monitor.name}}</text>
+        <text class="badge badge-{{monitor.status}}">{{monitor.statusLabel}}</text>
+      </view>
+      <text class="card-sub">{{monitor.targetUrl}}</text>
+      <view class="meta-grid">
+        <view class="meta-item">
+          <text class="meta-label">类型</text>
+          <text class="meta-value">{{monitor.type}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">检测间隔</text>
+          <text class="meta-value">{{monitor.intervalText}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">上次检测</text>
+          <text class="meta-value">{{monitor.lastCheckText}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{stats}}" class="card">
+      <text class="section-title">24 小时统计</text>
+      <view class="stat-row">
+        <view class="stat-item">
+          <view class="stat-value">{{stats.uptimePct}}%</view>
+          <view class="stat-label">可用率</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{stats.totalChecks}}</view>
+          <view class="stat-label">检测次数</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{stats.downChecks}}</view>
+          <view class="stat-label">失败次数</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <text class="section-title">最近检测</text>
+      <view wx:if="{{checks.length === 0}}" class="empty-inline">暂无检测记录</view>
+      <view wx:for="{{checks}}" wx:key="id" class="check-row">
+        <view class="check-left">
+          <text class="check-status {{item.isUp ? 'ok' : 'fail'}}">{{item.statusText}}</text>
+          <text class="check-time">{{item.timeText}}</text>
+        </view>
+        <view class="check-right">
+          <text>{{item.responseText}}</text>
+          <text wx:if="{{item.codeText !== '—'}}">HTTP {{item.codeText}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

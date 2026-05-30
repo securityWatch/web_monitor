@@ -1,0 +1,32 @@
+<view class="container">
+  <view class="card profile">
+    <text class="section-title">账号</text>
+    <text class="email">{{user.email}}</text>
+    <text wx:if="{{user.displayName}}" class="display-name">{{user.displayName}}</text>
+  </view>
+
+  <view class="card">
+    <text class="section-title">组织</text>
+    <text class="org-name">{{organization.name}}</text>
+    <text class="card-sub">套餐 {{organization.planTier}}</text>
+  </view>
+
+  <view class="card">
+    <text class="section-title">API 连接</text>
+    <view class="api-row" bindtap="copyApiBase">
+      <text class="api-url">{{apiBase}}</text>
+      <text class="copy-hint">点击复制</text>
+    </view>
+    <text class="card-sub hint">修改地址请编辑 config/env.js 后重新编译</text>
+  </view>
+
+  <view class="card stub">
+    <text class="section-title">更多设置</text>
+    <text class="stub-text">通知偏好、告警渠道、团队管理等完整功能请使用 Web 端。</text>
+    <text class="stub-link">http://49.234.112.108/zh/settings</text>
+  </view>
+
+  <button class="logout-btn" bindtap="logout">退出登录</button>
+
+  <text class="version">PulseWatch 小程序 v{{version}}</text>
+</view>
