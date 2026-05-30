@@ -128,7 +128,7 @@ export function HomeDevTools() {
 
   return (
     <section id="tools" className="border-t border-zinc-800 bg-zinc-950/50 py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold sm:text-4xl">{t('title')}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-lg text-zinc-400">{t('subtitle')}</p>
@@ -152,7 +152,7 @@ export function HomeDevTools() {
           ))}
         </div>
 
-        <div className="mt-6 card border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+        <div className="mt-6 card border-zinc-800 bg-zinc-900/40 p-4 sm:p-6 lg:p-8">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {activeTool === 'json' && (
               <>
@@ -219,14 +219,14 @@ export function HomeDevTools() {
             </p>
           )}
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:items-stretch lg:gap-6">
             <Panel label={t('input')} hint={hints[activeTool]}>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={placeholders[activeTool]}
                 spellCheck={false}
-                className="w-full min-h-[360px] lg:min-h-[400px] resize-y rounded-xl border border-zinc-700 bg-zinc-900/80 p-4 font-mono text-base lg:text-lg leading-relaxed text-white placeholder:text-zinc-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full min-h-[360px] flex-1 resize-y rounded-xl border border-zinc-700 bg-zinc-900/80 p-5 font-mono text-base leading-relaxed text-white placeholder:text-zinc-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:p-6 sm:text-lg lg:min-h-[480px] lg:h-[50vh] lg:max-h-[40rem]"
               />
             </Panel>
             <Panel label={t('output')} hint={t('outputHint')}>
@@ -235,7 +235,7 @@ export function HomeDevTools() {
                 readOnly
                 placeholder={t('outputPlaceholder')}
                 spellCheck={false}
-                className="w-full min-h-[360px] lg:min-h-[400px] resize-y rounded-xl border border-zinc-700 bg-zinc-900/80 p-4 font-mono text-base lg:text-lg leading-relaxed text-zinc-300 placeholder:text-zinc-600 focus:outline-none"
+                className="w-full min-h-[360px] flex-1 resize-y rounded-xl border border-zinc-700 bg-zinc-900/80 p-5 font-mono text-base leading-relaxed text-zinc-300 placeholder:text-zinc-600 focus:outline-none sm:p-6 sm:text-lg lg:min-h-[480px] lg:h-[50vh] lg:max-h-[40rem]"
               />
             </Panel>
           </div>
@@ -249,12 +249,12 @@ export function HomeDevTools() {
 
 function Panel({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col">
-      <div className="mb-2 flex items-baseline justify-between gap-2">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-3 flex items-baseline justify-between gap-2">
         <span className="text-sm font-medium text-zinc-300 sm:text-base">{label}</span>
         <span className="text-xs text-zinc-600 sm:text-sm">{hint}</span>
       </div>
-      {children}
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );
 }
