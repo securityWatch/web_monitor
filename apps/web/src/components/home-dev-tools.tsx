@@ -45,6 +45,20 @@ const TOOLS: { id: ToolId; icon: typeof Braces }[] = [
 
 export function HomeDevTools() {
   const t = useTranslations('homeTools');
+  const placeholders: Record<ToolId, string> = {
+    json: t('placeholders.json'),
+    escape: t('placeholders.escape'),
+    base64: t('placeholders.base64'),
+    url: t('placeholders.url'),
+    timestamp: t('placeholders.timestamp'),
+  };
+  const hints: Record<ToolId, string> = {
+    json: t('hints.json'),
+    escape: t('hints.escape'),
+    base64: t('hints.base64'),
+    url: t('hints.url'),
+    timestamp: t('hints.timestamp'),
+  };
   const [activeTool, setActiveTool] = useState<ToolId>('json');
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
@@ -206,11 +220,11 @@ export function HomeDevTools() {
           )}
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <Panel label={t('input')} hint={t(`hints.${activeTool}`)}>
+            <Panel label={t('input')} hint={hints[activeTool]}>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={t(`placeholders.${activeTool}`)}
+                placeholder={placeholders[activeTool]}
                 spellCheck={false}
                 className="w-full min-h-[360px] lg:min-h-[400px] resize-y rounded-xl border border-zinc-700 bg-zinc-900/80 p-4 font-mono text-base lg:text-lg leading-relaxed text-white placeholder:text-zinc-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
