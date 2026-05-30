@@ -407,7 +407,11 @@ func stepLabel(step HTTPStep, index int) string {
 }
 
 func elapsedMs(start time.Time) int {
-	return int(time.Since(start).Milliseconds())
+	ms := int(time.Since(start).Milliseconds())
+	if ms < 1 {
+		return 1
+	}
+	return ms
 }
 
 func attachBodySnippet(metadata map[string]interface{}, body []byte) {

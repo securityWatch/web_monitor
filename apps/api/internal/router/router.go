@@ -76,6 +76,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r.GET("/health", authH.Health)
 	r.GET("/api/v1/openapi.json", openAPIH.Spec)
 	r.GET("/api/v1/public/founding-count", meH.FoundingCount)
+	r.GET("/api/v1/public/status-domain", statusH.PublicGetByDomain)
 	r.GET("/api/v1/public/status/:slug", statusH.PublicGet)
 	r.POST("/api/v1/public/status/:slug/subscribe", statusH.PublicSubscribe)
 	r.POST("/api/v1/public/status/:slug/subscribe/confirm", statusH.PublicSubscribeConfirm)
