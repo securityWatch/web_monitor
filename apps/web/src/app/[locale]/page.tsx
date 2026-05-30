@@ -1,4 +1,23 @@
-import { LandingPageClient } from '@/components/landing-page';
+import { getTranslations } from 'next-intl/server';
+import { LandingPage } from '@/components/landing-page';
+import { LandingJsonLd } from '@/components/landing-json-ld';
+import { buildPageMetadata } from '@/lib/seo';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'meta.home' });
+  const keywords = t('keywords')
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean);
+  return buildPageMetadata({
+    locale,
+    path: '',
+    title: t('title'),
+    description: t('description'),
+    keywords,
+  });
+}
 
 async function getFoundingCount() {
   try {
@@ -14,11 +33,19 @@ async function getFoundingCount() {
       const data = await res.json();
       return data.remaining as number;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return 3847;
 }
 
-export default async function LandingPage() {
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const foundingCount = await getFoundingCount();
-  return <LandingPageClient foundingCount={foundingCount} />;
+  return (
+    <>
+      <LandingJsonLd locale={locale} />
+      <LandingPage foundingCount={foundingCount} />
+    </>
+  );
 }
