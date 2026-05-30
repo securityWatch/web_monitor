@@ -27,7 +27,8 @@ if grep -q '^CORS_ORIGINS=' ${APP_DIR}/api/.env 2>/dev/null; then
 else
   echo 'CORS_ORIGINS=${CORS_ORIGINS}' >> ${APP_DIR}/api/.env
 fi`;
-      c.exec(`mv /tmp/pulsewatch-api ${APP_DIR}/api/pulsewatch-api && chmod +x ${APP_DIR}/api/pulsewatch-api && ${patchEnv} && echo prs@2018 | sudo -S systemctl restart pulsewatch-api && sleep 3 && curl -s http://127.0.0.1:4000/health`, (e2, s) => {
+      const pw = PASSWORD.replace(/'/g, "'\\''");
+      c.exec(`echo '${pw}' | sudo -S systemctl stop pulsewatch-api && mv /tmp/pulsewatch-api ${APP_DIR}/api/pulsewatch-api && chmod +x ${APP_DIR}/api/pulsewatch-api && ${patchEnv} && echo '${pw}' | sudo -S systemctl start pulsewatch-api && sleep 3 && curl -s http://127.0.0.1:4000/health`, (e2, s) => {
         s.on('data', d => process.stdout.write(d));
         s.stderr.on('data', d => process.stderr.write(d));
         s.on('close', () => c.end());
