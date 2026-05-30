@@ -49,7 +49,19 @@ const emptyForm = () => ({
   secret: '',
   signEnabled: false,
   delayMinutes: 0,
+  eventType: 'all',
 });
+
+const EVENT_TYPES = [
+  { id: 'all', labelKey: 'eventAll' },
+  { id: 'down', labelKey: 'eventDown' },
+  { id: 'up', labelKey: 'eventUp' },
+  { id: 'security', labelKey: 'eventSecurity' },
+  { id: 'ssl_warning', labelKey: 'eventSslWarning' },
+  { id: 'dns_change', labelKey: 'eventDnsChange' },
+  { id: 'tamper_major_change', labelKey: 'eventTamperMajor' },
+  { id: 'tamper_policy_violation', labelKey: 'eventTamperPolicy' },
+] as const;
 
 export function AlertIntegrations() {
   const t = useTranslations('settings.integrations');
@@ -102,6 +114,7 @@ export function AlertIntegrations() {
         config,
         enabled: true,
         delayMinutes: form.delayMinutes,
+        eventType: form.eventType,
       }),
     });
     setForm(emptyForm());
@@ -219,6 +232,14 @@ export function AlertIntegrations() {
             <p className="text-xs text-zinc-600">{t('signHint')}</p>
           </div>
         )}
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">{t('eventType')}</label>
+          <select className="input max-w-md" value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })}>
+            {EVENT_TYPES.map((et) => (
+              <option key={et.id} value={et.id}>{t(et.labelKey)}</option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">{t('delayMinutes')}</label>
           <input type="number" min={0} className="input w-32" value={form.delayMinutes} onChange={(e) => setForm({ ...form, delayMinutes: Number(e.target.value) })} />

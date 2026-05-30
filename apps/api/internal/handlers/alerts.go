@@ -75,8 +75,9 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 		Name    string          `json:"name" binding:"required"`
 		Type    string          `json:"type" binding:"required"`
 		Config  json.RawMessage `json:"config"`
-		Enabled *bool           `json:"enabled"`
-		DelayMinutes *int       `json:"delayMinutes"`
+		Enabled      *bool           `json:"enabled"`
+		DelayMinutes *int            `json:"delayMinutes"`
+		EventType    string          `json:"eventType"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -115,10 +116,18 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 		return
 	}
 
+	eventType := strings.ToLower(strings.TrimSpace(req.EventType))
+	validEvents := map[string]bool{
+		"all": true, "down": true, "up": true, "security": true,
+		"ssl_warning": true, "dns_change": true, "tamper_major_change": true, "tamper_policy_violation": true,
+	}
+	if !validEvents[eventType] {
+		eventType = "all"
+	}
 	_, _ = h.db.Exec(c.Request.Context(), `
 		INSERT INTO alert_rules (id, org_id, monitor_id, channel_id, event_type, enabled, delay_minutes)
-		VALUES ($1, $2, NULL, $3, 'all', true, $4)
-	`, uuid.New().String(), orgID, id, delayMinutes)
+		VALUES ($1, $2, NULL, $3, $4, true, $5)
+	`, uuid.New().String(), orgID, id, eventType, delayMinutes)
 
 	ch, _ := h.fetchChannel(c, orgID, id)
 	c.JSON(http.StatusCreated, ch)

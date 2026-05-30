@@ -199,6 +199,48 @@ func (a *AuthService) LoginOrRegisterOAuth(ctx context.Context, provider, provid
 	return a.issueTokens(ctx, user, org, userAgent, ip)
 }
 
+// LoginOrRegisterSSO logs in via org OIDC; user must already belong to the org (or match email invite flow via Register).
+func (a *AuthService) LoginOrRegisterSSO(ctx context.Context, orgID, provider, providerUID, email, displayName, userAgent, ip string) (*models.AuthResponse, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
+	var userID string
+	err := a.db.QueryRow(ctx, `
+		SELECT user_id FROM oauth_identities WHERE provider = $1 AND provider_user_id = $2
+	`, provider, providerUID).Scan(&userID)
+	if err != nil {
+		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+		if userID == "" {
+			return nil, fmt.Errorf("no account for this email; ask your admin for an invitation")
+		}
+		_, _ = a.db.Exec(ctx, `
+			INSERT INTO oauth_identities (id, user_id, provider, provider_user_id)
+			VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+		`, uuid.New().String(), userID, provider, providerUID)
+	}
+	var member bool
+	_ = a.db.QueryRow(ctx, `
+		SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)
+	`, userID, orgID).Scan(&member)
+	if !member {
+		return nil, fmt.Errorf("user is not a member of this organization")
+	}
+	if displayName != "" {
+		_, _ = a.db.Exec(ctx, `UPDATE users SET display_name = COALESCE(NULLIF(display_name,''), $1), email_verified_at = COALESCE(email_verified_at, now()), updated_at = now() WHERE id = $2`, displayName, userID)
+	}
+	user, org, err := a.loadUserOrg(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	totpSvc := NewTOTPService(a.db)
+	if totpSvc.IsEnabled(ctx, userID) {
+		temp, err := a.signTempTotpToken(userID)
+		if err != nil {
+			return nil, err
+		}
+		return &models.AuthResponse{RequiresTotp: true, TempToken: temp}, nil
+	}
+	return a.issueTokens(ctx, user, org, userAgent, ip)
+}
+
 func GenerateRandomPassword() string {
 	b := make([]byte, 24)
 	_, _ = rand.Read(b)
@@ -463,6 +505,49 @@ func (a *AuthService) CompleteTotpLogin(ctx context.Context, tempToken, code, us
 	`, userID).Scan(&orgID)
 	if err != nil {
 		return nil, fmt.Errorf("no organization found")
+	}
+	user, org, err := a.loadUserOrg(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	return a.issueTokens(ctx, user, org, userAgent, ip)
+}
+
+// LoginOrRegisterSSO completes org-scoped OIDC login and ensures membership in orgID.
+func (a *AuthService) LoginOrRegisterSSO(ctx context.Context, orgID, providerUID, email, displayName, avatarURL, userAgent, ip string) (*models.AuthResponse, error) {
+	provider := "oidc:sso:" + orgID
+	var userID string
+	err := a.db.QueryRow(ctx, `
+		SELECT user_id FROM oauth_identities WHERE provider = $1 AND provider_user_id = $2
+	`, provider, providerUID).Scan(&userID)
+	if err != nil {
+		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+		if userID == "" {
+			resp, err := a.Register(ctx, email, GenerateRandomPassword(), displayName)
+			if err != nil && !strings.Contains(err.Error(), "already exists") {
+				return nil, err
+			}
+			if resp != nil {
+				userID = resp.User.ID
+			} else {
+				_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+			}
+		}
+		_, _ = a.db.Exec(ctx, `
+			INSERT INTO oauth_identities (id, user_id, provider, provider_user_id)
+			VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+		`, uuid.New().String(), userID, provider, providerUID)
+	}
+	if avatarURL != "" {
+		_, _ = a.db.Exec(ctx, `UPDATE users SET avatar_url = $1, display_name = COALESCE(NULLIF(display_name,''), $2), email_verified_at = COALESCE(email_verified_at, now()), updated_at = now() WHERE id = $3`, avatarURL, displayName, userID)
+	}
+	var memberExists bool
+	_ = a.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)`, userID, orgID).Scan(&memberExists)
+	if !memberExists {
+		_, _ = a.db.Exec(ctx, `
+			INSERT INTO organization_members (id, user_id, org_id, role, joined_at)
+			VALUES ($1, $2, $3, 'viewer', now())
+		`, uuid.New().String(), userID, orgID)
 	}
 	user, org, err := a.loadUserOrg(ctx, userID, orgID)
 	if err != nil {

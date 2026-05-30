@@ -69,7 +69,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	openAPIH := handlers.NewOpenAPIHandler()
 	probeDispatch := services.NewProbeDispatch(db)
 	probeH := handlers.NewProbeHandler(probeDispatch, cfg.ProbeSecret)
-	ssoH := handlers.NewSSOHandler(db)
+	ssoSvc := services.NewSSOService(authSvc, cfg, db)
+	ssoH := handlers.NewSSOHandler(db, ssoSvc, cfg.WebURL)
 
 	rateLimit := middleware.NewRateLimiter(120, time.Minute)
 
@@ -105,6 +106,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 		auth.GET("/oauth/:provider/callback", oauthH.Callback)
 		auth.GET("/providers", authH.OAuthProviders)
 		auth.GET("/sso/start", ssoH.LoginStart)
+		auth.GET("/sso/callback", ssoH.Callback)
+		auth.GET("/sso/status", ssoH.Status)
 
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware(cfg.JWTSecret, db))

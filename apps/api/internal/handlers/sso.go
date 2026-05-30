@@ -2,18 +2,22 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pulsewatch/api/internal/services"
 )
 
 type SSOHandler struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
+	sso *services.SSOService
+	web string
 }
 
-func NewSSOHandler(db *pgxpool.Pool) *SSOHandler {
-	return &SSOHandler{db: db}
+func NewSSOHandler(db *pgxpool.Pool, sso *services.SSOService, webURL string) *SSOHandler {
+	return &SSOHandler{db: db, sso: sso, web: webURL}
 }
 
 func (h *SSOHandler) Get(c *gin.Context) {
@@ -64,25 +68,69 @@ func (h *SSOHandler) Upsert(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "saved"})
 }
 
+func (h *SSOHandler) Status(c *gin.Context) {
+	orgSlug := c.Query("org")
+	if orgSlug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"enabled": false})
+		return
+	}
+	_, err := h.sso.LoadOrgBySlug(c.Request.Context(), orgSlug)
+	c.JSON(http.StatusOK, gin.H{"enabled": err == nil})
+}
+
 func (h *SSOHandler) LoginStart(c *gin.Context) {
 	orgSlug := c.Query("org")
 	if orgSlug == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "org required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "org required", "code": "ORG_REQUIRED"})
 		return
 	}
-	var issuer, clientID string
-	err := h.db.QueryRow(c.Request.Context(), `
-		SELECT s.issuer_url, s.client_id FROM org_sso s
-		JOIN organizations o ON o.id = s.org_id
-		WHERE o.slug = $1 AND s.enabled = true
-	`, orgSlug).Scan(&issuer, &clientID)
+	authURL, err := h.sso.AuthRedirectURL(c.Request.Context(), orgSlug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "SSO not configured"})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error(), "code": "SSO_NOT_CONFIGURED"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"issuerUrl": issuer,
-		"clientId":  clientID,
-		"message":   "Redirect user to IdP authorization endpoint with client_id and issuer",
-	})
+	c.Redirect(http.StatusTemporaryRedirect, authURL)
+}
+
+func (h *SSOHandler) Callback(c *gin.Context) {
+	code := c.Query("code")
+	state := c.Query("state")
+	if code == "" || state == "" {
+		c.Redirect(http.StatusTemporaryRedirect, h.web+"/login?error=sso")
+		return
+	}
+	resp, redirect, err := h.sso.HandleCallback(c.Request.Context(), code, state, c.GetHeader("User-Agent"), c.ClientIP())
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, h.web+"/login?error=sso")
+		return
+	}
+	if resp.RequiresTotp {
+		c.Redirect(http.StatusTemporaryRedirect, h.web+"/login?totp="+url.QueryEscape(resp.TempToken))
+		return
+	}
+	u, _ := url.Parse(redirect)
+	q := u.Query()
+	q.Set("accessToken", resp.AccessToken)
+	q.Set("refreshToken", resp.RefreshToken)
+	u.RawQuery = q.Encode()
+	c.Redirect(http.StatusTemporaryRedirect, u.String())
+}
+
+func (h *SSOHandler) Status(c *gin.Context) {
+	orgSlug := c.Query("org")
+	if orgSlug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"enabled": false, "error": "org required"})
+		return
+	}
+	var enabled bool
+	err := h.db.QueryRow(c.Request.Context(), `
+		SELECT s.enabled FROM org_sso s
+		JOIN organizations o ON o.id = s.org_id
+		WHERE o.slug = $1
+	`, orgSlug).Scan(&enabled)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"enabled": false})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"enabled": enabled})
 }

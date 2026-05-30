@@ -22,16 +22,35 @@ export default function LoginPage() {
   const [magicSent, setMagicSent] = useState(false);
   const [totpCode, setTotpCode] = useState('');
   const [tempToken, setTempToken] = useState(totpToken || '');
+  const [orgSlug, setOrgSlug] = useState('');
+  const [ssoEnabled, setSsoEnabled] = useState(false);
 
   useEffect(() => {
     fetch('/api/v1/auth/providers')
       .then((r) => r.json())
       .then((d) => setProviders(d.providers || []))
       .catch(() => {});
-    if (searchParams.get('error') === 'magic') {
-      setError('登录链接无效或已过期');
+    const err = searchParams.get('error');
+    if (err === 'magic') {
+      setError(t('magicLinkInvalid'));
+    } else if (err === 'sso' || err === 'oauth') {
+      setError(t('ssoFailed'));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
+
+  useEffect(() => {
+    const slug = orgSlug.trim().toLowerCase();
+    if (!slug) {
+      setSsoEnabled(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    fetch(`/api/v1/auth/sso/status?org=${encodeURIComponent(slug)}`, { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((d) => setSsoEnabled(!!d.enabled))
+      .catch(() => setSsoEnabled(false));
+    return () => ctrl.abort();
+  }, [orgSlug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,15 +161,41 @@ export default function LoginPage() {
           </form>
         ) : (
           <>
+            <div className="mt-6 space-y-3">
+              <div>
+                <label className="mb-1 block text-sm text-zinc-400">{t('ssoOrgSlug')}</label>
+                <input
+                  className="input font-mono text-sm"
+                  placeholder={t('ssoOrgSlugPlaceholder')}
+                  value={orgSlug}
+                  onChange={(e) => setOrgSlug(e.target.value)}
+                />
+                <p className="mt-1 text-xs text-zinc-600">{t('ssoOrgHint')}</p>
+              </div>
+              {ssoEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = `/api/v1/auth/sso/start?org=${encodeURIComponent(orgSlug.trim().toLowerCase())}`;
+                  }}
+                  className="btn-secondary w-full py-2.5"
+                >
+                  {t('ssoLoginButton')}
+                </button>
+              ) : orgSlug.trim() ? (
+                <p className="text-xs text-zinc-500">{t('ssoNotConfigured')}</p>
+              ) : null}
+            </div>
+
             {(providers.includes('google') || providers.includes('github')) && (
-              <div className="mt-6 flex flex-col gap-2">
+              <div className="mt-4 flex flex-col gap-2">
                 {providers.includes('google') && (
-                  <button type="button" onClick={() => { window.location.href = '/api/v1/auth/oauth/google'; }} className="btn-secondary w-full py-2.5">Google 登录</button>
+                  <button type="button" onClick={() => { window.location.href = '/api/v1/auth/oauth/google'; }} className="btn-secondary w-full py-2.5">Google</button>
                 )}
                 {providers.includes('github') && (
-                  <button type="button" onClick={() => { window.location.href = '/api/v1/auth/oauth/github'; }} className="btn-secondary w-full py-2.5">GitHub 登录</button>
+                  <button type="button" onClick={() => { window.location.href = '/api/v1/auth/oauth/github'; }} className="btn-secondary w-full py-2.5">GitHub</button>
                 )}
-                <p className="text-center text-xs text-zinc-600">或</p>
+                <p className="text-center text-xs text-zinc-600">{t('orDivider')}</p>
               </div>
             )}
 

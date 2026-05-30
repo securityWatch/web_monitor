@@ -15,9 +15,13 @@ import {
   ShoppingCart,
   Cloud,
   Users,
+  Lock,
+  Phone,
+  MapPin,
+  LayoutDashboard,
 } from 'lucide-react';
 
-const FAQ_COUNT = 8;
+const FAQ_COUNT = 11;
 
 export async function LandingPage({ foundingCount }: { foundingCount: number }) {
   const t = await getTranslations('landing');
@@ -25,11 +29,14 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
 
   const features = [
     { icon: Globe, title: t('feature1Title'), desc: t('feature1Desc') },
-    { icon: LineChart, title: t('feature2Title'), desc: t('feature2Desc') },
-    { icon: Bell, title: t('feature3Title'), desc: t('feature3Desc') },
-    { icon: Shield, title: t('feature4Title'), desc: t('feature4Desc') },
-    { icon: Code, title: t('feature5Title'), desc: t('feature5Desc') },
-    { icon: Sparkles, title: t('feature6Title'), desc: t('feature6Desc') },
+    { icon: Lock, title: t('feature2Title'), desc: t('feature2Desc') },
+    { icon: LineChart, title: t('feature3Title'), desc: t('feature3Desc') },
+    { icon: Bell, title: t('feature4Title'), desc: t('feature4Desc') },
+    { icon: Phone, title: t('feature5Title'), desc: t('feature5Desc') },
+    { icon: MapPin, title: t('feature6Title'), desc: t('feature6Desc') },
+    { icon: Code, title: t('feature7Title'), desc: t('feature7Desc') },
+    { icon: LayoutDashboard, title: t('feature8Title'), desc: t('feature8Desc') },
+    { icon: Sparkles, title: t('feature9Title'), desc: t('feature9Desc') },
   ];
 
   const useCases = [
@@ -37,6 +44,7 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
     { icon: ShoppingCart, title: t('useCase2Title'), desc: t('useCase2Desc') },
     { icon: Cloud, title: t('useCase3Title'), desc: t('useCase3Desc') },
     { icon: Users, title: t('useCase4Title'), desc: t('useCase4Desc') },
+    { icon: Shield, title: t('useCase5Title'), desc: t('useCase5Desc') },
   ];
 
   const plans = [
@@ -106,7 +114,7 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="text-center text-3xl font-bold">{t('useCasesTitle')}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-zinc-400">{t('useCasesSubtitle')}</p>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {useCases.map((u) => (
               <article key={u.title} className="card hover:border-zinc-700 transition-colors">
                 <u.icon className="h-8 w-8 text-blue-500" aria-hidden />
@@ -255,8 +263,14 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
                 {t('resourcesCompare')}
               </Link>
             </li>
+            <li>
+              <Link href="/compare/uptimerobot" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesCompareUptimeRobot')}
+              </Link>
+            </li>
           </ul>
           <p className="mt-4 text-xs text-zinc-500">{t('resourcesAppNote')}</p>
+          <p className="mt-2 text-xs text-zinc-500">{t('resourcesMiniprogramNote')}</p>
         </div>
       </section>
 

@@ -75,6 +75,7 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 		    OR ar.event_type = $3
 		    OR (ar.event_type = 'down' AND $3 = 'down')
 		    OR (ar.event_type = 'up' AND $3 IN ('up', 'recovery'))
+		    OR (ar.event_type = 'security' AND $3 IN ('ssl_warning', 'dns_change', 'tamper_major_change', 'tamper_policy_violation'))
 		  )
 	`, orgID, monitorID, status)
 	if err != nil {

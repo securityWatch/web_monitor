@@ -63,17 +63,19 @@
 | P5-2 | 移动端底栏导航 | P0 | ✅ 2026-05-30 |
 | P5-3 | 国内 IM 告警部署 | P0 | ✅ 2026-05-30 |
 | P5-4 | On-Call 升级 + 事件指挥台 UI | P1 | ✅ 2026-05-30 |
-| P5-5 | 故障截图 + 取证 Tab | P1 | ✅ MVP |
+| P5-5 | 故障截图 + 取证 Tab | P1 | ✅ usable — 标注 PNG + body 片段 + 详情取证区 |
 | P5-6 | 状态页公告 + uptime 历史 | P1 | ✅ 2026-05-30 |
 | P5-7 | Twilio 语音告警 | P1 | ✅ 2026-05-30 |
 | P5-8 | Monitors 虚拟滚动 + 批量 | P1 | ✅ 2026-05-30 |
 | P5-9 | 套餐配额硬门控 | P1 | ✅ 2026-05-30 |
-| P5-10 | Terraform Provider v0.1 | P1 | ✅ partial — client MVP |
-| P5-11 | Core Web Vitals 扩展 | P2 | ✅ LCP/FCP estimate |
+| P5-10 | Terraform Provider v0.1 | P1 | ✅ usable — client + `examples/rest-monitor.tf` |
+| P5-11 | Core Web Vitals 扩展 | P2 | ✅ LCP/FCP 估算（UI 标注非实验室 CWV） |
 | P5-12 | ⌘K 命令面板 | P2 | ✅ 2026-05-30 |
-| P5-13 | SSO OIDC | P2 | ✅ partial — config API |
+| P5-13 | SSO OIDC | P2 | ✅ OIDC 登录流（需 Business + org 成员） |
 | P5-14 | Opsgenie 集成 | P2 | ✅ 2026-05-30 |
 | P5-15 | 竞品对比落地页 | P1 | ✅ 2026-05-30 |
+
+**Phase 7 延后**：Headless Chromium 真页面截图、HashiCorp Terraform plugin 注册发布、真实 Chrome CWV 实验室采集。
 
 ---
 
@@ -96,7 +98,8 @@
 
 | 变量 | 用途 |
 |------|------|
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth / 也可作 org OIDC 测试 |
+| Org SSO | Settings → 组织 OIDC（Business）；回调 `GET /api/v1/auth/sso/callback` |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth |
 | `WEB_URL` | OAuth / 密码重置 / Stripe 跳转 |
 | `STRIPE_SECRET_KEY` / `STRIPE_PRO_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` | 付费 |

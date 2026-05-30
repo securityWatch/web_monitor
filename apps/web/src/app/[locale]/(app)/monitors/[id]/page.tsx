@@ -104,6 +104,7 @@ export default function MonitorDetailPage() {
   const [search, setSearch] = useState('');
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [artifacts, setArtifacts] = useState<{ id: string; url: string; kind: string; createdAt: string }[]>([]);
 
 
 
@@ -147,7 +148,14 @@ export default function MonitorDetailPage() {
 
   }, [orgId, id]);
 
-
+  useEffect(() => {
+    if (!orgId || !id) return;
+    apiFetch<{ artifacts: { id: string; url: string; kind: string; createdAt: string }[] }>(
+      `/api/v1/orgs/${orgId}/monitors/${id}/artifacts`,
+    )
+      .then((d) => setArtifacts(d.artifacts || []))
+      .catch(() => setArtifacts([]));
+  }, [orgId, id]);
 
   const loadChecks = useCallback(() => {
 
@@ -340,7 +348,72 @@ export default function MonitorDetailPage() {
 
       <MonitorSecurityStatus type={monitor.type} meta={securityMeta} />
 
+      {monitor.type === 'pagespeed' && (latestMeta.lcpMs != null || latestMeta.fcpMs != null) && (
+        <div className="card">
+          <h2 className="font-semibold">{t('cwvTitle')}</h2>
+          <p className="mt-1 text-xs text-amber-400/90">{t('cwvEstimatedNote')}</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            {latestMeta.lcpMs != null && (
+              <div>
+                <p className="text-sm text-zinc-500">{t('cwvLcp')}</p>
+                <p className="mt-1 font-mono text-lg">{latestMeta.lcpMs} ms</p>
+              </div>
+            )}
+            {latestMeta.fcpMs != null && (
+              <div>
+                <p className="text-sm text-zinc-500">{t('cwvFcp')}</p>
+                <p className="mt-1 font-mono text-lg">{latestMeta.fcpMs} ms</p>
+              </div>
+            )}
+            {latestMeta.ttfbMs != null && (
+              <div>
+                <p className="text-sm text-zinc-500">{t('timingTtfb')}</p>
+                <p className="mt-1 font-mono text-lg">{latestMeta.ttfbMs} ms</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
+      {(artifacts.length > 0 || (latestCheck && !latestCheck.isUp && latestMeta.responseBodySnippet)) && (
+        <div className="card">
+          <h2 className="font-semibold">{t('forensicsTitle')}</h2>
+          <p className="mt-1 text-xs text-zinc-500">{t('forensicsDesc')}</p>
+          {artifacts.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-4">
+              {artifacts.slice(0, 5).map((a) => {
+                if (a.kind === 'http_capture' && a.url.startsWith('data:application/json')) {
+                  try {
+                    const raw = atob(a.url.split(',')[1] || '');
+                    const meta = JSON.parse(raw) as { statusCode?: number; bodySnippet?: string };
+                    return (
+                      <div key={a.id} className="max-w-xl rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400">
+                        <p className="font-medium text-zinc-300">{t('forensicsHttpCapture')}</p>
+                        {meta.statusCode != null && <p className="mt-1">HTTP {meta.statusCode}</p>}
+                        {meta.bodySnippet && (
+                          <pre className="mt-2 max-h-32 overflow-auto rounded bg-black/30 p-2 text-zinc-300">{meta.bodySnippet}</pre>
+                        )}
+                      </div>
+                    );
+                  } catch {
+                    return null;
+                  }
+                }
+                if (a.kind !== 'screenshot') return null;
+                return (
+                  <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" className="block max-w-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.url} alt={t('forensicsScreenshot')} className="rounded-lg border border-zinc-800" />
+                  </a>
+                );
+              })}
+            </div>
+          )}
+          {latestMeta.responseBodySnippet && (
+            <pre className="mt-4 max-h-48 overflow-auto rounded bg-black/30 p-3 text-xs text-zinc-300">{latestMeta.responseBodySnippet}</pre>
+          )}
+        </div>
+      )}
 
       {latestMeta.timings && (
 
@@ -484,7 +557,8 @@ export default function MonitorDetailPage() {
 
                 const open = expandedId === c.id;
 
-                const hasDetail = timingRowsCount(meta) > 0 || (meta.chainStepDetails?.length || 0) > 0;
+                const hasDetail = timingRowsCount(meta) > 0 || (meta.chainStepDetails?.length || 0) > 0
+                  || !!meta.responseBodySnippet || !c.isUp;
 
                 return (
 
@@ -527,6 +601,12 @@ export default function MonitorDetailPage() {
                       <tr className="border-b border-zinc-800/50 bg-zinc-900/40">
 
                         <td colSpan={5} className="px-4 py-3">
+                          {!c.isUp && (
+                            <p className="mb-2 text-xs font-medium text-zinc-400">{t('forensicsTab')}</p>
+                          )}
+                          {meta.responseBodySnippet && (
+                            <pre className="mb-3 max-h-36 overflow-auto rounded bg-black/30 p-2 text-xs text-zinc-300">{meta.responseBodySnippet}</pre>
+                          )}
 
                           {meta.timings && (
 
