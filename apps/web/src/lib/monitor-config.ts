@@ -132,12 +132,25 @@ export interface TamperMonitorConfig {
   contentScanConsent?: boolean;
 }
 
+export interface PageSpeedMonitorConfig {
+  maxTtfbMs?: number;
+  maxLcpMs?: number;
+  maxTotalMs?: number;
+  maxPageWeightKb?: number;
+}
+
 export const defaultSslConfig = (): SslMonitorConfig => ({ warnDays: 30 });
 export const defaultDnsConfig = (): DnsMonitorConfig => ({ recordType: 'A', baselineMode: 'auto' });
 export const defaultTamperConfig = (): TamperMonitorConfig => ({
   changeThresholdPercent: 10,
   detectMajorChange: true,
   policyCategories: {},
+});
+export const defaultPageSpeedConfig = (): PageSpeedMonitorConfig => ({
+  maxTtfbMs: 2000,
+  maxLcpMs: 2500,
+  maxTotalMs: 5000,
+  maxPageWeightKb: 2048,
 });
 
 export const defaultAlertConfig = (): MonitorAlertConfig => ({ webhookEnabled: true });
@@ -182,6 +195,17 @@ export function parseTamperConfig(raw: unknown): TamperMonitorConfig {
   };
 }
 
+export function parsePageSpeedConfig(raw: unknown): PageSpeedMonitorConfig {
+  if (!raw || typeof raw !== 'object') return defaultPageSpeedConfig();
+  const obj = raw as Record<string, unknown>;
+  return {
+    maxTtfbMs: typeof obj.maxTtfbMs === 'number' ? obj.maxTtfbMs : 2000,
+    maxLcpMs: typeof obj.maxLcpMs === 'number' ? obj.maxLcpMs : 2500,
+    maxTotalMs: typeof obj.maxTotalMs === 'number' ? obj.maxTotalMs : 5000,
+    maxPageWeightKb: typeof obj.maxPageWeightKb === 'number' ? obj.maxPageWeightKb : 2048,
+  };
+}
+
 export function parseAlertConfig(raw: unknown): MonitorAlertConfig {
   if (!raw || typeof raw !== 'object') return defaultAlertConfig();
   const obj = raw as Record<string, unknown>;
@@ -201,6 +225,7 @@ export function mergeMonitorConfigForSave(
     ssl?: SslMonitorConfig;
     dns?: DnsMonitorConfig;
     tamper?: TamperMonitorConfig;
+    pagespeed?: PageSpeedMonitorConfig;
   },
 ): Record<string, unknown> {
   const base: Record<string, unknown> =
@@ -242,6 +267,14 @@ export function mergeMonitorConfigForSave(
       .filter(Boolean);
     if (keywords.length > 0) base.customBlocklist = keywords;
     else delete base.customBlocklist;
+  }
+
+  if (security?.pagespeed) {
+    const ps = security.pagespeed;
+    if (ps.maxTtfbMs != null) base.maxTtfbMs = ps.maxTtfbMs;
+    if (ps.maxLcpMs != null) base.maxLcpMs = ps.maxLcpMs;
+    if (ps.maxTotalMs != null) base.maxTotalMs = ps.maxTotalMs;
+    if (ps.maxPageWeightKb != null) base.maxPageWeightKb = ps.maxPageWeightKb;
   }
 
   base.alerts = { webhookEnabled: alertConfig.webhookEnabled };

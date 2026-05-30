@@ -127,6 +127,30 @@ func TestHTTPTimingsMetadata(t *testing.T) {
 	assert.NotNil(t, timings["totalMs"])
 }
 
+func TestRunPageSpeedCheckMetadataAndBudgets(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<!doctype html><html><head><link rel="stylesheet" href="/app.css"><script src="/app.js"></script></head><body><img src="/hero.png"></body></html>`))
+	}))
+	defer srv.Close()
+
+	outcome := services.RunCheck(context.Background(), "pagespeed", srv.URL, json.RawMessage(`{"maxTtfbMs":2000,"maxLcpMs":2500,"maxTotalMs":5000,"maxPageWeightKb":2048}`))
+	assert.True(t, outcome.IsUp, outcome.ErrorMessage)
+	assert.Equal(t, true, outcome.Metadata["pageSpeed"])
+	assert.NotNil(t, outcome.Metadata["fcpMs"])
+	assert.NotNil(t, outcome.Metadata["lcpMs"])
+	assert.NotNil(t, outcome.Metadata["performanceScore"])
+	assert.Equal(t, "pass", outcome.Metadata["budgetStatus"])
+	inventory, ok := outcome.Metadata["resourceInventory"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, 3, inventory["total"])
+
+	failing := services.RunCheck(context.Background(), "pagespeed", srv.URL, json.RawMessage(`{"maxLcpMs":1}`))
+	assert.False(t, failing.IsUp)
+	assert.Equal(t, "fail", failing.Metadata["budgetStatus"])
+}
+
 func TestRunHTTPMultipleExpectedStatuses(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)

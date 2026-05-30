@@ -20,6 +20,20 @@ export interface CheckMetadata {
   timings?: CheckTimings;
   chainStepDetails?: ChainStepDetail[];
   responseBodySnippet?: string;
+  pageSpeed?: boolean;
+  fcpMs?: number;
+  lcpMs?: number;
+  performanceScore?: number;
+  budgetStatus?: 'pass' | 'fail';
+  budgetViolations?: string[];
+  pageWeightBytes?: number;
+  htmlBytes?: number;
+  resourceInventory?: {
+    total: number;
+    byType: Record<string, number>;
+  };
+  navigationPhases?: { name: string; durationMs: number }[];
+  performanceBudgets?: Record<string, number>;
 }
 
 export interface SecurityCheckMetadata {
@@ -66,6 +80,17 @@ export function parseCheckMetadata(raw: unknown): CheckMetadata {
   return {
     timings: parseTimings(obj.timings),
     responseBodySnippet: typeof obj.responseBodySnippet === 'string' ? obj.responseBodySnippet : undefined,
+    pageSpeed: obj.pageSpeed === true,
+    fcpMs: numFromObject(obj, 'fcpMs'),
+    lcpMs: numFromObject(obj, 'lcpMs'),
+    performanceScore: numFromObject(obj, 'performanceScore'),
+    budgetStatus: obj.budgetStatus === 'fail' ? 'fail' : obj.budgetStatus === 'pass' ? 'pass' : undefined,
+    budgetViolations: Array.isArray(obj.budgetViolations) ? obj.budgetViolations.map(String) : undefined,
+    pageWeightBytes: numFromObject(obj, 'pageWeightBytes'),
+    htmlBytes: numFromObject(obj, 'htmlBytes'),
+    resourceInventory: parseResourceInventory(obj.resourceInventory),
+    navigationPhases: parseNavigationPhases(obj.navigationPhases),
+    performanceBudgets: parseNumberMap(obj.performanceBudgets),
     chainStepDetails: Array.isArray(obj.chainStepDetails)
       ? obj.chainStepDetails.map((s) => {
           const step = s as Record<string, unknown>;
@@ -80,6 +105,46 @@ export function parseCheckMetadata(raw: unknown): CheckMetadata {
         })
       : undefined,
   };
+}
+
+function numFromObject(obj: Record<string, unknown>, key: string) {
+  return typeof obj[key] === 'number' ? (obj[key] as number) : undefined;
+}
+
+function parseResourceInventory(raw: unknown) {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const obj = raw as Record<string, unknown>;
+  const byTypeRaw = obj.byType && typeof obj.byType === 'object' ? obj.byType as Record<string, unknown> : {};
+  const byType: Record<string, number> = {};
+  for (const [key, value] of Object.entries(byTypeRaw)) {
+    if (typeof value === 'number') byType[key] = value;
+  }
+  return {
+    total: typeof obj.total === 'number' ? obj.total : Object.values(byType).reduce((sum, value) => sum + value, 0),
+    byType,
+  };
+}
+
+function parseNavigationPhases(raw: unknown) {
+  if (!Array.isArray(raw)) return undefined;
+  return raw
+    .map((item) => {
+      const obj = item as Record<string, unknown>;
+      return {
+        name: typeof obj.name === 'string' ? obj.name : '',
+        durationMs: typeof obj.durationMs === 'number' ? obj.durationMs : 0,
+      };
+    })
+    .filter((item) => item.name);
+}
+
+function parseNumberMap(raw: unknown) {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'number') out[key] = value;
+  }
+  return out;
 }
 
 function parseTimings(raw: unknown): CheckTimings | undefined {

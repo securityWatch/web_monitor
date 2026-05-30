@@ -17,6 +17,7 @@ import { apiFetch, getStoredAuth } from '@/lib/api';
 import { parseCheckMetadata, parseSecurityMetadata } from '@/lib/check-metadata';
 
 import { MonitorSecurityStatus } from '@/components/monitor-security-status';
+import { PageSpeedInsights } from '@/components/page-speed-insights';
 
 import { TimingBreakdown } from '@/components/check-timing-breakdown';
 
@@ -363,6 +364,8 @@ export default function MonitorDetailPage() {
 
 
       <MonitorSecurityStatus type={monitor.type} meta={securityMeta} />
+
+      <PageSpeedInsights meta={latestMeta} />
 
 
 
