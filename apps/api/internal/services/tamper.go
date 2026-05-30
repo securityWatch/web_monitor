@@ -1,7 +1,6 @@
 package services
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -11,16 +10,13 @@ import (
 	htmlstd "html"
 	"io"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"time"
 )
 
 const (
-	deepSeekDefaultBaseURL = "https://api.deepseek.com"
-	deepSeekDefaultModel   = "deepseek-chat"
-	tamperAITextLimit      = 6000
+	tamperAITextLimit = 6000
 )
 
 var defaultGamblingKeywords = []string{
@@ -343,72 +339,9 @@ type tamperAIRecognitionResult struct {
 }
 
 func recognizeTamperContentWithDeepSeek(ctx context.Context, targetURL, text string) (tamperAIRecognitionResult, error) {
-	apiKey := strings.TrimSpace(os.Getenv("DEEPSEEK_API_KEY"))
-	if apiKey == "" {
-		return tamperAIRecognitionResult{}, errors.New("DeepSeek API key not configured")
-	}
-	model := strings.TrimSpace(os.Getenv("DEEPSEEK_MODEL"))
-	if model == "" {
-		model = deepSeekDefaultModel
-	}
-	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("DEEPSEEK_API_BASE_URL")), "/")
-	if baseURL == "" {
-		baseURL = deepSeekDefaultBaseURL
-	}
 	if len(text) > tamperAITextLimit {
 		text = text[:tamperAITextLimit]
 	}
-
-	reqCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-
-	payload := map[string]interface{}{
-		"model": model,
-		"messages": []map[string]string{
-			{
-				"role":    "system",
-				"content": "You are a website tamper and content-safety classifier. Return only compact JSON with keys flagged(boolean), riskLevel(one of none,low,medium,high), categories(array), summary(string), confidence(number 0-1). Flag only likely defacement, phishing, gambling, adult/NSFW, malware, spam injection, or illegal content inserted into a normal website.",
-			},
-			{
-				"role":    "user",
-				"content": fmt.Sprintf("URL: %s\n\nVisible page text:\n%s", targetURL, text),
-			},
-		},
-		"response_format": map[string]string{"type": "json_object"},
-		"temperature":     0,
-	}
-	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, baseURL+"/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return tamperAIRecognitionResult{}, err
-	}
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := (&http.Client{Timeout: 25 * time.Second}).Do(req)
-	if err != nil {
-		return tamperAIRecognitionResult{}, err
-	}
-	defer resp.Body.Close()
-	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
-	if resp.StatusCode >= 300 {
-		return tamperAIRecognitionResult{}, fmt.Errorf("DeepSeek API returned HTTP %d", resp.StatusCode)
-	}
-
-	var envelope struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.Unmarshal(respBody, &envelope); err != nil {
-		return tamperAIRecognitionResult{}, err
-	}
-	if len(envelope.Choices) == 0 || strings.TrimSpace(envelope.Choices[0].Message.Content) == "" {
-		return tamperAIRecognitionResult{}, errors.New("DeepSeek API returned empty content")
-	}
-
 	var parsed struct {
 		Flagged    bool     `json:"flagged"`
 		RiskLevel  string   `json:"riskLevel"`
@@ -416,19 +349,15 @@ func recognizeTamperContentWithDeepSeek(ctx context.Context, targetURL, text str
 		Summary    string   `json:"summary"`
 		Confidence float64  `json:"confidence"`
 	}
-	if err := json.Unmarshal([]byte(stripJSONCodeFence(envelope.Choices[0].Message.Content)), &parsed); err != nil {
+	if err := callDeepSeekJSON(ctx,
+		"You are a website tamper and content-safety classifier. Return only compact JSON with keys flagged(boolean), riskLevel(one of none,low,medium,high), categories(array), summary(string), confidence(number 0-1). Flag only likely defacement, phishing, gambling, adult/NSFW, malware, spam injection, or illegal content inserted into a normal website.",
+		fmt.Sprintf("URL: %s\n\nVisible page text:\n%s", targetURL, text),
+		&parsed,
+	); err != nil {
 		return tamperAIRecognitionResult{}, err
 	}
 
-	return sanitizeTamperAIResult(parsed.Flagged, parsed.RiskLevel, parsed.Categories, parsed.Summary, parsed.Confidence, model), nil
-}
-
-func stripJSONCodeFence(s string) string {
-	s = strings.TrimSpace(s)
-	s = strings.TrimPrefix(s, "```json")
-	s = strings.TrimPrefix(s, "```")
-	s = strings.TrimSuffix(s, "```")
-	return strings.TrimSpace(s)
+	return sanitizeTamperAIResult(parsed.Flagged, parsed.RiskLevel, parsed.Categories, parsed.Summary, parsed.Confidence, deepSeekModel()), nil
 }
 
 func sanitizeTamperAIResult(flagged bool, riskLevel string, categories []string, summary string, confidence float64, model string) tamperAIRecognitionResult {

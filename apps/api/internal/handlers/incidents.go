@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +19,75 @@ type IncidentHandler struct {
 
 func NewIncidentHandler(db *pgxpool.Pool, incidents *services.IncidentService) *IncidentHandler {
 	return &IncidentHandler{db: db, incidents: incidents}
+}
+
+func (h *IncidentHandler) AISummary(c *gin.Context) {
+	orgID := c.Param("orgId")
+	incidentID := c.Param("incidentId")
+	userID := GetUserID(c)
+	ctx := c.Request.Context()
+	if !h.verifyOrgAccess(c, orgID, userID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	var inc models.Incident
+	err := h.db.QueryRow(ctx, `
+		SELECT i.id, i.org_id, i.monitor_id, m.name, i.started_at, i.resolved_at, i.status, i.severity, i.message,
+		       COALESCE(i.title, m.name), COALESCE(i.workflow_status, 'investigating'), i.assignee_id, i.post_mortem
+		FROM incidents i JOIN monitors m ON m.id = i.monitor_id
+		WHERE i.id = $1 AND i.org_id = $2
+	`, incidentID, orgID).Scan(&inc.ID, &inc.OrgID, &inc.MonitorID, &inc.MonitorName, &inc.StartedAt, &inc.ResolvedAt, &inc.Status, &inc.Severity, &inc.Message, &inc.Title, &inc.WorkflowStatus, &inc.AssigneeID, &inc.PostMortem)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	rows, _ := h.db.Query(ctx, `
+		SELECT kind, message, created_at FROM incident_timeline
+		WHERE incident_id = $1 ORDER BY created_at ASC LIMIT 100
+	`, incidentID)
+	var timeline []string
+	if rows != nil {
+		defer rows.Close()
+		for rows.Next() {
+			var kind, msg string
+			var created time.Time
+			if rows.Scan(&kind, &msg, &created) == nil {
+				timeline = append(timeline, fmt.Sprintf("%s %s: %s", created.Format(time.RFC3339), kind, msg))
+			}
+		}
+	}
+	msg := ""
+	if inc.Message != nil {
+		msg = *inc.Message
+	}
+	input := fmt.Sprintf("Incident: %s\nMonitor: %s\nStatus: %s\nSeverity: %s\nStarted: %s\nResolved: %v\nMessage: %s\nTimeline:\n%s",
+		inc.Title, inc.MonitorName, inc.Status, inc.Severity, inc.StartedAt.Format(time.RFC3339), inc.ResolvedAt, msg, strings.Join(timeline, "\n"))
+	summary, err := services.GenerateAIIncidentSummary(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
+		return
+	}
+	postMortem := formatIncidentPostMortem(summary)
+	_, _ = h.db.Exec(ctx, `UPDATE incidents SET post_mortem = $1 WHERE id = $2 AND org_id = $3`, postMortem, incidentID, orgID)
+	h.incidents.AddTimeline(ctx, incidentID, "ai_summary", "AI incident summary generated", &userID)
+	c.JSON(http.StatusOK, gin.H{"summary": summary, "postMortem": postMortem})
+}
+
+func formatIncidentPostMortem(s services.AIIncidentSummary) string {
+	parts := []string{
+		"Summary: " + s.Summary,
+		"Impact: " + s.Impact,
+		"Likely cause: " + s.LikelyCause,
+	}
+	if len(s.ActionItems) > 0 {
+		parts = append(parts, "Action items: "+strings.Join(s.ActionItems, "; "))
+	}
+	if s.CustomerUpdate != "" {
+		parts = append(parts, "Customer update: "+s.CustomerUpdate)
+	}
+	return strings.Join(parts, "\n")
 }
 
 func (h *IncidentHandler) verifyOrgAccess(c *gin.Context, orgID, userID string) bool {
@@ -152,11 +223,11 @@ func (h *IncidentHandler) Update(c *gin.Context) {
 	}
 
 	var req struct {
-		WorkflowStatus  *string `json:"workflowStatus"`
-		AssigneeID      *string `json:"assigneeId"`
-		PostMortem      *string `json:"postMortem"`
-		Status          *string `json:"status"`
-		SyncStatusPage  *bool   `json:"syncStatusPage"`
+		WorkflowStatus *string `json:"workflowStatus"`
+		AssigneeID     *string `json:"assigneeId"`
+		PostMortem     *string `json:"postMortem"`
+		Status         *string `json:"status"`
+		SyncStatusPage *bool   `json:"syncStatusPage"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

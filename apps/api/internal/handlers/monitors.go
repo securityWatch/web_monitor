@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,6 +21,72 @@ type MonitorHandler struct {
 
 func NewMonitorHandler(db *pgxpool.Pool) *MonitorHandler {
 	return &MonitorHandler{db: db}
+}
+
+func (h *MonitorHandler) AIDraft(c *gin.Context) {
+	orgID := c.Param("orgId")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	var req struct {
+		Prompt string `json:"prompt" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	draft, err := services.BuildMonitorDraftWithAI(c.Request.Context(), req.Prompt)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
+		return
+	}
+	validTypes := map[string]bool{"http": true, "tcp": true, "ping": true, "keyword": true, "ssl": true, "heartbeat": true, "dns": true, "domain": true, "pagespeed": true, "tamper": true}
+	if !validTypes[strings.ToLower(draft.Type)] {
+		draft.Type = "http"
+	}
+	c.JSON(http.StatusOK, gin.H{"draft": draft})
+}
+
+func (h *MonitorHandler) AIVisualExplain(c *gin.Context) {
+	orgID := c.Param("orgId")
+	id := c.Param("id")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	m, err := h.fetchMonitor(c, orgID, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	var checkedAt *time.Time
+	var isUp *bool
+	var errMsg *string
+	var meta json.RawMessage
+	_ = h.db.QueryRow(c.Request.Context(), `
+		SELECT checked_at, is_up, error_message, metadata
+		FROM check_results
+		WHERE org_id = $1 AND monitor_id = $2
+		ORDER BY checked_at DESC LIMIT 1
+	`, orgID, id).Scan(&checkedAt, &isUp, &errMsg, &meta)
+	var artifactCount int
+	_ = h.db.QueryRow(c.Request.Context(), `
+		SELECT COUNT(*) FROM check_artifacts
+		WHERE org_id = $1 AND monitor_id = $2 AND kind = 'screenshot' AND (expires_at IS NULL OR expires_at > now())
+	`, orgID, id).Scan(&artifactCount)
+	errText := ""
+	if errMsg != nil {
+		errText = *errMsg
+	}
+	input := fmt.Sprintf("Monitor: %s\nType: %s\nTarget: %s\nStatus: %s\nLatest check: %v\nLatest isUp: %v\nError: %s\nMetadata JSON: %s\nScreenshot artifacts available: %d",
+		m.Name, m.Type, m.TargetURL, m.Status, checkedAt, isUp, errText, string(meta), artifactCount)
+	explanation, err := services.ExplainVisualTamperWithAI(c.Request.Context(), input)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"explanation": explanation})
 }
 
 func (h *MonitorHandler) verifyOrgAccess(c *gin.Context, orgID string) bool {

@@ -104,6 +104,8 @@ export default function MonitorDetailPage() {
   const [search, setSearch] = useState('');
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [aiVisualLoading, setAiVisualLoading] = useState(false);
+  const [aiVisual, setAiVisual] = useState('');
 
 
 
@@ -206,6 +208,27 @@ export default function MonitorDetailPage() {
       .catch(console.error);
 
   }, [orgId, id, range]);
+
+  const explainVisual = async () => {
+    if (!orgId || !id) return;
+    setAiVisualLoading(true);
+    try {
+      const res = await apiFetch<{
+        explanation: { summary?: string; visualRisk?: string; evidence?: string[]; nextActions?: string[] };
+      }>(`/api/v1/orgs/${orgId}/monitors/${id}/ai-visual`, { method: 'POST' });
+      const e = res.explanation;
+      setAiVisual([
+        e.summary,
+        e.visualRisk ? `Risk: ${e.visualRisk}` : '',
+        e.evidence?.length ? `Evidence: ${e.evidence.join('; ')}` : '',
+        e.nextActions?.length ? `Next: ${e.nextActions.join('; ')}` : '',
+      ].filter(Boolean).join('\n'));
+    } catch (err) {
+      setAiVisual(err instanceof Error ? err.message : 'AI error');
+    } finally {
+      setAiVisualLoading(false);
+    }
+  };
 
 
 
@@ -339,6 +362,21 @@ export default function MonitorDetailPage() {
 
 
       <MonitorSecurityStatus type={monitor.type} meta={securityMeta} />
+
+      {(monitor.type === 'tamper' || securityMeta.aiContentRecognition || securityMeta.diffSummary) && (
+        <div className="card space-y-3 border-blue-500/20 bg-blue-500/5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-blue-100">AI 视觉/篡改解释</h2>
+              <p className="text-xs text-blue-100/60">结合最近截图取证、错误和篡改 metadata 解释页面风险。</p>
+            </div>
+            <button type="button" className="btn-secondary text-sm" disabled={aiVisualLoading} onClick={explainVisual}>
+              {aiVisualLoading ? '...' : '生成解释'}
+            </button>
+          </div>
+          {aiVisual && <pre className="whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs text-blue-100/80">{aiVisual}</pre>}
+        </div>
+      )}
 
 
 

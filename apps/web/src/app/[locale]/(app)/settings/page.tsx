@@ -23,6 +23,8 @@ export default function SettingsPage() {
   const [passwords, setPasswords] = useState({ current: '', newPass: '' });
   const [notify, setNotify] = useState({ incidents: true, weekly: true, product: false, ssl: true });
   const [msg, setMsg] = useState('');
+  const [aiReport, setAiReport] = useState('');
+  const [aiReportLoading, setAiReportLoading] = useState(false);
 
   const saveProfile = async () => {
     await apiFetch('/api/v1/me/profile', { method: 'PATCH', body: JSON.stringify({ displayName, locale }) });
@@ -45,6 +47,30 @@ export default function SettingsPage() {
       body: JSON.stringify({ notifyIncidents: notify.incidents, notifyWeekly: notify.weekly, notifyProduct: notify.product, notifySsl: notify.ssl }),
     });
     setMsg(t('saved'));
+  };
+
+  const generateAIReport = async () => {
+    if (!auth?.organization.id) return;
+    setAiReportLoading(true);
+    setMsg('');
+    try {
+      const res = await apiFetch<{
+        report: { headline?: string; summary?: string; risks?: string[]; wins?: string[]; nextActions?: string[]; customerBrief?: string };
+      }>(`/api/v1/orgs/${auth.organization.id}/reports/ai-security`, { method: 'POST' });
+      const r = res.report;
+      setAiReport([
+        r.headline,
+        r.summary,
+        r.risks?.length ? `风险：${r.risks.join('；')}` : '',
+        r.wins?.length ? `亮点：${r.wins.join('；')}` : '',
+        r.nextActions?.length ? `建议：${r.nextActions.join('；')}` : '',
+        r.customerBrief ? `客户简报：${r.customerBrief}` : '',
+      ].filter(Boolean).join('\n'));
+    } catch (err) {
+      setAiReport(err instanceof Error ? err.message : 'AI error');
+    } finally {
+      setAiReportLoading(false);
+    }
   };
 
   const tabs = [
@@ -154,6 +180,15 @@ export default function SettingsPage() {
           >
             {t('upgradePro')}
           </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={generateAIReport}
+            disabled={aiReportLoading}
+          >
+            {aiReportLoading ? '...' : '生成 AI 安全周报'}
+          </button>
+          {aiReport && <pre className="whitespace-pre-wrap rounded-lg border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-100/80">{aiReport}</pre>}
           <button
             type="button"
             className="btn-secondary"

@@ -132,6 +132,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.GET("/incidents/:incidentId", incH.Get)
 				org.PATCH("/incidents/:incidentId", incH.Update)
 				org.POST("/incidents/:incidentId/notes", incH.AddNote)
+				org.POST("/incidents/:incidentId/ai-summary", incH.AISummary)
 
 				org.GET("/on-call/schedules", oncallH.ListSchedules)
 				org.POST("/on-call/schedules", oncallH.CreateSchedule)
@@ -140,6 +141,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.POST("/on-call/alerts/:alertId/ack", oncallH.Ack)
 
 				org.PATCH("/monitors/batch", monitorH.Batch)
+				org.POST("/monitors/ai-draft", monitorH.AIDraft)
 				org.GET("/monitors", monitorH.List)
 				org.POST("/monitors", monitorH.Create)
 				org.GET("/monitors/:id", monitorH.Get)
@@ -147,6 +149,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.DELETE("/monitors/:id", monitorH.Delete)
 				org.GET("/monitors/:id/checks", monitorH.GetChecks)
 				org.GET("/monitors/:id/artifacts", monitorH.GetArtifacts)
+				org.POST("/monitors/:id/ai-visual", monitorH.AIVisualExplain)
 				org.POST("/monitors/:id/baseline", monitorH.CaptureBaseline)
 				org.GET("/monitors/:id/stats", monitorH.GetStats)
 
@@ -180,6 +183,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 
 				org.GET("/reports/sla.csv", reportH.SLAExport)
 				org.GET("/reports/sla.html", reportH.SLAReportHTML)
+				org.POST("/reports/ai-security", reportH.AISecurityReport)
 
 				org.GET("/api-keys", apiKeyH.List)
 				org.POST("/api-keys", apiKeyH.Create)

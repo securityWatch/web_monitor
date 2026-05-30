@@ -55,6 +55,21 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 	if status == "up" {
 		event = "recovery"
 	}
+	if event != "recovery" && event != "test" && deepSeekConfigured() {
+		if ai, err := ExplainAlertWithAI(ctx, name, status, detail); err == nil && ai.Summary != "" {
+			if len(ai.NextSteps) > 3 {
+				ai.NextSteps = ai.NextSteps[:3]
+			}
+			extra := fmt.Sprintf("\n\nAI: %s", ai.Summary)
+			if ai.LikelyCause != "" {
+				extra += "\nLikely cause: " + ai.LikelyCause
+			}
+			if len(ai.NextSteps) > 0 {
+				extra += "\nNext steps: " + strings.Join(ai.NextSteps, "; ")
+			}
+			detail += extra
+		}
+	}
 
 	webhookEnabled := true
 	if monitorID != "" {

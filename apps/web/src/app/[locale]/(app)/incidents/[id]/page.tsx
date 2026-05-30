@@ -33,6 +33,8 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [note, setNote] = useState('');
   const [workflow, setWorkflow] = useState('investigating');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
 
   useEffect(() => {
     params.then((p) => setIncidentId(p.id));
@@ -78,6 +80,20 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     setIncident((i) => i ? { ...i, status: 'resolved', workflowStatus: 'resolved' } : i);
   };
 
+  const generateAISummary = async () => {
+    if (!orgId || !incidentId) return;
+    setAiLoading(true);
+    try {
+      const res = await apiFetch<{ postMortem: string }>(`/api/v1/orgs/${orgId}/incidents/${incidentId}/ai-summary`, { method: 'POST' });
+      setAiSummary(res.postMortem);
+      setIncident((i) => i ? { ...i, postMortem: res.postMortem } : i);
+    } catch (err) {
+      setAiSummary(err instanceof Error ? err.message : 'AI error');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   if (!incident) {
     return <div className="text-zinc-500">加载中...</div>;
   }
@@ -91,6 +107,21 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           <p className="text-sm text-zinc-500">{t('started')}: {new Date(incident.startedAt).toLocaleString()}</p>
         </div>
         <span className={incident.status === 'open' ? 'badge-down' : 'badge-up'}>{incident.status}</span>
+      </div>
+
+      <div className="card space-y-3 border-blue-500/20 bg-blue-500/5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-blue-100">AI 事故总结</h2>
+            <p className="text-xs text-blue-100/60">基于时间线生成复盘、影响、疑似原因和客户通告。</p>
+          </div>
+          <button type="button" className="btn-secondary text-sm" onClick={generateAISummary} disabled={aiLoading}>
+            {aiLoading ? '...' : '生成 AI 总结'}
+          </button>
+        </div>
+        {(aiSummary || incident.postMortem) && (
+          <pre className="whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs text-blue-100/80">{aiSummary || incident.postMortem}</pre>
+        )}
       </div>
 
       {incident.status === 'open' && (

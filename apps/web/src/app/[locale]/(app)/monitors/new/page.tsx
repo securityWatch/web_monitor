@@ -42,6 +42,9 @@ export default function NewMonitorPage() {
   const [loading, setLoading] = useState(false);
   const [hbInfo, setHbInfo] = useState<{ token?: string; url?: string } | null>(null);
   const [upgradeModal, setUpgradeModal] = useState<'quota' | 'email' | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiDraftMsg, setAiDraftMsg] = useState('');
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
   const planTier = auth?.organization.planTier || 'free';
   const paidPlan = planTier !== 'free';
   const tamperAIOn = form.type === 'tamper' && !!tamperConfig.aiContentRecognitionEnabled;
@@ -67,6 +70,35 @@ export default function NewMonitorPage() {
       type,
       intervalSeconds: type === 'tamper' && tamperConfig.aiContentRecognitionEnabled && !paidPlan && f.intervalSeconds < 1800 ? 1800 : f.intervalSeconds,
     }));
+  };
+
+  const generateAIDraft = async () => {
+    if (!auth?.organization.id || !aiPrompt.trim()) return;
+    setAiDraftLoading(true);
+    setAiDraftMsg('');
+    try {
+      const res = await apiFetch<{
+        draft: { name: string; type: string; targetUrl: string; intervalSeconds: number; config?: Record<string, unknown>; regions?: string[]; explanation?: string };
+      }>(`/api/v1/orgs/${auth.organization.id}/monitors/ai-draft`, {
+        method: 'POST',
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      const d = res.draft;
+      setForm({
+        name: d.name || form.name,
+        targetUrl: d.targetUrl || form.targetUrl,
+        type: d.type || 'http',
+        intervalSeconds: d.intervalSeconds || 300,
+        regions: (d.regions || ['us-east', 'eu-west']).join(','),
+      });
+      setHttpConfig(parseHttpConfig(d.config || {}));
+      setTamperConfig(parseTamperConfig(d.config || {}));
+      setAiDraftMsg(d.explanation || t('aiDraftApplied'));
+    } catch (err) {
+      setAiDraftMsg(err instanceof Error ? err.message : 'AI error');
+    } finally {
+      setAiDraftLoading(false);
+    }
   };
 
   const securityPayload = () => {
@@ -127,6 +159,22 @@ export default function NewMonitorPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-2xl font-bold">{t('createTitle')}</h1>
+      <div className="card border-blue-500/20 bg-blue-500/5 space-y-3">
+        <div>
+          <p className="font-semibold text-blue-100">{t('aiDraftTitle')}</p>
+          <p className="mt-1 text-xs text-blue-100/60">{t('aiDraftDesc')}</p>
+        </div>
+        <textarea
+          className="input min-h-[72px]"
+          placeholder={t('aiDraftPlaceholder')}
+          value={aiPrompt}
+          onChange={(e) => setAiPrompt(e.target.value)}
+        />
+        <button type="button" className="btn-secondary text-sm" disabled={aiDraftLoading || !aiPrompt.trim()} onClick={generateAIDraft}>
+          {aiDraftLoading ? '...' : t('aiDraftButton')}
+        </button>
+        {aiDraftMsg && <p className="text-xs text-blue-100/70">{aiDraftMsg}</p>}
+      </div>
       <div className="flex flex-wrap gap-2">
         {MONITOR_TEMPLATES.map((tpl) => (
           <button

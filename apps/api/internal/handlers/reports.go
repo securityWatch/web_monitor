@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pulsewatch/api/internal/services"
 )
 
 type ReportHandler struct {
@@ -75,6 +77,64 @@ func (h *ReportHandler) SLAExport(c *gin.Context) {
 		}
 		c.String(http.StatusOK, "%q,%s,%d,%d,%s,%s\n", name, mType, total, up, upPct, avg)
 	}
+}
+
+func (h *ReportHandler) AISecurityReport(c *gin.Context) {
+	orgID := c.Param("orgId")
+	userID := GetUserID(c)
+	var exists bool
+	_ = h.db.QueryRow(c.Request.Context(), `
+		SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)
+	`, userID, orgID).Scan(&exists)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	var monitorCount, downCount, checks, failedChecks, incidents, securityFindings int
+	_ = h.db.QueryRow(ctx, `SELECT COUNT(*), COUNT(*) FILTER (WHERE status = 'down') FROM monitors WHERE org_id = $1`, orgID).Scan(&monitorCount, &downCount)
+	_ = h.db.QueryRow(ctx, `SELECT COUNT(*), COUNT(*) FILTER (WHERE NOT is_up) FROM check_results WHERE org_id = $1 AND checked_at > now() - interval '7 days'`, orgID).Scan(&checks, &failedChecks)
+	_ = h.db.QueryRow(ctx, `SELECT COUNT(*) FROM incidents WHERE org_id = $1 AND started_at > now() - interval '7 days'`, orgID).Scan(&incidents)
+	_ = h.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM check_results
+		WHERE org_id = $1 AND checked_at > now() - interval '7 days'
+		  AND (metadata ? 'tamperAIContentViolation' OR metadata ? 'tamperPolicyViolation' OR metadata ? 'dnsChanged' OR metadata ? 'sslDaysLeft')
+	`, orgID).Scan(&securityFindings)
+
+	rows, _ := h.db.Query(ctx, `
+		SELECT m.name, m.type, cr.checked_at, cr.is_up, cr.error_message, cr.metadata
+		FROM check_results cr
+		JOIN monitors m ON m.id = cr.monitor_id
+		WHERE cr.org_id = $1 AND cr.checked_at > now() - interval '7 days' AND (NOT cr.is_up OR cr.error_message IS NOT NULL)
+		ORDER BY cr.checked_at DESC LIMIT 20
+	`, orgID)
+	var recent []string
+	if rows != nil {
+		defer rows.Close()
+		for rows.Next() {
+			var name, mType string
+			var checked time.Time
+			var isUp bool
+			var errMsg *string
+			var meta []byte
+			if rows.Scan(&name, &mType, &checked, &isUp, &errMsg, &meta) == nil {
+				msg := ""
+				if errMsg != nil {
+					msg = *errMsg
+				}
+				recent = append(recent, fmt.Sprintf("%s %s/%s up=%v error=%s metadata=%s", checked.Format(time.RFC3339), name, mType, isUp, msg, string(meta)))
+			}
+		}
+	}
+	input := fmt.Sprintf("7d stats: monitors=%d downNow=%d checks=%d failedChecks=%d incidents=%d securityFindings=%d\nRecent failures:\n%s",
+		monitorCount, downCount, checks, failedChecks, incidents, securityFindings, strings.Join(recent, "\n"))
+	report, err := services.GenerateAISecurityReport(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"report": report})
 }
 
 func (h *ReportHandler) SLAReportHTML(c *gin.Context) {
