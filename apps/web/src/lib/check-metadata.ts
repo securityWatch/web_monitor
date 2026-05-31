@@ -20,6 +20,11 @@ export interface CheckMetadata {
   timings?: CheckTimings;
   chainStepDetails?: ChainStepDetail[];
   responseBodySnippet?: string;
+  /** Pagespeed monitor — server-side estimates from TTFB/body size */
+  pageSpeed?: boolean;
+  fcpMs?: number;
+  lcpMs?: number;
+  ttfbMs?: number;
 }
 
 export interface SecurityCheckMetadata {
@@ -66,6 +71,10 @@ export function parseCheckMetadata(raw: unknown): CheckMetadata {
   return {
     timings: parseTimings(obj.timings),
     responseBodySnippet: typeof obj.responseBodySnippet === 'string' ? obj.responseBodySnippet : undefined,
+    pageSpeed: obj.pageSpeed === true,
+    fcpMs: typeof obj.fcpMs === 'number' ? obj.fcpMs : undefined,
+    lcpMs: typeof obj.lcpMs === 'number' ? obj.lcpMs : undefined,
+    ttfbMs: typeof obj.ttfbMs === 'number' ? obj.ttfbMs : undefined,
     chainStepDetails: Array.isArray(obj.chainStepDetails)
       ? obj.chainStepDetails.map((s) => {
           const step = s as Record<string, unknown>;

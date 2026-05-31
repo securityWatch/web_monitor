@@ -263,7 +263,12 @@ func (s *Scheduler) fireDownAlert(ctx context.Context, monitorID, orgID, name, d
 		var planTier, target, mType string
 		_ = s.db.QueryRow(ctx, `SELECT o.plan_tier, m.target_url, m.type FROM monitors m JOIN organizations o ON o.id = m.org_id WHERE m.id = $1`, monitorID).Scan(&planTier, &target, &mType)
 		if mType == "http" || mType == "keyword" {
-			go NewScreenshotService(s.db, s.cfg).CaptureOnDown(context.Background(), orgID, monitorID, "", target, detail, planTier)
+			var bodySnippet string
+			_ = s.db.QueryRow(ctx, `
+				SELECT COALESCE(metadata->>'responseBodySnippet', '')
+				FROM check_results WHERE monitor_id = $1 ORDER BY checked_at DESC LIMIT 1
+			`, monitorID).Scan(&bodySnippet)
+			go NewScreenshotService(s.db, s.cfg).CaptureOnDown(context.Background(), orgID, monitorID, "", target, detail, bodySnippet, planTier)
 		}
 	}
 }

@@ -39,7 +39,11 @@ resource "null_resource" "monitor" {
 }
 ```
 
-## 正式 Provider v0.1
+## 可复制示例（推荐）
+
+`integrations/terraform/examples/rest-monitor.tf` — `null_resource` + `curl`，可在生产 API 上直接 `terraform apply`（需 API Key 与 org UUID）。
+
+## 正式 Provider v0.1（client MVP）
 
 `integrations/terraform/provider/` 包含最小 API 客户端（`client.go`），支持 `CreateMonitor` / `DeleteMonitor`。
 

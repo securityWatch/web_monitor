@@ -68,7 +68,7 @@ Self-review the diff before commit (agent self-review — not a separate PR bot 
 - **i18n**: UI changes include `messages/en.json` and `messages/zh.json` keys
 - **API contracts**: request/response shapes match callers and docs
 - **Edge cases**: null/empty inputs, auth boundaries, error paths
-- **Landing sync**: user-facing features reflected on the public homepage (see **Landing page sync** below)
+- **Landing sync**: user-facing features reflected on the public homepage (see **Homepage marketing sync** below)
 - Fix obvious issues found during review before proceeding
 
 ### 2. Test
@@ -149,12 +149,13 @@ git push origin main
 - Founding Member pricing ($1/$4/$10) on landing and billing stub
 - English code/UI keys; translations via next-intl only
 
-### Landing page sync (SEO & marketing)
+### Homepage marketing sync (required when shipping user-facing features)
 
-When shipping **user-facing features** (monitor types, alerts, tools, security monitors, integrations, on-call, etc.), **also update the public landing page** before considering the task complete:
+Any new **user-facing capability** MUST update landing copy before the task is complete:
 
-- **Files**: `apps/web/src/components/landing-page.tsx` (or locale home `page.tsx`), `messages/en.json` / `messages/zh.json` (`landing` namespace — features, use cases, FAQ, about), `landing-json-ld.tsx` if FAQ count changes, `sitemap.ts` / `publicMarketingPaths` if new public routes
-- **Content**: feature list, use cases, and FAQ entries with keyword-rich but natural copy; update hero/about subtitles when the product story changes
+- **Files**: `apps/web/src/components/landing-page.tsx` (or locale home `page.tsx`), `messages/en.json` + `messages/zh.json` (`landing` namespace — features, capabilities, use cases, FAQ, about), `landing-json-ld.tsx` if FAQ count changes, `sitemap.ts` / `publicMarketingPaths` if new public routes
+- **Content**: keyword-rich H2/H3 sections, feature list, use cases, and FAQ entries; update hero/about subtitles when the product story changes
 - **SSR**: marketing copy must be server-rendered text for crawlers — not client-only or empty shells
 - **Do NOT expose**: internal ops (Baidu submit steps, DB/storage implementation, deployment secrets) per Security rules above
-- **Workflow**: landing sync is part of **task complete** — review → test → commit → deploy-web (when copy changed) → verify `/en` and `/zh` view-source → push
+- **Internal-only features exempt** — no landing update required for backend-only or ops-only changes
+- **Workflow**: review → test → commit → deploy-web (when copy changed) → verify `/en` and `/zh` view-source → push

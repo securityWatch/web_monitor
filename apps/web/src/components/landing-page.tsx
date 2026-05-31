@@ -19,9 +19,13 @@ import {
   Phone,
   MapPin,
   LayoutDashboard,
+  Search,
+  CalendarClock,
+  AlertTriangle,
+  Radio,
 } from 'lucide-react';
 
-const FAQ_COUNT = 11;
+const FAQ_COUNT = 13;
 
 export async function LandingPage({ foundingCount }: { foundingCount: number }) {
   const t = await getTranslations('landing');
@@ -58,6 +62,18 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
     q: t(`faq${i + 1}Q`),
     a: t(`faq${i + 1}A`),
   }));
+
+  const capabilityBlocks = [
+    { icon: Globe, title: t('cap1Title'), desc: t('cap1Desc') },
+    { icon: Lock, title: t('cap2Title'), desc: t('cap2Desc') },
+    { icon: Shield, title: t('cap3Title'), desc: t('cap3Desc') },
+    { icon: AlertTriangle, title: t('cap4Title'), desc: t('cap4Desc') },
+    { icon: Phone, title: t('cap5Title'), desc: t('cap5Desc') },
+    { icon: Bell, title: t('cap6Title'), desc: t('cap6Desc') },
+    { icon: CalendarClock, title: t('cap7Title'), desc: t('cap7Desc') },
+    { icon: Search, title: t('cap8Title'), desc: t('cap8Desc') },
+    { icon: Radio, title: t('cap9Title'), desc: t('cap9Desc') },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white">
@@ -149,6 +165,24 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
                 <f.icon className="h-8 w-8 text-blue-500" aria-hidden />
                 <h3 className="mt-4 font-semibold">{f.title}</h3>
                 <p className="mt-2 text-sm text-zinc-400 leading-relaxed">{f.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="capabilities" className="border-t border-zinc-800 py-20" aria-labelledby="capabilities-heading">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <h2 id="capabilities-heading" className="text-center text-3xl font-bold">
+            {t('capabilitiesTitle')}
+          </h2>
+          <p className="mx-auto mt-3 max-w-3xl text-center text-zinc-400">{t('capabilitiesSubtitle')}</p>
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {capabilityBlocks.map((block) => (
+              <article key={block.title} className="card hover:border-zinc-700 transition-colors">
+                <block.icon className="h-7 w-7 text-blue-500" aria-hidden />
+                <h3 className="mt-4 text-lg font-semibold text-white">{block.title}</h3>
+                <p className="mt-2 text-sm text-zinc-400 leading-relaxed">{block.desc}</p>
               </article>
             ))}
           </div>

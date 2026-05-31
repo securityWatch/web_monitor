@@ -115,7 +115,7 @@ export default function EditMonitorPage() {
         </div>
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('targetUrl')}</label>
-          <input required className="input font-mono" placeholder="https://example.com" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} />
+          <input required className="input font-mono" placeholder={t('targetUrlPlaceholder')} value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} />
           <p className="mt-1 text-xs text-zinc-500">{t('targetUrlChainHint')}</p>
         </div>
         <div>
