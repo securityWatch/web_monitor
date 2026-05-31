@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -35,6 +36,111 @@ func TestHTTPCheckLocalServer(t *testing.T) {
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/http-check?url="+srv.URL, nil)
 
 	h.HTTPCheck(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body["isUp"] != true {
+		t.Fatalf("isUp = %v", body["isUp"])
+	}
+}
+
+func TestDNSLookupMissingHost(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/dns-lookup", nil)
+
+	h.DNSLookup(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestDNSLookupExampleCom(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/dns-lookup?host=example.com&type=A", nil)
+
+	h.DNSLookup(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body["host"] != "example.com" {
+		t.Fatalf("host = %v", body["host"])
+	}
+	if body["recordType"] != "A" {
+		t.Fatalf("recordType = %v", body["recordType"])
+	}
+}
+
+func TestPingTestMissingHost(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/ping", nil)
+
+	h.PingTest(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestPingTestLocalhost(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/ping?host=127.0.0.1", nil)
+
+	h.PingTest(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+}
+
+func TestPortCheckMissingHost(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/port-check", nil)
+
+	h.PortCheck(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestPortCheckLocalListener(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	_, portStr, err := net.SplitHostPort(ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/port-check?host=127.0.0.1&port="+portStr, nil)
+
+	h.PortCheck(c)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
 	}

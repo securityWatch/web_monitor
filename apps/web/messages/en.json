@@ -148,7 +148,17 @@
     "resourcesPdfToWord": "PDF to Word converter",
     "resourcesSsl": "Free SSL checker tool",
     "resourcesWebsiteDown": "Website down checker",
+    "resourcesDnsLookup": "Free DNS lookup tool",
+    "resourcesPingTest": "Ping test tool",
+    "resourcesPortChecker": "Port checker tool",
     "resourcesUptimeFeature": "Uptime monitoring features",
+    "resourcesSslMonitoring": "SSL monitoring features",
+    "resourcesStatusPages": "Status pages",
+    "resourcesAlerting": "Alerting & notifications",
+    "resourcesBlog": "Monitoring guides & blog",
+    "resourcesApiUseCase": "API monitoring use case",
+    "resourcesEcommerceUseCase": "E-commerce uptime use case",
+    "useCaseLearnMore": "Learn more",
     "resourcesCompare": "Compare with Better Stack",
     "resourcesAppNote": "Monitors, incidents, and status pages are available after sign-in from your authenticated dashboard.",
     "jsonLdOrgDescription": "Uptime and website monitoring with SSL, DNS, and content integrity alerts, CN IM channels, and fast incident workflows.",
@@ -175,6 +185,12 @@
     "faq12A": "Yes. In Settings → Maintenance windows, define planned downtime for your organization. Checks may still run, but alert noise is suppressed so on-call is not paged for expected work.",
     "faq13Q": "Is there a command palette or competitor comparison pages?",
     "faq13A": "Signed-in users can press ⌘K (Ctrl+K on Windows) to jump to monitors, incidents, settings, and more. Public compare pages at /compare/uptimerobot and /compare/better-stack summarize how PulseWatch stacks up on pricing and features.",
+    "faq14Q": "What free online monitoring tools does PulseWatch offer?",
+    "faq14A": "No signup required: website down checker, SSL certificate checker, DNS lookup, ping test, and TCP port checker — all run from our servers so you can troubleshoot before creating monitors.",
+    "faq15Q": "Can I test DNS and port connectivity without an account?",
+    "faq15A": "Yes. Use /tools/dns-lookup for A/AAAA/MX/TXT records, /tools/ping-test for ICMP reachability, and /tools/port-checker for open TCP ports like 443 or 22. Upgrade to PulseWatch monitors for 24/7 checks and alerts.",
+    "faq16Q": "Where can I learn about SSL monitoring, status pages, and alerting?",
+    "faq16A": "Feature pages at /features/ssl-monitoring, /features/status-pages, and /features/alerting explain tiered SSL expiry alerts, public status pages on the free tier, and multi-channel notifications including Slack and CN IM tools.",
     "capabilitiesTitle": "Platform capabilities for uptime, security, and on-call",
     "capabilitiesSubtitle": "External probes, tiered SSL alerts, DNS and tamper detection, multi-channel notifications, status pages, and developer-friendly workflows — all indexable, all built for production teams.",
     "cap1Title": "Uptime monitoring & multi-region probes",
@@ -224,7 +240,10 @@
       "jwtDecoder": "JWT Decoder",
       "cronParser": "Cron Parser",
       "websiteDownChecker": "Website Down Checker",
-      "sslChecker": "SSL Checker"
+      "sslChecker": "SSL Checker",
+      "dnsLookup": "DNS Lookup",
+      "pingTest": "Ping Test",
+      "portChecker": "Port Checker"
     },
     "json": {
       "format": "Pretty print",
@@ -388,6 +407,54 @@
       "tls": "TLS version",
       "cta": "Get email alerts before certificates expire —",
       "ctaLink": "sign up free"
+    },
+    "dnsLookup": {
+      "badge": "DNS resolver",
+      "title": "Free DNS Lookup Tool",
+      "subtitle": "Query A, AAAA, CNAME, MX, TXT, and NS records from external servers.",
+      "placeholder": "example.com",
+      "recordType": "Record type",
+      "lookup": "Lookup",
+      "looking": "Looking up…",
+      "failed": "Lookup failed. Try again.",
+      "found": "Records found",
+      "notFound": "No records or lookup failed",
+      "responseTime": "Response time",
+      "errorDetail": "Details",
+      "cta": "Monitor DNS changes 24/7 with alerts —",
+      "ctaLink": "start free"
+    },
+    "pingTest": {
+      "badge": "ICMP probe",
+      "title": "Free Ping Test Tool",
+      "subtitle": "Test host reachability with a single ICMP ping from our servers.",
+      "placeholder": "8.8.8.8 or example.com",
+      "ping": "Ping",
+      "pinging": "Pinging…",
+      "failed": "Ping failed. Try again.",
+      "reachable": "Host is reachable",
+      "unreachable": "Host unreachable or blocked",
+      "responseTime": "Response time",
+      "errorDetail": "Details",
+      "cta": "Get continuous ping monitoring with alerts —",
+      "ctaLink": "sign up free"
+    },
+    "portChecker": {
+      "badge": "TCP probe",
+      "title": "Free Port Checker Tool",
+      "subtitle": "Check if a TCP port is open on any host — HTTPS, SSH, databases, and more.",
+      "placeholderHost": "example.com",
+      "placeholderPort": "443",
+      "port": "Port",
+      "check": "Check port",
+      "checking": "Checking…",
+      "failed": "Check failed. Try again.",
+      "open": "Port is open",
+      "closed": "Port closed or filtered",
+      "responseTime": "Response time",
+      "errorDetail": "Details",
+      "cta": "Monitor TCP ports 24/7 with downtime alerts —",
+      "ctaLink": "start free"
     }
   },
   "pricingPage": {
@@ -425,6 +492,146 @@
     "ctaPrimary": "Start free",
     "ctaTool": "Try website down checker",
     "ctaPricing": "View pricing"
+  },
+  "sslMonitoring": {
+    "eyebrow": "Feature",
+    "title": "SSL certificate monitoring & expiry alerts",
+    "subtitle": "Track HTTPS certificate expiry, issuer changes, and TLS health with tiered email alerts before customers see browser warnings.",
+    "h1Title": "Dedicated SSL monitors",
+    "h1Desc": "Probe any HTTPS endpoint and track certificate chain, expiry date, and TLS version on every check.",
+    "h2Title": "Tiered expiry warnings",
+    "h2Desc": "Alerts at 30, 14, 7, and 1 day before expiry so renewals never slip through the cracks.",
+    "h3Title": "Instant notifications",
+    "h3Desc": "Email, Slack, webhooks, and CN IM channels when certificates are invalid or about to expire.",
+    "h4Title": "Free SSL checker tool",
+    "h4Desc": "One-off certificate inspection at /tools/ssl-checker — upgrade to monitors for continuous coverage.",
+    "freeTierTitle": "Included on the free plan",
+    "freeTierDesc": "SSL monitors count toward your 10 free monitors with 5-minute minimum intervals.",
+    "freeTier1": "SSL expiry monitors on free tier",
+    "freeTier2": "Tiered warning emails before expiry",
+    "freeTier3": "Combine with uptime and DNS monitors",
+    "ctaPrimary": "Start free",
+    "ctaTool": "Try SSL checker",
+    "ctaPricing": "View pricing"
+  },
+  "statusPagesFeature": {
+    "eyebrow": "Feature",
+    "title": "Public status pages for your customers",
+    "subtitle": "Share real-time component health, incident updates, and subscribe-to-updates links—included on the free tier.",
+    "h1Title": "Branded public pages",
+    "h1Desc": "Custom slug, logo-friendly layout, and component mapping from your monitors.",
+    "h2Title": "Incident transparency",
+    "h2Desc": "Post investigating, identified, and resolved updates while engineers work internally.",
+    "h3Title": "Email subscriptions",
+    "h3Desc": "Let customers subscribe to status emails during outages.",
+    "h4Title": "Free tier included",
+    "h4Desc": "Publish status pages without upgrading—ideal for early SaaS and client projects.",
+    "freeTierTitle": "Free tier — no credit card",
+    "freeTierDesc": "Build trust during outages without a separate status-page vendor.",
+    "freeTier1": "Public status pages on free plan",
+    "freeTier2": "Map monitors to components",
+    "freeTier3": "Works with incident timeline",
+    "ctaPrimary": "Start free",
+    "ctaUptime": "Uptime monitoring",
+    "ctaPricing": "View pricing"
+  },
+  "alerting": {
+    "eyebrow": "Feature",
+    "title": "Multi-channel alerting & on-call",
+    "subtitle": "Route downtime, SSL, and DNS alerts to email, Slack, Discord, Teams, DingTalk, Feishu, WeCom, webhooks, SMS, and voice.",
+    "h1Title": "Flexible alert routing",
+    "h1Desc": "Configure global channels and override webhooks per monitor when you need finer control.",
+    "h2Title": "CN-ready integrations",
+    "h2Desc": "Native DingTalk, Feishu, and WeCom bots alongside Slack, Discord, and Microsoft Teams.",
+    "h3Title": "Voice & on-call",
+    "h3Desc": "On-call schedules with acknowledgement workflows; voice TTS alerts on Business plans.",
+    "h4Title": "Flap suppression",
+    "h4Desc": "Smart suppression during flapping and maintenance windows to reduce alert fatigue.",
+    "freeTierTitle": "Alerts on every plan",
+    "freeTierDesc": "Email alerts included free — add IM and webhook channels after sign-up.",
+    "freeTier1": "Email alerts on free tier",
+    "freeTier2": "Recovery notifications when service is healthy",
+    "freeTier3": "Upgrade for Slack, IM, and voice channels",
+    "ctaPrimary": "Start free",
+    "ctaTool": "Try website down checker",
+    "ctaPricing": "View pricing"
+  },
+  "useCases": {
+    "apiMonitoring": {
+      "eyebrow": "Use case",
+      "title": "API uptime monitoring for microservices",
+      "subtitle": "Catch 5xx spikes, auth gateway failures, and slow p95 before customers open support tickets.",
+      "h1Title": "Health endpoints",
+      "h1Desc": "Monitor REST, GraphQL, and gRPC health URLs with status-code and keyword checks.",
+      "h2Title": "Webhooks & callbacks",
+      "h2Desc": "Verify payment, shipping, and partner callback URLs stay reachable.",
+      "h3Title": "Latency trends",
+      "h3Desc": "Response-time history and p95 spikes to debug regressions early.",
+      "h4Title": "Incident workflow",
+      "h4Desc": "Acknowledge, escalate, and notify on-call when APIs go DOWN.",
+      "freeTierTitle": "Start in minutes",
+      "freeTierDesc": "No agent install—external probes hit your public endpoints.",
+      "freeTier1": "HTTP/HTTPS monitors on free tier",
+      "freeTier2": "5-minute minimum interval",
+      "freeTier3": "Email alerts included",
+      "ctaPrimary": "Start free",
+      "ctaTool": "Free website down checker",
+      "ctaFeature": "Uptime monitoring features"
+    },
+    "ecommerce": {
+      "eyebrow": "Use case",
+      "title": "E-commerce & checkout uptime monitoring",
+      "subtitle": "Watch storefront URLs, payment callbacks, and inventory APIs—a two-minute outage during a campaign can dwarf monitoring cost.",
+      "h1Title": "Storefront & CDN",
+      "h1Desc": "HTTP checks on shop home, cart, and CDN-backed assets from multiple regions.",
+      "h2Title": "Payment & webhooks",
+      "h2Desc": "Alert when checkout or PSP callback endpoints fail or slow down.",
+      "h3Title": "SSL before peak traffic",
+      "h3Desc": "Tiered certificate expiry alerts before holiday sales—not after browsers warn shoppers.",
+      "h4Title": "Public status page",
+      "h4Desc": "Tell customers you are on it with a branded status page during incidents.",
+      "freeTierTitle": "Commercial-friendly free tier",
+      "freeTierDesc": "10 monitors for early shops—upgrade when campaigns scale.",
+      "freeTier1": "Free tier allows commercial use",
+      "freeTier2": "Status pages included",
+      "freeTier3": "Multi-channel alerts",
+      "ctaPrimary": "Start free",
+      "ctaTool": "SSL checker",
+      "ctaFeature": "SSL monitoring"
+    }
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "title": "Uptime monitoring guides",
+    "subtitle": "Practical tips on API health checks, website down testing, and getting started with PulseWatch.",
+    "readArticle": "Read article",
+    "backToBlog": "Back to blog",
+    "ctaPrimary": "Start free monitoring",
+    "linkApiMonitoring": "API monitoring use case",
+    "linkUptimeFeature": "Uptime monitoring features",
+    "linkWebsiteDown": "Website down checker",
+    "linkDnsLookup": "DNS lookup tool",
+    "linkRegister": "Create free account",
+    "articles": {
+      "apiUptime": {
+        "title": "How to monitor API uptime in 5 minutes",
+        "excerpt": "Set up external HTTP checks on health endpoints, interpret status codes, and route alerts to your team.",
+        "date": "2026-05-15",
+        "p1": "API uptime monitoring means probing your public health endpoints from outside your VPC on a fixed interval. When a check fails—timeout, 5xx, or missing keyword—your team gets notified before customers notice.",
+        "p2": "Start with a dedicated /health or /ready URL that returns 200 without heavy dependencies. Add keyword checks for critical JSON fields when you need stronger guarantees than status codes alone.",
+        "p3": "Configure consecutive failure thresholds so brief blips do not page on-call. Pair monitors with Slack or email channels, then add webhook routing per service when you need quieter nights.",
+        "p4": "PulseWatch free tier includes 10 monitors with 5-minute intervals—enough to cover staging and production gateways while you evaluate paid intervals and SMS escalation."
+      },
+      "websiteDown": {
+        "title": "Website down checker: when to use it vs full monitoring",
+        "excerpt": "Run instant reachability tests, then graduate to scheduled checks with history and alerts.",
+        "date": "2026-05-22",
+        "p1": "A website down checker answers one question right now: is this URL reachable from the internet? PulseWatch runs the request from external infrastructure and returns HTTP status and response time.",
+        "p2": "Use instant checks during deploys, DNS cutovers, or firewall changes. When the site is up, you are done. When it is down, the checker shows error detail to speed triage.",
+        "p3": "Scheduled monitoring adds history, recovery notifications, SSL and DNS alerts, and on-call workflows. That is what prevents the next outage from being discovered on social media.",
+        "p4": "Try the free tool at /tools/website-down-checker, then create monitors for URLs that matter 24/7. Combine with /tools/dns-lookup and /tools/port-checker when routing or firewalls are suspect."
+      }
+    }
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -1044,6 +1251,58 @@
       "title": "Free SSL Certificate Checker | PulseWatch",
       "description": "Check HTTPS certificate expiry, issuer, and TLS version. Free external SSL inspection tool.",
       "keywords": "SSL checker, certificate expiry, TLS check, HTTPS certificate test"
+    },
+    "dnsLookup": {
+      "title": "Free DNS Lookup Tool — A, MX, TXT & More | PulseWatch",
+      "description": "Query DNS A, AAAA, CNAME, MX, TXT, and NS records from external servers. Free online DNS lookup.",
+      "keywords": "DNS lookup, DNS checker, MX lookup, TXT record lookup, NS lookup"
+    },
+    "pingTest": {
+      "title": "Free Ping Test Tool — Is Host Reachable? | PulseWatch",
+      "description": "Test ICMP ping reachability for any host or IP from external servers. Free online ping tool.",
+      "keywords": "ping test, online ping, ICMP test, host reachability, network ping"
+    },
+    "portChecker": {
+      "title": "Free Port Checker — TCP Open Port Test | PulseWatch",
+      "description": "Check if TCP ports like 443, 80, or 22 are open on any host. Free external port scanner tool.",
+      "keywords": "port checker, open port test, TCP port scan, check port 443, port availability"
+    },
+    "sslMonitoring": {
+      "title": "SSL Certificate Monitoring & Expiry Alerts | PulseWatch",
+      "description": "Monitor HTTPS certificate expiry with tiered alerts at 30/14/7/1 days. Free tier includes SSL monitors.",
+      "keywords": "SSL monitoring, certificate expiry alert, HTTPS monitoring, TLS certificate monitor"
+    },
+    "statusPagesFeature": {
+      "title": "Public Status Pages — Free Tier | PulseWatch",
+      "description": "Create branded public status pages with component health, incident posts, and email subscriptions.",
+      "keywords": "status page, public status page, incident communication, uptime status"
+    },
+    "statusPages": {
+      "title": "Public Status Pages — Free Tier | PulseWatch",
+      "description": "Create branded public status pages with component health, incident posts, and email subscriptions.",
+      "keywords": "status page, public status page, incident communication, uptime status"
+    },
+    "alerting": {
+      "title": "Multi-Channel Alerting — Slack, Email & CN IM | PulseWatch",
+      "description": "Downtime alerts via email, Slack, Discord, Teams, DingTalk, Feishu, WeCom, webhooks, SMS, and voice.",
+      "keywords": "uptime alerts, Slack monitoring alerts, on-call alerting, incident notifications"
+    },
+    "blog": {
+      "title": "Uptime Monitoring Guides & Blog | PulseWatch",
+      "description": "Practical guides on API health checks, website down testing, and getting started with external uptime monitoring.",
+      "keywords": "uptime monitoring blog, API monitoring guide, website down checker guide"
+    },
+    "useCases": {
+      "apiMonitoring": {
+        "title": "API Uptime Monitoring Use Case | PulseWatch",
+        "description": "Monitor REST and GraphQL health endpoints, webhooks, and latency trends with external probes and multi-channel alerts.",
+        "keywords": "API monitoring, microservices uptime, health check monitoring, webhook monitoring"
+      },
+      "ecommerce": {
+        "title": "E-commerce Uptime Monitoring Use Case | PulseWatch",
+        "description": "Watch storefronts, payment callbacks, and SSL before peak sales with status pages and downtime alerts.",
+        "keywords": "e-commerce uptime, checkout monitoring, online store monitoring, payment webhook alerts"
+      }
     },
     "compare": {
       "uptimerobot": {

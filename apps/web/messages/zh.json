@@ -148,7 +148,17 @@
     "resourcesPdfToWord": "PDF 转 Word",
     "resourcesSsl": "免费 SSL 检测工具",
     "resourcesWebsiteDown": "网站宕机检测",
+    "resourcesDnsLookup": "免费 DNS 查询",
+    "resourcesPingTest": "Ping 测试工具",
+    "resourcesPortChecker": "端口检测工具",
     "resourcesUptimeFeature": "可用性监控功能",
+    "resourcesSslMonitoring": "SSL 监控功能",
+    "resourcesStatusPages": "状态页",
+    "resourcesAlerting": "告警与通知",
+    "resourcesBlog": "监控指南与博客",
+    "resourcesApiUseCase": "API 监控场景",
+    "resourcesEcommerceUseCase": "电商可用性场景",
+    "useCaseLearnMore": "了解更多",
     "resourcesCompare": "对比 Better Stack",
     "resourcesAppNote": "监控、事件与状态页需在登录后于控制台中使用。",
     "jsonLdOrgDescription": "网站与可用性监控：SSL、DNS、内容完整性告警，国内 IM 渠道与快速事件流程。",
@@ -175,6 +185,12 @@
     "faq12A": "可以。在「设置 → 维护窗口」中为组织定义计划内停机时段。检测可能仍会继续，但告警会被抑制，避免值班人员在预期维护期间被误呼。",
     "faq13Q": "是否有命令面板或竞品对比页？",
     "faq13A": "登录用户可按 ⌘K（Windows 为 Ctrl+K）快速跳转监控、事件、设置等。公开对比页 /compare/uptimerobot 与 /compare/better-stack 汇总 PulseWatch 在定价与功能上的差异。",
+    "faq14Q": "PulseWatch 提供哪些免费在线监控小工具？",
+    "faq14A": "无需注册：网站宕机检测、SSL 证书检测、DNS 查询、Ping 测试与 TCP 端口检测 — 均从我们的服务器运行，便于在创建监控前先排查问题。",
+    "faq15Q": "不注册账号能否测试 DNS 与端口连通性？",
+    "faq15A": "可以。使用 /tools/dns-lookup 查询 A/AAAA/MX/TXT 等记录，/tools/ping-test 测试 ICMP 可达性，/tools/port-checker 检测 443 或 22 等 TCP 端口。升级至 PulseWatch 监控可获得 24/7 检测与告警。",
+    "faq16Q": "在哪里了解 SSL 监控、状态页与告警功能？",
+    "faq16A": "功能页 /features/ssl-monitoring、/features/status-pages 与 /features/alerting 介绍 SSL 分级到期告警、免费版公开状态页，以及 Slack 与国内 IM 等多渠道通知。",
     "capabilitiesTitle": "可用性、安全与值班一体化能力",
     "capabilitiesSubtitle": "外部多区域探针、SSL 分级预警、DNS 与篡改检测、多渠道通知、状态页与维护窗口、开发者友好工作流 — 面向生产团队，便于搜索引擎与用户发现。",
     "cap1Title": "可用性监控与多区域探针",
@@ -224,7 +240,10 @@
       "jwtDecoder": "JWT 解码",
       "cronParser": "Cron 解析",
       "websiteDownChecker": "网站宕机检测",
-      "sslChecker": "SSL 检测"
+      "sslChecker": "SSL 检测",
+      "dnsLookup": "DNS 查询",
+      "pingTest": "Ping 测试",
+      "portChecker": "端口检测"
     },
     "json": {
       "format": "格式化",
@@ -388,6 +407,54 @@
       "tls": "TLS 版本",
       "cta": "证书到期前自动邮件提醒 —",
       "ctaLink": "免费注册"
+    },
+    "dnsLookup": {
+      "badge": "DNS 解析",
+      "title": "免费 DNS 查询工具",
+      "subtitle": "从外部服务器查询 A、AAAA、CNAME、MX、TXT 与 NS 记录。",
+      "placeholder": "example.com",
+      "recordType": "记录类型",
+      "lookup": "查询",
+      "looking": "查询中…",
+      "failed": "查询失败，请重试。",
+      "found": "找到记录",
+      "notFound": "无记录或查询失败",
+      "responseTime": "响应时间",
+      "errorDetail": "详情",
+      "cta": "24/7 监控 DNS 变更并告警 —",
+      "ctaLink": "免费开始"
+    },
+    "pingTest": {
+      "badge": "ICMP 探测",
+      "title": "免费 Ping 测试工具",
+      "subtitle": "从我们的服务器对主机发起单次 ICMP Ping，测试可达性。",
+      "placeholder": "8.8.8.8 或 example.com",
+      "ping": "Ping",
+      "pinging": "Ping 中…",
+      "failed": "Ping 失败，请重试。",
+      "reachable": "主机可达",
+      "unreachable": "主机不可达或被拦截",
+      "responseTime": "响应时间",
+      "errorDetail": "详情",
+      "cta": "持续 Ping 监控与告警 —",
+      "ctaLink": "免费注册"
+    },
+    "portChecker": {
+      "badge": "TCP 探测",
+      "title": "免费端口检测工具",
+      "subtitle": "检测任意主机上的 TCP 端口是否开放 — HTTPS、SSH、数据库等。",
+      "placeholderHost": "example.com",
+      "placeholderPort": "443",
+      "port": "端口",
+      "check": "检测端口",
+      "checking": "检测中…",
+      "failed": "检测失败，请重试。",
+      "open": "端口开放",
+      "closed": "端口关闭或被过滤",
+      "responseTime": "响应时间",
+      "errorDetail": "详情",
+      "cta": "24/7 监控 TCP 端口与宕机告警 —",
+      "ctaLink": "免费开始"
     }
   },
   "pricingPage": {
@@ -425,6 +492,146 @@
     "ctaPrimary": "免费开始",
     "ctaTool": "试用网站宕机检测",
     "ctaPricing": "查看定价"
+  },
+  "sslMonitoring": {
+    "eyebrow": "功能",
+    "title": "SSL 证书监控与到期告警",
+    "subtitle": "跟踪 HTTPS 证书到期、颁发者变更与 TLS 健康，在客户看到浏览器警告前发送分级邮件告警。",
+    "h1Title": "专用 SSL 监控",
+    "h1Desc": "探测任意 HTTPS 端点，每次检测跟踪证书链、到期日期与 TLS 版本。",
+    "h2Title": "分级到期预警",
+    "h2Desc": "在到期前 30、14、7、1 天告警，避免续期遗漏。",
+    "h3Title": "即时通知",
+    "h3Desc": "证书无效或即将到期时，通过邮件、Slack、Webhook 与国内 IM 渠道告警。",
+    "h4Title": "免费 SSL 检测工具",
+    "h4Desc": "在 /tools/ssl-checker 一次性检测证书 — 升级至监控获得持续覆盖。",
+    "freeTierTitle": "免费版已包含",
+    "freeTierDesc": "SSL 监控计入免费 10 个监控配额，最短 5 分钟间隔。",
+    "freeTier1": "免费版支持 SSL 到期监控",
+    "freeTier2": "到期前分级邮件预警",
+    "freeTier3": "可与可用性与 DNS 监控组合",
+    "ctaPrimary": "免费开始",
+    "ctaTool": "试用 SSL 检测",
+    "ctaPricing": "查看定价"
+  },
+  "statusPagesFeature": {
+    "eyebrow": "功能",
+    "title": "面向客户的公开状态页",
+    "subtitle": "分享组件实时健康状态、发布事件更新，支持邮件订阅 — 免费版已包含。",
+    "h1Title": "品牌公开页面",
+    "h1Desc": "将监控映射为组件，发布可分享的状态 URL 供客户与干系人查看。",
+    "h2Title": "事件公告",
+    "h2Desc": "在状态页发布维护与故障更新，同时在内部管理事件。",
+    "h3Title": "邮件订阅",
+    "h3Desc": "访客可订阅状态更新，经双重确认后接收邮件。",
+    "h4Title": "可用性透明",
+    "h4Desc": "展示各组件当前状态与历史可用性，无需暴露内部控制台。",
+    "freeTierTitle": "免费版状态页",
+    "freeTierDesc": "无需升级即可创建公开状态页 — 适合早期 SaaS。",
+    "freeTier1": "免费版含公开状态页",
+    "freeTier2": "从监控映射组件",
+    "freeTier3": "订阅者邮件通知",
+    "ctaPrimary": "免费注册",
+    "ctaUptime": "可用性监控",
+    "ctaPricing": "查看定价"
+  },
+  "alerting": {
+    "eyebrow": "功能",
+    "title": "多渠道告警与值班",
+    "subtitle": "将宕机、SSL 与 DNS 告警路由至邮件、Slack、Discord、Teams、钉钉、飞书、企微、Webhook、短信与语音。",
+    "h1Title": "灵活告警路由",
+    "h1Desc": "配置全局渠道，需要时可按监控单独关闭 Webhook。",
+    "h2Title": "国内 IM 集成",
+    "h2Desc": "原生钉钉、飞书、企微机器人，以及 Slack、Discord 与 Microsoft Teams。",
+    "h3Title": "语音与值班",
+    "h3Desc": "带确认流程的值班表；Business 套餐支持语音 TTS 电话告警。",
+    "h4Title": "抖动抑制",
+    "h4Desc": "抖动与维护窗口期间智能抑制，减少告警疲劳。",
+    "freeTierTitle": "各套餐均含告警",
+    "freeTierDesc": "免费版含邮件告警 — 注册后可添加 IM 与 Webhook 渠道。",
+    "freeTier1": "免费版含邮件告警",
+    "freeTier2": "服务恢复时发送恢复通知",
+    "freeTier3": "升级解锁 Slack、IM 与语音渠道",
+    "ctaPrimary": "免费开始",
+    "ctaTool": "试用网站宕机检测",
+    "ctaPricing": "查看定价"
+  },
+  "useCases": {
+    "apiMonitoring": {
+      "eyebrow": "使用场景",
+      "title": "微服务 API 可用性监控",
+      "subtitle": "在客户提交工单前发现 5xx 尖峰、认证网关故障与 p95 变慢。",
+      "h1Title": "健康检查端点",
+      "h1Desc": "用状态码与关键词检测监控 REST、GraphQL 与 gRPC 健康 URL。",
+      "h2Title": "Webhook 与回调",
+      "h2Desc": "确保支付、物流与合作伙伴回调 URL 持续可达。",
+      "h3Title": "延迟趋势",
+      "h3Desc": "响应时间历史与 p95 尖峰，尽早发现性能回退。",
+      "h4Title": "事件流程",
+      "h4Desc": "API DOWN 时确认、升级并通知值班人员。",
+      "freeTierTitle": "几分钟即可上手",
+      "freeTierDesc": "无需安装 Agent — 外部探针访问您的公网端点。",
+      "freeTier1": "免费版支持 HTTP/HTTPS 监控",
+      "freeTier2": "最短 5 分钟检测间隔",
+      "freeTier3": "含邮件告警",
+      "ctaPrimary": "免费开始",
+      "ctaTool": "免费网站宕机检测",
+      "ctaFeature": "可用性监控功能"
+    },
+    "ecommerce": {
+      "eyebrow": "使用场景",
+      "title": "电商与结账可用性监控",
+      "subtitle": "监控店铺 URL、支付回调与库存 API — 大促期间两分钟宕机可能比监控年费更贵。",
+      "h1Title": "店铺与 CDN",
+      "h1Desc": "多区域 HTTP 检测店铺首页、购物车与 CDN 资源。",
+      "h2Title": "支付与 Webhook",
+      "h2Desc": "结账或支付服务商回调失败或变慢时立即告警。",
+      "h3Title": "大促前 SSL",
+      "h3Desc": "节假日销售前分级证书到期告警，而非等浏览器警告购物者。",
+      "h4Title": "公开状态页",
+      "h4Desc": "故障期间用品牌状态页告知客户您已在处理。",
+      "freeTierTitle": "商用友好免费版",
+      "freeTierDesc": "早期店铺 10 个监控 — 大促规模扩大后再升级。",
+      "freeTier1": "免费版允许商用",
+      "freeTier2": "含公开状态页",
+      "freeTier3": "多渠道告警",
+      "ctaPrimary": "免费开始",
+      "ctaTool": "SSL 检测",
+      "ctaFeature": "SSL 监控"
+    }
+  },
+  "blog": {
+    "eyebrow": "博客",
+    "title": "可用性监控指南",
+    "subtitle": "API 健康检查、网站宕机测试与 PulseWatch 入门实用技巧。",
+    "readArticle": "阅读全文",
+    "backToBlog": "返回博客",
+    "ctaPrimary": "免费开始监控",
+    "linkApiMonitoring": "API 监控场景",
+    "linkUptimeFeature": "可用性监控功能",
+    "linkWebsiteDown": "试用网站宕机检测",
+    "linkDnsLookup": "DNS 查询工具",
+    "linkRegister": "免费注册",
+    "articles": {
+      "apiUptime": {
+        "title": "5 分钟搭建 API 可用性监控",
+        "excerpt": "为健康端点配置外部 HTTP 检测，解读状态码并将告警路由到团队。",
+        "date": "2026-05-15",
+        "p1": "API 可用性监控指从 VPC 外部按固定间隔探测公网健康端点。检测失败 — 超时、5xx 或关键词缺失 — 时，在客户察觉前通知团队。",
+        "p2": "先从返回 200 且依赖较少的 /health 或 /ready URL 开始。需要比状态码更强保障时，为关键 JSON 字段添加关键词检测。",
+        "p3": "配置连续失败阈值，避免短暂抖动误呼值班。搭配 Slack 或邮件渠道，需要安静夜间时可按服务单独配置 Webhook。",
+        "p4": "PulseWatch 免费版含 10 个监控、5 分钟间隔 — 足以覆盖预发与生产网关，再评估更短间隔与短信升级。"
+      },
+      "websiteDown": {
+        "title": "网站宕机检测：何时用即时工具 vs 完整监控",
+        "excerpt": "先做即时可达性测试，再升级为带历史与告警的定时检测。",
+        "date": "2026-05-22",
+        "p1": "网站宕机检测回答一个问题：此刻该 URL 从公网是否可达？PulseWatch 从外部基础设施发起请求并返回 HTTP 状态与响应时间。",
+        "p2": "部署、DNS 切换或防火墙变更时使用即时检测。正常则结束；宕机时检测器展示错误详情以加快排查。",
+        "p3": "定时监控增加历史、恢复通知、SSL 与 DNS 告警及值班流程 — 防止下次故障在社交媒体才被发现。",
+        "p4": "试用 /tools/website-down-checker 免费工具，再为 24/7 重要 URL 创建监控。怀疑路由或防火墙时结合 /tools/dns-lookup 与 /tools/port-checker。"
+      }
+    }
   },
   "auth": {
     "loginTitle": "欢迎回来",
@@ -1044,6 +1251,58 @@
       "title": "免费 SSL 证书检测 | PulseWatch",
       "description": "检查 HTTPS 证书有效期、颁发者与 TLS 版本。免费外部 SSL 检测工具。",
       "keywords": "SSL 检测, 证书到期, TLS 检测, HTTPS 证书测试"
+    },
+    "dnsLookup": {
+      "title": "免费 DNS 查询 — A、MX、TXT 等 | PulseWatch",
+      "description": "从外部服务器查询 DNS A、AAAA、CNAME、MX、TXT 与 NS 记录。免费在线 DNS 工具。",
+      "keywords": "DNS 查询, DNS 检测, MX 查询, TXT 记录, NS 查询"
+    },
+    "pingTest": {
+      "title": "免费 Ping 测试 — 主机是否可达？ | PulseWatch",
+      "description": "从外部服务器测试任意主机或 IP 的 ICMP Ping 可达性。免费在线 Ping 工具。",
+      "keywords": "Ping 测试, 在线 Ping, ICMP 测试, 主机可达性, 网络 Ping"
+    },
+    "portChecker": {
+      "title": "免费端口检测 — TCP 开放端口测试 | PulseWatch",
+      "description": "检测任意主机上 443、80、22 等 TCP 端口是否开放。免费外部端口检测工具。",
+      "keywords": "端口检测, 开放端口测试, TCP 端口, 443 端口检测, 端口可用性"
+    },
+    "sslMonitoring": {
+      "title": "SSL 证书监控与到期告警 | PulseWatch",
+      "description": "监控 HTTPS 证书到期，30/14/7/1 天分级告警。免费版含 SSL 监控。",
+      "keywords": "SSL 监控, 证书到期告警, HTTPS 监控, TLS 证书监控"
+    },
+    "statusPagesFeature": {
+      "title": "公开状态页 — 免费版 | PulseWatch",
+      "description": "创建品牌公开状态页，展示组件健康、事件公告与邮件订阅。",
+      "keywords": "状态页, 公开状态页, 事件沟通, 可用性状态"
+    },
+    "statusPages": {
+      "title": "公开状态页 — 免费版 | PulseWatch",
+      "description": "创建品牌公开状态页，展示组件健康、事件公告与邮件订阅。",
+      "keywords": "状态页, 公开状态页, 事件沟通, 可用性状态"
+    },
+    "alerting": {
+      "title": "多渠道告警 — Slack、邮件与国内 IM | PulseWatch",
+      "description": "宕机告警：邮件、 Slack、Discord、Teams、钉钉、飞书、企微、Webhook、短信与语音。",
+      "keywords": "可用性告警, Slack 监控告警, 值班告警, 事件通知"
+    },
+    "blog": {
+      "title": "可用性监控指南与博客 | PulseWatch",
+      "description": "API 健康检查、网站宕机测试与外部可用性监控入门实用指南。",
+      "keywords": "可用性监控博客, API 监控指南, 网站宕机检测教程"
+    },
+    "useCases": {
+      "apiMonitoring": {
+        "title": "API 可用性监控场景 | PulseWatch",
+        "description": "用外部探针监控 REST/GraphQL 健康端点、Webhook 与延迟趋势，多渠道告警。",
+        "keywords": "API 监控, 微服务可用性, 健康检查监控, Webhook 监控"
+      },
+      "ecommerce": {
+        "title": "电商可用性监控场景 | PulseWatch",
+        "description": "监控店铺、支付回调与大促前 SSL，配合状态页与宕机告警。",
+        "keywords": "电商可用性, 结账监控, 网店监控, 支付回调告警"
+      }
     },
     "compare": {
       "uptimerobot": {

@@ -57,6 +57,125 @@ func (h *ToolsHandler) SSLCheck(c *gin.Context) {
 	})
 }
 
+var allowedDNSRecordTypes = map[string]bool{
+	"A": true, "AAAA": true, "CNAME": true, "MX": true, "TXT": true, "NS": true,
+}
+
+func normalizeToolHost(raw string) string {
+	host := strings.TrimSpace(raw)
+	host = strings.TrimPrefix(strings.TrimPrefix(host, "https://"), "http://")
+	host = strings.Split(host, "/")[0]
+	return strings.Split(host, ":")[0]
+}
+
+func recordsFromMeta(meta map[string]interface{}) []string {
+	if meta == nil {
+		return []string{}
+	}
+	raw, ok := meta["records"]
+	if !ok {
+		return []string{}
+	}
+	switch v := raw.(type) {
+	case []string:
+		return v
+	case []interface{}:
+		out := make([]string, 0, len(v))
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	default:
+		return []string{}
+	}
+}
+
+func checkOutcomeJSON(outcome services.CheckOutcome, extra gin.H) gin.H {
+	resp := gin.H{
+		"isUp":       outcome.IsUp,
+		"responseMs": outcome.ResponseMs,
+	}
+	for k, v := range extra {
+		resp[k] = v
+	}
+	if outcome.ErrorMessage != "" {
+		resp["error"] = outcome.ErrorMessage
+	}
+	if outcome.Metadata != nil {
+		resp["metadata"] = outcome.Metadata
+	}
+	return resp
+}
+
+func (h *ToolsHandler) DNSLookup(c *gin.Context) {
+	host := normalizeToolHost(c.Query("host"))
+	if host == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "host is required"})
+		return
+	}
+
+	recordType := strings.ToUpper(strings.TrimSpace(c.Query("type")))
+	if recordType == "" {
+		recordType = "A"
+	}
+	if !allowedDNSRecordTypes[recordType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "type must be one of A, AAAA, CNAME, MX, TXT, NS"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
+	defer cancel()
+
+	cfg, _ := json.Marshal(map[string]string{"recordType": recordType})
+	outcome := services.RunCheck(ctx, "dns", host, cfg)
+	records := recordsFromMeta(outcome.Metadata)
+
+	c.JSON(http.StatusOK, checkOutcomeJSON(outcome, gin.H{
+		"host":       host,
+		"recordType": recordType,
+		"records":    records,
+	}))
+}
+
+func (h *ToolsHandler) PingTest(c *gin.Context) {
+	host := normalizeToolHost(c.Query("host"))
+	if host == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "host is required"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
+	defer cancel()
+
+	outcome := services.RunCheck(ctx, "ping", host, json.RawMessage(`{}`))
+	c.JSON(http.StatusOK, checkOutcomeJSON(outcome, gin.H{"host": host}))
+}
+
+func (h *ToolsHandler) PortCheck(c *gin.Context) {
+	host := normalizeToolHost(c.Query("host"))
+	if host == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "host is required"})
+		return
+	}
+
+	port := strings.TrimSpace(c.Query("port"))
+	if port == "" {
+		port = "443"
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
+	defer cancel()
+
+	target := net.JoinHostPort(host, port)
+	outcome := services.RunCheck(ctx, "tcp", target, json.RawMessage(`{}`))
+	c.JSON(http.StatusOK, checkOutcomeJSON(outcome, gin.H{
+		"host": host,
+		"port": port,
+	}))
+}
+
 func (h *ToolsHandler) HTTPCheck(c *gin.Context) {
 	rawURL := strings.TrimSpace(c.Query("url"))
 	if rawURL == "" {

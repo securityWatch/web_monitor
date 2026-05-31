@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { getSiteUrl, localeUrl } from '@/lib/seo';
 
-const FAQ_COUNT = 13;
+const FAQ_COUNT = 16;
 
 export async function LandingJsonLd({ locale }: { locale: string }) {
   const t = await getTranslations({ locale, namespace: 'landing' });

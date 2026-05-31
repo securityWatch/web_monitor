@@ -25,7 +25,7 @@ import {
   Radio,
 } from 'lucide-react';
 
-const FAQ_COUNT = 13;
+const FAQ_COUNT = 16;
 
 export async function LandingPage({ foundingCount }: { foundingCount: number }) {
   const t = await getTranslations('landing');
@@ -44,8 +44,8 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
   ];
 
   const useCases = [
-    { icon: Server, title: t('useCase1Title'), desc: t('useCase1Desc') },
-    { icon: ShoppingCart, title: t('useCase2Title'), desc: t('useCase2Desc') },
+    { icon: Server, title: t('useCase1Title'), desc: t('useCase1Desc'), href: '/use-cases/api-monitoring' as const },
+    { icon: ShoppingCart, title: t('useCase2Title'), desc: t('useCase2Desc'), href: '/use-cases/ecommerce-uptime' as const },
     { icon: Cloud, title: t('useCase3Title'), desc: t('useCase3Desc') },
     { icon: Users, title: t('useCase4Title'), desc: t('useCase4Desc') },
     { icon: Shield, title: t('useCase5Title'), desc: t('useCase5Desc') },
@@ -131,13 +131,27 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
           <h2 className="text-center text-3xl font-bold">{t('useCasesTitle')}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-zinc-400">{t('useCasesSubtitle')}</p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {useCases.map((u) => (
-              <article key={u.title} className="card hover:border-zinc-700 transition-colors">
-                <u.icon className="h-8 w-8 text-blue-500" aria-hidden />
-                <h3 className="mt-4 font-semibold text-white">{u.title}</h3>
-                <p className="mt-2 text-sm text-zinc-400 leading-relaxed">{u.desc}</p>
-              </article>
-            ))}
+            {useCases.map((u) => {
+              const inner = (
+                <>
+                  <u.icon className="h-8 w-8 text-blue-500" aria-hidden />
+                  <h3 className="mt-4 font-semibold text-white">{u.title}</h3>
+                  <p className="mt-2 text-sm text-zinc-400 leading-relaxed">{u.desc}</p>
+                  {'href' in u && u.href && (
+                    <p className="mt-3 text-xs text-blue-400">{t('useCaseLearnMore')} →</p>
+                  )}
+                </>
+              );
+              return 'href' in u && u.href ? (
+                <Link key={u.title} href={u.href} className="card hover:border-zinc-700 transition-colors block">
+                  {inner}
+                </Link>
+              ) : (
+                <article key={u.title} className="card hover:border-zinc-700 transition-colors">
+                  {inner}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -303,8 +317,53 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
               </Link>
             </li>
             <li>
+              <Link href="/tools/dns-lookup" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesDnsLookup')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/tools/ping-test" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesPingTest')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/tools/port-checker" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesPortChecker')}
+              </Link>
+            </li>
+            <li>
               <Link href="/features/uptime-monitoring" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
                 {t('resourcesUptimeFeature')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/features/ssl-monitoring" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesSslMonitoring')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/features/status-pages" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesStatusPages')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/features/alerting" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesAlerting')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/use-cases/api-monitoring" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesApiUseCase')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/use-cases/ecommerce-uptime" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesEcommerceUseCase')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/blog" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesBlog')}
               </Link>
             </li>
             <li>

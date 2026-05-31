@@ -20,6 +20,9 @@ import {
   CalendarClock,
   Files,
   Globe,
+  Network,
+  Plug,
+  Activity as ActivityIcon,
 } from 'lucide-react';
 import {
   base64Decode,
@@ -54,6 +57,9 @@ const TOOLS: { id: ToolId; icon: typeof Braces }[] = [
 const EXTRA_TOOLS = [
   { href: '/tools/website-down-checker', key: 'websiteDownChecker', icon: Globe },
   { href: '/tools/ssl-checker', key: 'sslChecker', icon: ShieldCheck },
+  { href: '/tools/dns-lookup', key: 'dnsLookup', icon: Network },
+  { href: '/tools/ping-test', key: 'pingTest', icon: ActivityIcon },
+  { href: '/tools/port-checker', key: 'portChecker', icon: Plug },
   { href: '/tools/image-compress', key: 'imageCompress', icon: ImageIcon },
   { href: '/tools/pdf-tools', key: 'pdfTools', icon: Files },
   { href: '/tools/pdf-to-word', key: 'pdfToWord', icon: FileText },

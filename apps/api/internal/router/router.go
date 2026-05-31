@@ -89,6 +89,9 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r.POST("/api/v1/billing/webhook", billingH.Webhook)
 	r.GET("/api/v1/public/ssl-check", toolsH.SSLCheck)
 	r.GET("/api/v1/public/http-check", toolsH.HTTPCheck)
+	r.GET("/api/v1/public/dns-lookup", toolsH.DNSLookup)
+	r.GET("/api/v1/public/ping", toolsH.PingTest)
+	r.GET("/api/v1/public/port-check", toolsH.PortCheck)
 
 	internal := r.Group("/api/internal/probe")
 	{

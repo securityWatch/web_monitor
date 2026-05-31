@@ -31,8 +31,16 @@ export const publicMarketingPaths = [
   '/register',
   '/pricing',
   '/features/uptime-monitoring',
+  '/features/ssl-monitoring',
+  '/features/status-pages',
+  '/features/alerting',
   '/compare/better-stack',
   '/compare/uptimerobot',
+  '/use-cases/api-monitoring',
+  '/use-cases/ecommerce-uptime',
+  '/blog',
+  '/blog/how-to-monitor-api-uptime',
+  '/blog/website-down-checker-guide',
   '/tools',
   '/tools/website-down-checker',
   '/tools/image-compress',
@@ -42,6 +50,9 @@ export const publicMarketingPaths = [
   '/tools/jwt-decoder',
   '/tools/cron-parser',
   '/tools/ssl-checker',
+  '/tools/dns-lookup',
+  '/tools/ping-test',
+  '/tools/port-checker',
 ] as const;
 
 export function buildPageMetadata(opts: {
