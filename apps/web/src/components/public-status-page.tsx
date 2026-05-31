@@ -32,20 +32,29 @@ export function PublicStatusPageView({ lookup, value }: Props) {
   const t = useTranslations('statusPages');
   const searchParams = useSearchParams();
   const [data, setData] = useState<PublicStatus | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [subEmail, setSubEmail] = useState('');
   const [subMsg, setSubMsg] = useState('');
   const [subLoading, setSubLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
+    setLoadError(false);
+    setData(null);
     const base = getApiUrl();
     const path = lookup === 'domain'
       ? `/api/v1/public/status-domain?domain=${encodeURIComponent(value)}`
       : `/api/v1/public/status/${value}`;
     fetch(`${base}${path}`)
-      .then((r) => r.json())
-      .then(setData)
-      .catch(console.error);
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok || !Array.isArray(json.components)) {
+          setLoadError(true);
+          return;
+        }
+        setData(json as PublicStatus);
+      })
+      .catch(() => setLoadError(true));
   }, [lookup, value]);
 
   useEffect(() => {
@@ -83,6 +92,14 @@ export function PublicStatusPageView({ lookup, value }: Props) {
       setSubLoading(false);
     }
   };
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-[#0A0A0B] px-4 text-center text-zinc-500">
+        <p>{t('notFound')}</p>
+      </div>
+    );
+  }
 
   if (!data) {
     return <div className="flex min-h-screen items-center justify-center bg-[#0A0A0B] text-zinc-500">{t('loading')}</div>;

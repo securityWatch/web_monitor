@@ -747,6 +747,7 @@
     "subscribeFailed": "订阅失败",
     "subscribeConfirmed": "订阅已确认，故障时将收到邮件通知。",
     "subscribeConfirmFailed": "订阅确认失败，链接可能已过期。",
+    "notFound": "该域名未配置公开状态页。",
     "activeIncidents": "进行中事件"
   },
   "compare": {

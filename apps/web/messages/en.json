@@ -747,6 +747,7 @@
     "subscribeFailed": "Subscription failed",
     "subscribeConfirmed": "Subscription confirmed. You will receive email updates during incidents.",
     "subscribeConfirmFailed": "Subscription confirmation failed. The link may have expired.",
+    "notFound": "No public status page is configured for this domain.",
     "activeIncidents": "Active incidents"
   },
   "compare": {

@@ -3,7 +3,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { APP_DIR, ROOT, PASSWORD, SITE_URL } = require('./lib/config');
+const { APP_DIR, ROOT, PASSWORD, SITE_URL, APP_DOMAINS } = require('./lib/config');
 const { sshExec, scpToRemote, shellQuote } = require('./lib/ssh');
 
 const pw = shellQuote(PASSWORD);
@@ -14,7 +14,13 @@ async function main() {
   if (!process.env.SKIP_WEB_BUILD) {
     execSync('npm run build', {
       cwd: path.join(ROOT, 'apps/web'),
-      env: { ...process.env, NODE_ENV: 'production', NEXT_PUBLIC_API_URL: SITE_URL, NEXT_PUBLIC_SITE_URL: SITE_URL },
+      env: {
+        ...process.env,
+        NODE_ENV: 'production',
+        NEXT_PUBLIC_API_URL: SITE_URL,
+        NEXT_PUBLIC_SITE_URL: SITE_URL,
+        NEXT_PUBLIC_APP_DOMAINS: APP_DOMAINS,
+      },
       stdio: 'inherit',
     });
   }
