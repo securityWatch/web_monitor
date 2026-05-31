@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pulsewatch/api/internal/config"
 )
@@ -115,23 +116,59 @@ func (s *EmailOTPService) sendCode(ctx context.Context, email, purpose, locale s
 	return s.email.SendVerificationCode(email, locale, purpose, code)
 }
 
-func (s *EmailOTPService) Verify(ctx context.Context, email, purpose, code string) error {
+var errInvalidOTP = fmt.Errorf("invalid or expired verification code")
+
+func (s *EmailOTPService) normalizeOTPInput(email, code string) (string, string, error) {
 	email = normalizeOTPEmail(email)
 	code = strings.TrimSpace(code)
 	if len(code) != 6 {
-		return fmt.Errorf("invalid or expired verification code")
+		return "", "", errInvalidOTP
+	}
+	return email, code, nil
+}
+
+// CheckCode validates an OTP without consuming it (wrong codes do not invalidate a valid OTP).
+func (s *EmailOTPService) CheckCode(ctx context.Context, email, purpose, code string) error {
+	email, code, err := s.normalizeOTPInput(email, code)
+	if err != nil {
+		return err
 	}
 	hash := HashToken(code)
 	var id string
-	err := s.db.QueryRow(ctx, `
+	err = s.db.QueryRow(ctx, `
 		SELECT id FROM email_otp_codes
 		WHERE email = $1 AND purpose = $2 AND code_hash = $3
 		  AND used_at IS NULL AND expires_at > now()
 		ORDER BY created_at DESC LIMIT 1
 	`, email, purpose, hash).Scan(&id)
 	if err != nil {
-		return fmt.Errorf("invalid or expired verification code")
+		return errInvalidOTP
 	}
-	_, _ = s.db.Exec(ctx, `UPDATE email_otp_codes SET used_at = now() WHERE id = $1`, id)
+	return nil
+}
+
+// ConsumeCodeInTx marks a previously checked OTP as used inside an open transaction.
+func (s *EmailOTPService) ConsumeCodeInTx(ctx context.Context, tx pgx.Tx, email, purpose, code string) error {
+	email, code, err := s.normalizeOTPInput(email, code)
+	if err != nil {
+		return err
+	}
+	hash := HashToken(code)
+	var id string
+	err = tx.QueryRow(ctx, `
+		WITH candidate AS (
+			SELECT id FROM email_otp_codes
+			WHERE email = $1 AND purpose = $2 AND code_hash = $3
+			  AND used_at IS NULL AND expires_at > now()
+			ORDER BY created_at DESC LIMIT 1
+			FOR UPDATE
+		)
+		UPDATE email_otp_codes SET used_at = now()
+		FROM candidate WHERE email_otp_codes.id = candidate.id
+		RETURNING email_otp_codes.id
+	`, email, purpose, hash).Scan(&id)
+	if err != nil {
+		return errInvalidOTP
+	}
 	return nil
 }

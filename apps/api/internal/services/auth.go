@@ -32,13 +32,30 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 	if a.otp == nil {
 		return nil, fmt.Errorf("email verification unavailable")
 	}
-	if err := a.otp.Verify(ctx, email, OTPPurposeRegister, code); err != nil {
+	email = strings.ToLower(strings.TrimSpace(email))
+	if !ValidateEmail(email) && !IsWeChatPlaceholderEmail(email) {
+		return nil, fmt.Errorf("invalid email")
+	}
+	if !IsWeChatPlaceholderEmail(email) {
+		if err := ValidatePassword(password); err != nil {
+			return nil, err
+		}
+	}
+	var exists bool
+	err := a.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, email).Scan(&exists)
+	if err != nil {
 		return nil, err
 	}
-	return a.registerInternal(ctx, email, password, displayName, true, provider, locale)
+	if exists {
+		return nil, fmt.Errorf("email already exists")
+	}
+	if err := a.otp.CheckCode(ctx, email, OTPPurposeRegister, code); err != nil {
+		return nil, err
+	}
+	return a.registerInternal(ctx, email, password, displayName, true, provider, locale, code)
 }
 
-func (a *AuthService) registerInternal(ctx context.Context, email, password, displayName string, emailVerified bool, provider, locale string) (*models.AuthResponse, error) {
+func (a *AuthService) registerInternal(ctx context.Context, email, password, displayName string, emailVerified bool, provider, locale, otpCode string) (*models.AuthResponse, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if !ValidateEmail(email) && !IsWeChatPlaceholderEmail(email) {
 		return nil, fmt.Errorf("invalid email")
@@ -76,6 +93,15 @@ func (a *AuthService) registerInternal(ctx context.Context, email, password, dis
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
+
+	if otpCode != "" {
+		if a.otp == nil {
+			return nil, fmt.Errorf("email verification unavailable")
+		}
+		if err := a.otp.ConsumeCodeInTx(ctx, tx, email, OTPPurposeRegister, otpCode); err != nil {
+			return nil, err
+		}
+	}
 
 	userID := uuid.New().String()
 	now := time.Now().UTC()
@@ -155,10 +181,10 @@ func (a *AuthService) ResetPasswordWithCode(ctx context.Context, email, code, ne
 	if err := ValidatePassword(newPassword); err != nil {
 		return err
 	}
-	if err := a.otp.Verify(ctx, email, OTPPurposePasswordReset, code); err != nil {
+	email = strings.ToLower(strings.TrimSpace(email))
+	if err := a.otp.CheckCode(ctx, email, OTPPurposePasswordReset, code); err != nil {
 		return err
 	}
-	email = strings.ToLower(strings.TrimSpace(email))
 	var userID string
 	err := a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
 	if err != nil {
@@ -168,9 +194,21 @@ func (a *AuthService) ResetPasswordWithCode(ctx context.Context, email, code, ne
 	if err != nil {
 		return err
 	}
-	_, _ = a.db.Exec(ctx, `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, passHash, userID)
-	_, _ = a.db.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, userID)
-	return nil
+	tx, err := a.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if err := a.otp.ConsumeCodeInTx(ctx, tx, email, OTPPurposePasswordReset, code); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, passHash, userID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, userID); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // LoginOrRegisterWeChatMiniProgram signs in or auto-registers via WeChat mini program wx.login code.
@@ -258,7 +296,7 @@ func (a *AuthService) LoginOrRegisterOAuth(ctx context.Context, provider, provid
 	if err != nil {
 		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
 		if userID == "" {
-			resp, err := a.registerInternal(ctx, email, GenerateRandomPassword(), displayName, true, provider, "en")
+			resp, err := a.registerInternal(ctx, email, GenerateRandomPassword(), displayName, true, provider, "en", "")
 			if err != nil && !strings.Contains(err.Error(), "already exists") {
 				return nil, err
 			}

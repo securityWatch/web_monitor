@@ -110,6 +110,52 @@ func TestRegisterLoginRefresh(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w2.Code)
 }
 
+func TestRegisterOTPWrongCodeThenCorrect(t *testing.T) {
+	email := uniqueEmail("otp-retry")
+	code := "789012"
+	seedOTP(t, email, services.OTPPurposeRegister, code)
+
+	tryRegister := func(email, password, code string) *httptest.ResponseRecorder {
+		body, _ := json.Marshal(map[string]string{
+			"email": email, "password": password, "displayName": "OTP User", "code": code,
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		return w
+	}
+
+	w1 := tryRegister(email, "password123", "000000")
+	assert.Equal(t, http.StatusBadRequest, w1.Code)
+
+	w2 := tryRegister(email, "password123", code)
+	assert.Equal(t, http.StatusCreated, w2.Code, w2.Body.String())
+}
+
+func TestRegisterOTPWeakPasswordThenCorrect(t *testing.T) {
+	email := uniqueEmail("otp-pwd")
+	code := "345678"
+	seedOTP(t, email, services.OTPPurposeRegister, code)
+
+	tryRegister := func(email, password, code string) *httptest.ResponseRecorder {
+		body, _ := json.Marshal(map[string]string{
+			"email": email, "password": password, "displayName": "OTP User", "code": code,
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		return w
+	}
+
+	w1 := tryRegister(email, "short", code)
+	assert.Equal(t, http.StatusBadRequest, w1.Code)
+
+	w2 := tryRegister(email, "password123", code)
+	assert.Equal(t, http.StatusCreated, w2.Code, w2.Body.String())
+}
+
 func TestMonitorCRUD(t *testing.T) {
 	resp := registerUser(t, uniqueEmail("monitor"), "password123")
 	token := resp["accessToken"].(string)
