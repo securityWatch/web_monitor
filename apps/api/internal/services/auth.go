@@ -28,17 +28,17 @@ func NewAuthService(db *pgxpool.Pool, cfg *config.Config, notifier *Notifier, ot
 	return &AuthService{db: db, cfg: cfg, lockout: NewLoginLockoutService(db), notifier: notifier, otp: otp}
 }
 
-func (a *AuthService) Register(ctx context.Context, email, password, displayName, code, provider string) (*models.AuthResponse, error) {
+func (a *AuthService) Register(ctx context.Context, email, password, displayName, code, provider, locale string) (*models.AuthResponse, error) {
 	if a.otp == nil {
 		return nil, fmt.Errorf("email verification unavailable")
 	}
 	if err := a.otp.Verify(ctx, email, OTPPurposeRegister, code); err != nil {
 		return nil, err
 	}
-	return a.registerInternal(ctx, email, password, displayName, true, provider)
+	return a.registerInternal(ctx, email, password, displayName, true, provider, locale)
 }
 
-func (a *AuthService) registerInternal(ctx context.Context, email, password, displayName string, emailVerified bool, provider string) (*models.AuthResponse, error) {
+func (a *AuthService) registerInternal(ctx context.Context, email, password, displayName string, emailVerified bool, provider, locale string) (*models.AuthResponse, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if !ValidateEmail(email) && !IsWeChatPlaceholderEmail(email) {
 		return nil, fmt.Errorf("invalid email")
@@ -66,6 +66,10 @@ func (a *AuthService) registerInternal(ctx context.Context, email, password, dis
 	if displayName == "" {
 		displayName = strings.Split(email, "@")[0]
 	}
+	userLocale := NormalizeEmailLocale(locale)
+	if provider == WeChatMiniProvider {
+		userLocale = "zh"
+	}
 
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -80,9 +84,9 @@ func (a *AuthService) registerInternal(ctx context.Context, email, password, dis
 		verifiedAt = &now
 	}
 	_, err = tx.Exec(ctx, `
-		INSERT INTO users (id, email, password_hash, display_name, email_verified_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $6)
-	`, userID, email, hash, displayName, verifiedAt, now)
+		INSERT INTO users (id, email, password_hash, display_name, locale, email_verified_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+	`, userID, email, hash, displayName, userLocale, verifiedAt, now)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +258,7 @@ func (a *AuthService) LoginOrRegisterOAuth(ctx context.Context, provider, provid
 	if err != nil {
 		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
 		if userID == "" {
-			resp, err := a.registerInternal(ctx, email, GenerateRandomPassword(), displayName, true, provider)
+			resp, err := a.registerInternal(ctx, email, GenerateRandomPassword(), displayName, true, provider, "en")
 			if err != nil && !strings.Contains(err.Error(), "already exists") {
 				return nil, err
 			}

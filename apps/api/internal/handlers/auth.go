@@ -27,6 +27,7 @@ type registerReq struct {
 	Password    string `json:"password" binding:"required"`
 	DisplayName string `json:"displayName"`
 	Code        string `json:"code" binding:"required"`
+	Locale      string `json:"locale"`
 }
 
 type loginReq struct {
@@ -44,7 +45,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := h.auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.Code, "email")
+	locale := services.ResolveEmailLocale(req.Locale, "", c.GetHeader("Accept-Language"))
+	resp, err := h.auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.Code, "email", locale)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "code": "EMAIL_ALREADY_EXISTS"})
@@ -103,13 +105,15 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 func (h *AuthHandler) SendRegisterCode(c *gin.Context) {
 	var req struct {
-		Email string `json:"email" binding:"required"`
+		Email  string `json:"email" binding:"required"`
+		Locale string `json:"locale"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.otp.SendRegisterCode(c.Request.Context(), req.Email); err != nil {
+	locale := services.ResolveEmailLocale(req.Locale, "", c.GetHeader("Accept-Language"))
+	if err := h.otp.SendRegisterCode(c.Request.Context(), req.Email, locale); err != nil {
 		var rateLimit services.OTPRateLimitError
 		if errors.As(err, &rateLimit) {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error(), "code": "OTP_RATE_LIMIT"})
@@ -127,13 +131,14 @@ func (h *AuthHandler) SendRegisterCode(c *gin.Context) {
 
 func (h *AuthHandler) SendForgotPasswordCode(c *gin.Context) {
 	var req struct {
-		Email string `json:"email" binding:"required"`
+		Email  string `json:"email" binding:"required"`
+		Locale string `json:"locale"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.otp.SendPasswordResetCode(c.Request.Context(), req.Email); err != nil {
+	if err := h.otp.SendPasswordResetCode(c.Request.Context(), req.Email, req.Locale, c.GetHeader("Accept-Language")); err != nil {
 		var rateLimit services.OTPRateLimitError
 		if errors.As(err, &rateLimit) {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error(), "code": "OTP_RATE_LIMIT"})
@@ -145,13 +150,14 @@ func (h *AuthHandler) SendForgotPasswordCode(c *gin.Context) {
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req struct {
-		Email string `json:"email" binding:"required"`
+		Email  string `json:"email" binding:"required"`
+		Locale string `json:"locale"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	_ = h.otp.SendPasswordResetCode(c.Request.Context(), req.Email)
+	_ = h.otp.SendPasswordResetCode(c.Request.Context(), req.Email, req.Locale, c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a verification code has been sent"})
 }
 

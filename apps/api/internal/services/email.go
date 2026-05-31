@@ -87,14 +87,15 @@ func (e *EmailService) sendMailTLS(addr string, auth smtp.Auth, from string, to 
 	return client.Quit()
 }
 
-func (e *EmailService) SendVerificationCode(to, subject, intro, code string) error {
+func (e *EmailService) SendVerificationCode(to, locale, purpose, code string) error {
+	copy := OTPEmailCopyFor(locale, purpose)
 	body := fmt.Sprintf(`<div style="font-family:sans-serif;max-width:520px">
 <h2 style="color:#3b82f6">PulseWatch</h2>
 <p>%s</p>
 <p style="font-size:28px;font-weight:bold;letter-spacing:6px;color:#111">%s</p>
-<p style="color:#52525b">验证码 5 分钟内有效。如非本人操作，请忽略此邮件。</p>
-</div>`, intro, code)
-	return e.Send(context.Background(), to, subject, body)
+<p style="color:#52525b">%s</p>
+</div>`, copy.Intro, code, copy.Footer)
+	return e.Send(context.Background(), to, copy.Subject, body)
 }
 
 func (e *EmailService) SendAlert(to, monitorName, status, detail string) error {

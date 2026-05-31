@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { MarketingNav } from '@/components/marketing-nav';
 import { apiFetch, ApiError } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const router = useRouter();
   const [step, setStep] = useState<'email' | 'reset'>('email');
   const [email, setEmail] = useState('');
@@ -29,7 +30,7 @@ export default function ForgotPasswordPage() {
     try {
       await apiFetch('/api/v1/auth/forgot-password/send-code', {
         method: 'POST',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, locale }),
       });
       setStep('reset');
       setCooldown(60);
@@ -42,7 +43,7 @@ export default function ForgotPasswordPage() {
     } finally {
       setLoading(false);
     }
-  }, [email, t]);
+  }, [email, locale, t]);
 
   const resetPassword = async (e: React.FormEvent) => {
     e.preventDefault();

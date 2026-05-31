@@ -63,7 +63,7 @@ func (s *EmailOTPService) checkSendRate(ctx context.Context, email, purpose stri
 	return nil
 }
 
-func (s *EmailOTPService) SendRegisterCode(ctx context.Context, email string) error {
+func (s *EmailOTPService) SendRegisterCode(ctx context.Context, email, locale string) error {
 	email = normalizeOTPEmail(email)
 	if !ValidateEmail(email) {
 		return fmt.Errorf("invalid email")
@@ -76,23 +76,24 @@ func (s *EmailOTPService) SendRegisterCode(ctx context.Context, email string) er
 	if exists {
 		return fmt.Errorf("email already exists")
 	}
-	return s.sendCode(ctx, email, OTPPurposeRegister, "注册 PulseWatch 验证码", "请使用以下验证码完成注册（5 分钟内有效）：")
+	return s.sendCode(ctx, email, OTPPurposeRegister, locale)
 }
 
-func (s *EmailOTPService) SendPasswordResetCode(ctx context.Context, email string) error {
+func (s *EmailOTPService) SendPasswordResetCode(ctx context.Context, email, bodyLocale, acceptLanguage string) error {
 	email = normalizeOTPEmail(email)
 	if !ValidateEmail(email) {
 		return nil
 	}
-	var userID string
-	err := s.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	var userLocale string
+	err := s.db.QueryRow(ctx, `SELECT COALESCE(locale, 'en') FROM users WHERE email = $1`, email).Scan(&userLocale)
 	if err != nil {
 		return nil
 	}
-	return s.sendCode(ctx, email, OTPPurposePasswordReset, "PulseWatch 重置密码验证码", "请使用以下验证码重置密码（5 分钟内有效）：")
+	locale := ResolveEmailLocale(bodyLocale, userLocale, acceptLanguage)
+	return s.sendCode(ctx, email, OTPPurposePasswordReset, locale)
 }
 
-func (s *EmailOTPService) sendCode(ctx context.Context, email, purpose, subject, intro string) error {
+func (s *EmailOTPService) sendCode(ctx context.Context, email, purpose, locale string) error {
 	if err := s.checkSendRate(ctx, email, purpose); err != nil {
 		return err
 	}
@@ -111,7 +112,7 @@ func (s *EmailOTPService) sendCode(ctx context.Context, email, purpose, subject,
 	if err != nil {
 		return err
 	}
-	return s.email.SendVerificationCode(email, subject, intro, code)
+	return s.email.SendVerificationCode(email, locale, purpose, code)
 }
 
 func (s *EmailOTPService) Verify(ctx context.Context, email, purpose, code string) error {

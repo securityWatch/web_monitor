@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { MarketingNav } from '@/components/marketing-nav';
 import { apiFetch, setStoredAuth, ApiError } from '@/lib/api';
@@ -9,6 +9,7 @@ import type { AuthData } from '@/lib/api';
 
 export default function RegisterPage() {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const router = useRouter();
   const [form, setForm] = useState({ email: '', password: '', confirm: '', displayName: '', code: '' });
   const [error, setError] = useState('');
@@ -41,7 +42,7 @@ export default function RegisterPage() {
     try {
       await apiFetch('/api/v1/auth/register/send-code', {
         method: 'POST',
-        body: JSON.stringify({ email: form.email }),
+        body: JSON.stringify({ email: form.email, locale }),
       });
       setCodeSent(true);
       setCooldown(60);
@@ -56,7 +57,7 @@ export default function RegisterPage() {
     } finally {
       setCodeSending(false);
     }
-  }, [form.email, t]);
+  }, [form.email, locale, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +79,7 @@ export default function RegisterPage() {
           password: form.password,
           displayName: form.displayName,
           code: form.code,
+          locale,
         }),
       });
       setStoredAuth(data);
