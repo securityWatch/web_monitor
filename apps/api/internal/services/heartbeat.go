@@ -27,7 +27,8 @@ func GenerateHeartbeatToken() string {
 
 func (h *HeartbeatService) Ping(ctx context.Context, token string) error {
 	res, err := h.db.Exec(ctx, `
-		UPDATE monitors SET last_heartbeat_at = now(), status = 'up', pending_down_at = NULL, updated_at = now()
+		UPDATE monitors SET last_heartbeat_at = now(), status = 'up', pending_down_at = NULL,
+		       consecutive_failures = 0, updated_at = now()
 		WHERE heartbeat_token = $1 AND type = 'heartbeat'
 	`, token)
 	if err != nil {

@@ -111,6 +111,7 @@ export function parseHttpConfig(raw: unknown): HttpMonitorConfig {
 
 export interface MonitorAlertConfig {
   webhookEnabled: boolean;
+  consecutiveFailuresBeforeAlert: number;
 }
 
 export interface SslMonitorConfig {
@@ -154,7 +155,10 @@ export const defaultPageSpeedConfig = (): PageSpeedMonitorConfig => ({
   maxPageWeightKb: 2048,
 });
 
-export const defaultAlertConfig = (): MonitorAlertConfig => ({ webhookEnabled: true });
+export const defaultAlertConfig = (): MonitorAlertConfig => ({
+  webhookEnabled: true,
+  consecutiveFailuresBeforeAlert: 1,
+});
 
 export function parseSslConfig(raw: unknown): SslMonitorConfig {
   if (!raw || typeof raw !== 'object') return defaultSslConfig();
@@ -216,6 +220,10 @@ export function parseAlertConfig(raw: unknown): MonitorAlertConfig {
   const a = alerts as Record<string, unknown>;
   return {
     webhookEnabled: typeof a.webhookEnabled === 'boolean' ? a.webhookEnabled : true,
+    consecutiveFailuresBeforeAlert:
+      typeof a.consecutiveFailuresBeforeAlert === 'number' && a.consecutiveFailuresBeforeAlert >= 1
+        ? Math.min(10, Math.floor(a.consecutiveFailuresBeforeAlert))
+        : 1,
   };
 }
 
@@ -280,7 +288,10 @@ export function mergeMonitorConfigForSave(
     if (ps.maxPageWeightKb != null) base.maxPageWeightKb = ps.maxPageWeightKb;
   }
 
-  base.alerts = { webhookEnabled: alertConfig.webhookEnabled };
+  base.alerts = {
+    webhookEnabled: alertConfig.webhookEnabled,
+    consecutiveFailuresBeforeAlert: alertConfig.consecutiveFailuresBeforeAlert,
+  };
   return base;
 }
 

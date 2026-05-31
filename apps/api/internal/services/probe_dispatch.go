@@ -234,31 +234,7 @@ func (s *Scheduler) aggregateProbeRun(ctx context.Context, runID, id, orgID, nam
 		}
 	}
 
-	newStatus := "up"
-	if !outcome.IsUp {
-		newStatus = "down"
-	}
-	nextRun := now.Add(time.Duration(interval) * time.Second)
-	if newStatus == "down" && prevStatus != "down" {
-		_, _ = s.db.Exec(ctx, `
-			UPDATE monitors SET status = $1::monitor_status, last_checked_at = $2, last_response_ms = $3,
-			       next_run_at = $4, pending_down_at = $2, updated_at = $2 WHERE id = $5
-		`, newStatus, now, outcome.ResponseMs, nextRun, id)
-	} else if newStatus == "up" {
-		_, _ = s.db.Exec(ctx, `
-			UPDATE monitors SET status = $1::monitor_status, last_checked_at = $2, last_response_ms = $3,
-			       next_run_at = $4, pending_down_at = NULL, updated_at = $2 WHERE id = $5
-		`, newStatus, now, outcome.ResponseMs, nextRun, id)
-	} else {
-		_, _ = s.db.Exec(ctx, `
-			UPDATE monitors SET status = $1::monitor_status, last_checked_at = $2, last_response_ms = $3,
-			       next_run_at = $4, updated_at = $2 WHERE id = $5
-		`, newStatus, now, outcome.ResponseMs, nextRun, id)
-	}
-
-	if newStatus == "up" && (prevStatus == "down" || prevStatus == "pending") {
-		s.handleRecovery(ctx, id, orgID, name)
-	}
+	s.applyCheckOutcome(ctx, id, orgID, name, prevStatus, interval, outcome, config, outcome.ResponseMs)
 
 	s.security.AfterCheck(ctx, id, orgID, name, mType, config, outcome)
 	s.checkResponseAnomaly(ctx, id, orgID, name, outcome.ResponseMs)

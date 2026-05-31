@@ -247,13 +247,28 @@ export default function NewMonitorPage() {
             <p className="mt-1 text-xs text-zinc-500">{paidPlan ? t('tamperAIPaidInterval') : t('tamperAIFreeInterval')}</p>
           )}
         </div>
-        <div className="rounded-lg border border-zinc-800 p-4">
-          <p className="mb-2 text-sm font-medium text-zinc-300">{t('alertSettingsTitle')}</p>
+        <div className="rounded-lg border border-zinc-800 p-4 space-y-4">
+          <p className="text-sm font-medium text-zinc-300">{t('alertSettingsTitle')}</p>
+          <div>
+            <label className="mb-1 block text-sm text-zinc-400">{t('consecutiveFailuresBeforeAlert')}</label>
+            <input
+              type="number"
+              min={1}
+              max={10}
+              className="input w-32"
+              value={alertConfig.consecutiveFailuresBeforeAlert}
+              onChange={(e) => {
+                const n = Math.min(10, Math.max(1, Number(e.target.value) || 1));
+                setAlertConfig({ ...alertConfig, consecutiveFailuresBeforeAlert: n });
+              }}
+            />
+            <p className="mt-1 text-xs text-zinc-500">{t('consecutiveFailuresHint')}</p>
+          </div>
           <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={alertConfig.webhookEnabled}
-              onChange={(e) => setAlertConfig({ webhookEnabled: e.target.checked })}
+              onChange={(e) => setAlertConfig({ ...alertConfig, webhookEnabled: e.target.checked })}
               className="mt-0.5 rounded"
             />
             <span>

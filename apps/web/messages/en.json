@@ -634,6 +634,8 @@
     "openArtifact": "Open artifact",
     "artifactExpiresAt": "Expires at {date}",
     "alertSettingsTitle": "Alert settings",
+    "consecutiveFailuresBeforeAlert": "Consecutive failures before alert",
+    "consecutiveFailuresHint": "Alert and incident only after this many failed checks in a row (1–10). Until then the monitor shows as pending.",
     "webhookAlertsEnabled": "Send Webhook alerts for this monitor",
     "webhookAlertsHint": "When off, generic Webhook integrations in Settings will not fire for this monitor. Email, Slack, and other channels are unaffected.",
     "webhookAlertsDisabledBadge": "Webhook alerts off",

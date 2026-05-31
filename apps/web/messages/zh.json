@@ -634,6 +634,8 @@
     "openArtifact": "打开文件",
     "artifactExpiresAt": "过期时间：{date}",
     "alertSettingsTitle": "告警设置",
+    "consecutiveFailuresBeforeAlert": "连续故障次数后告警",
+    "consecutiveFailuresHint": "连续检测失败达到此次数后才触发告警与事件（1–10）。在此之前监控显示为待定状态，不会发送告警。",
     "webhookAlertsEnabled": "为此监控发送 Webhook 告警",
     "webhookAlertsHint": "关闭后，设置中的 Webhook 集成不会对此监控触发。邮件、Slack 等其他渠道不受影响。",
     "webhookAlertsDisabledBadge": "Webhook 告警已关闭",
