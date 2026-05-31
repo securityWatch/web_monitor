@@ -30,14 +30,13 @@ alwaysApply: true
 
 ## 分支策略
 
+**默认只在 `main` 上开发** — 不要开 feature 分支。所有改动直接 commit 到 `main` 并 `git push origin main`。
+
 | 场景 | 分支 | 推送命令 |
 |------|------|----------|
-| 在 `main` 上直接改 | `main` | `git push origin main` |
-| Cloud Agent / 功能分支 | `cursor/<描述>-fcc2` | `git push -u origin cursor/<描述>-fcc2` |
-| 功能已验收、需合入主线 | 先 merge/rebase 到 `main`，再 | `git push origin main` |
+| 常规开发（默认） | `main` | `git push origin main` |
 
-- Cloud Agent：每轮改动 **先 commit + push 当前分支**，再更新 PR（若有）
-- 用户要求「合入 main」或任务闭环需上生产：在测试/部署验证通过后 merge 到 `main` 并 **push `main`**
+- **禁止** 新建 `cursor/*` 或其它 feature 分支（除非用户明确要求）
 - **禁止** force push `main`
 
 ## 与部署的关系
@@ -47,7 +46,7 @@ alwaysApply: true
 | 仅文档 / 仅 `.cursor/rules` | **必须** | 可跳过 |
 | API / Web 运行时 | **必须** | **必须**（见 `pulsewatch.mdc` 部署表） |
 
-运行时变更：先 deploy + 验证，再 push（或 push 前确保远程可部署分支已通过验证 — 以 `pulsewatch.mdc` 为准）。
+运行时变更：**自动部署，不要问用户** — 按 `pulsewatch.mdc` 选 `redeploy-api.js` / `redeploy-web.js`，deploy + 验证后再 push。
 
 ## Agent 禁止事项
 
