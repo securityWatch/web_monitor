@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /** Patch DINGTALK_WEBHOOK_URL on server (never commit webhook URL). */
-const { withConn, exec, sudo, readRemote, uploadBuffer } = require('./lib/ssh2');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { sshExec, scpToRemote } = require('./lib/ssh');
 
 const url = process.env.DINGTALK_WEBHOOK_URL;
 if (!url) {
@@ -15,15 +18,25 @@ function upsertEnv(text, key, value) {
   return text.trimEnd() + '\n' + line + '\n';
 }
 
-withConn(async (conn) => {
+async function readRemoteEnv(envPath) {
+  const r = await sshExec(`cat ${envPath} 2>/dev/null || true`);
+  return r.stdout || '';
+}
+
+async function main() {
   const envPath = '/opt/pulsewatch/api/.env';
-  const env = upsertEnv(await readRemote(conn, envPath), 'DINGTALK_WEBHOOK_URL', url);
-  await uploadBuffer(conn, Buffer.from(env), '/tmp/pulsewatch-api.env');
-  await exec(conn, 'mv /tmp/pulsewatch-api.env ' + envPath + ' && chmod 600 ' + envPath);
-  await sudo(conn, 'systemctl restart pulsewatch-api');
-  await exec(conn, 'sleep 2 && curl -sf http://127.0.0.1:4000/health');
+  const env = upsertEnv(await readRemoteEnv(envPath), 'DINGTALK_WEBHOOK_URL', url);
+  const tmp = path.join(os.tmpdir(), 'pulsewatch-api.env');
+  fs.writeFileSync(tmp, env);
+  await scpToRemote(tmp, '/tmp/pulsewatch-api.env');
+  await sshExec(`mv /tmp/pulsewatch-api.env ${envPath} && chmod 600 ${envPath}`);
+  await sshExec('sudo systemctl restart pulsewatch-api');
+  const health = await sshExec('sleep 2 && curl -sf http://127.0.0.1:4000/health');
   console.log('[pulsewatch] DingTalk webhook configured');
-}).catch((e) => {
+  console.log(health.stdout.trim());
+}
+
+main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
