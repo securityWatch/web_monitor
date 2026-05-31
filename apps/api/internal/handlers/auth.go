@@ -14,17 +14,19 @@ import (
 type AuthHandler struct {
 	auth  *services.AuthService
 	email *services.EmailService
+	otp   *services.EmailOTPService
 	cfg   *config.Config
 }
 
-func NewAuthHandler(auth *services.AuthService, email *services.EmailService, cfg *config.Config) *AuthHandler {
-	return &AuthHandler{auth: auth, email: email, cfg: cfg}
+func NewAuthHandler(auth *services.AuthService, email *services.EmailService, otp *services.EmailOTPService, cfg *config.Config) *AuthHandler {
+	return &AuthHandler{auth: auth, email: email, otp: otp, cfg: cfg}
 }
 
 type registerReq struct {
 	Email       string `json:"email" binding:"required"`
 	Password    string `json:"password" binding:"required"`
 	DisplayName string `json:"displayName"`
+	Code        string `json:"code" binding:"required"`
 }
 
 type loginReq struct {
@@ -42,10 +44,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := h.auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName, "email")
+	resp, err := h.auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.Code, "email")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "code": "EMAIL_ALREADY_EXISTS"})
+			return
+		}
+		if strings.Contains(err.Error(), "verification code") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "code": "INVALID_OTP"})
 			return
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -95,6 +101,48 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+func (h *AuthHandler) SendRegisterCode(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.otp.SendRegisterCode(c.Request.Context(), req.Email); err != nil {
+		var rateLimit services.OTPRateLimitError
+		if errors.As(err, &rateLimit) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error(), "code": "OTP_RATE_LIMIT"})
+			return
+		}
+		if strings.Contains(err.Error(), "already exists") {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "code": "EMAIL_ALREADY_EXISTS"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "verification code sent"})
+}
+
+func (h *AuthHandler) SendForgotPasswordCode(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.otp.SendPasswordResetCode(c.Request.Context(), req.Email); err != nil {
+		var rateLimit services.OTPRateLimitError
+		if errors.As(err, &rateLimit) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error(), "code": "OTP_RATE_LIMIT"})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a verification code has been sent"})
+}
+
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required"`
@@ -103,17 +151,31 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	_ = h.auth.RequestPasswordReset(c.Request.Context(), req.Email, h.cfg.WebURL)
-	c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a reset link has been sent"})
+	_ = h.otp.SendPasswordResetCode(c.Request.Context(), req.Email)
+	c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a verification code has been sent"})
 }
 
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req struct {
-		Token       string `json:"token" binding:"required"`
+		Token       string `json:"token"`
+		Email       string `json:"email"`
+		Code        string `json:"code"`
 		NewPassword string `json:"newPassword" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.Code != "" && req.Email != "" {
+		if err := h.auth.ResetPasswordWithCode(c.Request.Context(), req.Email, req.Code, req.NewPassword); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "code": "INVALID_OTP"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "password reset successful"})
+		return
+	}
+	if req.Token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "token or email+code required"})
 		return
 	}
 	if err := h.auth.ResetPassword(c.Request.Context(), req.Token, req.NewPassword); err != nil {

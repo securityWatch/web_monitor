@@ -1,0 +1,136 @@
+package services
+
+import (
+	"context"
+	"crypto/rand"
+	"fmt"
+	"math/big"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pulsewatch/api/internal/config"
+)
+
+const (
+	OTPPurposeRegister       = "register"
+	OTPPurposePasswordReset  = "password_reset"
+	OTPValidity              = 5 * time.Minute
+	OTPMaxSendsPerMinute     = 2
+)
+
+type OTPRateLimitError struct{}
+
+func (OTPRateLimitError) Error() string {
+	return "too many verification codes sent; try again in a minute"
+}
+
+type EmailOTPService struct {
+	db    *pgxpool.Pool
+	cfg   *config.Config
+	email *EmailService
+}
+
+func NewEmailOTPService(db *pgxpool.Pool, cfg *config.Config, email *EmailService) *EmailOTPService {
+	return &EmailOTPService{db: db, cfg: cfg, email: email}
+}
+
+func normalizeOTPEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
+}
+
+func generateOTPCode() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n.Int64()), nil
+}
+
+func (s *EmailOTPService) checkSendRate(ctx context.Context, email, purpose string) error {
+	var count int
+	err := s.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM email_otp_codes
+		WHERE email = $1 AND purpose = $2 AND created_at > now() - interval '1 minute'
+	`, email, purpose).Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count >= OTPMaxSendsPerMinute {
+		return OTPRateLimitError{}
+	}
+	return nil
+}
+
+func (s *EmailOTPService) SendRegisterCode(ctx context.Context, email string) error {
+	email = normalizeOTPEmail(email)
+	if !ValidateEmail(email) {
+		return fmt.Errorf("invalid email")
+	}
+	if IsWeChatPlaceholderEmail(email) {
+		return fmt.Errorf("invalid email")
+	}
+	var exists bool
+	_ = s.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, email).Scan(&exists)
+	if exists {
+		return fmt.Errorf("email already exists")
+	}
+	return s.sendCode(ctx, email, OTPPurposeRegister, "注册 PulseWatch 验证码", "请使用以下验证码完成注册（5 分钟内有效）：")
+}
+
+func (s *EmailOTPService) SendPasswordResetCode(ctx context.Context, email string) error {
+	email = normalizeOTPEmail(email)
+	if !ValidateEmail(email) {
+		return nil
+	}
+	var userID string
+	err := s.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	if err != nil {
+		return nil
+	}
+	return s.sendCode(ctx, email, OTPPurposePasswordReset, "PulseWatch 重置密码验证码", "请使用以下验证码重置密码（5 分钟内有效）：")
+}
+
+func (s *EmailOTPService) sendCode(ctx context.Context, email, purpose, subject, intro string) error {
+	if err := s.checkSendRate(ctx, email, purpose); err != nil {
+		return err
+	}
+	code, err := generateOTPCode()
+	if err != nil {
+		return err
+	}
+	_, _ = s.db.Exec(ctx, `
+		UPDATE email_otp_codes SET used_at = now()
+		WHERE email = $1 AND purpose = $2 AND used_at IS NULL
+	`, email, purpose)
+	_, err = s.db.Exec(ctx, `
+		INSERT INTO email_otp_codes (id, email, purpose, code_hash, expires_at)
+		VALUES ($1, $2, $3, $4, now() + interval '5 minutes')
+	`, uuid.New().String(), email, purpose, HashToken(code))
+	if err != nil {
+		return err
+	}
+	return s.email.SendVerificationCode(email, subject, intro, code)
+}
+
+func (s *EmailOTPService) Verify(ctx context.Context, email, purpose, code string) error {
+	email = normalizeOTPEmail(email)
+	code = strings.TrimSpace(code)
+	if len(code) != 6 {
+		return fmt.Errorf("invalid or expired verification code")
+	}
+	hash := HashToken(code)
+	var id string
+	err := s.db.QueryRow(ctx, `
+		SELECT id FROM email_otp_codes
+		WHERE email = $1 AND purpose = $2 AND code_hash = $3
+		  AND used_at IS NULL AND expires_at > now()
+		ORDER BY created_at DESC LIMIT 1
+	`, email, purpose, hash).Scan(&id)
+	if err != nil {
+		return fmt.Errorf("invalid or expired verification code")
+	}
+	_, _ = s.db.Exec(ctx, `UPDATE email_otp_codes SET used_at = now() WHERE id = $1`, id)
+	return nil
+}

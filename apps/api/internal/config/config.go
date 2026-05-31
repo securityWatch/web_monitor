@@ -19,6 +19,7 @@ type Config struct {
 	SMTPUser                string
 	SMTPPass                string
 	SMTPFrom                string
+	SMTPSecure              bool
 	AccessTokenTTLMin       int
 	RefreshTokenTTLDays     int
 	WebURL                  string
@@ -66,6 +67,7 @@ func Load() *Config {
 		SMTPUser:                getEnv("SMTP_USER", ""),
 		SMTPPass:                getEnv("SMTP_PASS", ""),
 		SMTPFrom:                getEnv("SMTP_FROM", "noreply@pulsewatch.io"),
+		SMTPSecure:              getEnv("SMTP_SECURE", "") == "true" || smtpPort == 465,
 		AccessTokenTTLMin:       accessTTL,
 		RefreshTokenTTLDays:     refreshTTL,
 		WebURL:                  getEnv("WEB_URL", "http://localhost:3000"),

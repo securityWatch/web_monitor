@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"net/smtp"
 	"strings"
 
@@ -36,7 +38,63 @@ func (e *EmailService) Send(ctx context.Context, to, subject, body string) error
 
 	auth := smtp.PlainAuth("", e.cfg.SMTPUser, e.cfg.SMTPPass, e.cfg.SMTPHost)
 	addr := fmt.Sprintf("%s:%d", e.cfg.SMTPHost, e.cfg.SMTPPort)
+	if e.cfg.SMTPSecure || e.cfg.SMTPPort == 465 {
+		return e.sendMailTLS(addr, auth, e.cfg.SMTPFrom, []string{to}, []byte(msg))
+	}
 	return smtp.SendMail(addr, auth, e.cfg.SMTPFrom, []string{to}, []byte(msg))
+}
+
+func (e *EmailService) sendMailTLS(addr string, auth smtp.Auth, from string, to []string, msg []byte) error {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return err
+	}
+	conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: host})
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	if auth != nil {
+		if err := client.Auth(auth); err != nil {
+			return err
+		}
+	}
+	if err := client.Mail(from); err != nil {
+		return err
+	}
+	for _, rcpt := range to {
+		if err := client.Rcpt(rcpt); err != nil {
+			return err
+		}
+	}
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write(msg); err != nil {
+		return err
+	}
+	if err := w.Close(); err != nil {
+		return err
+	}
+	return client.Quit()
+}
+
+func (e *EmailService) SendVerificationCode(to, subject, intro, code string) error {
+	body := fmt.Sprintf(`<div style="font-family:sans-serif;max-width:520px">
+<h2 style="color:#3b82f6">PulseWatch</h2>
+<p>%s</p>
+<p style="font-size:28px;font-weight:bold;letter-spacing:6px;color:#111">%s</p>
+<p style="color:#52525b">验证码 5 分钟内有效。如非本人操作，请忽略此邮件。</p>
+</div>`, intro, code)
+	return e.Send(context.Background(), to, subject, body)
 }
 
 func (e *EmailService) SendAlert(to, monitorName, status, detail string) error {

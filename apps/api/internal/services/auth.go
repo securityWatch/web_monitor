@@ -21,19 +21,32 @@ type AuthService struct {
 	cfg      *config.Config
 	lockout  *LoginLockoutService
 	notifier *Notifier
+	otp      *EmailOTPService
 }
 
-func NewAuthService(db *pgxpool.Pool, cfg *config.Config, notifier *Notifier) *AuthService {
-	return &AuthService{db: db, cfg: cfg, lockout: NewLoginLockoutService(db), notifier: notifier}
+func NewAuthService(db *pgxpool.Pool, cfg *config.Config, notifier *Notifier, otp *EmailOTPService) *AuthService {
+	return &AuthService{db: db, cfg: cfg, lockout: NewLoginLockoutService(db), notifier: notifier, otp: otp}
 }
 
-func (a *AuthService) Register(ctx context.Context, email, password, displayName, provider string) (*models.AuthResponse, error) {
+func (a *AuthService) Register(ctx context.Context, email, password, displayName, code, provider string) (*models.AuthResponse, error) {
+	if a.otp == nil {
+		return nil, fmt.Errorf("email verification unavailable")
+	}
+	if err := a.otp.Verify(ctx, email, OTPPurposeRegister, code); err != nil {
+		return nil, err
+	}
+	return a.registerInternal(ctx, email, password, displayName, true, provider)
+}
+
+func (a *AuthService) registerInternal(ctx context.Context, email, password, displayName string, emailVerified bool, provider string) (*models.AuthResponse, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
-	if !ValidateEmail(email) {
+	if !ValidateEmail(email) && !IsWeChatPlaceholderEmail(email) {
 		return nil, fmt.Errorf("invalid email")
 	}
-	if err := ValidatePassword(password); err != nil {
-		return nil, err
+	if !IsWeChatPlaceholderEmail(email) {
+		if err := ValidatePassword(password); err != nil {
+			return nil, err
+		}
 	}
 
 	var exists bool
@@ -62,10 +75,14 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 
 	userID := uuid.New().String()
 	now := time.Now().UTC()
+	var verifiedAt *time.Time
+	if emailVerified {
+		verifiedAt = &now
+	}
 	_, err = tx.Exec(ctx, `
 		INSERT INTO users (id, email, password_hash, display_name, email_verified_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, NULL, $5, $5)
-	`, userID, email, hash, displayName, now)
+		VALUES ($1, $2, $3, $4, $5, $6, $6)
+	`, userID, email, hash, displayName, verifiedAt, now)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +138,35 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 		return nil, err
 	}
 
-	if !IsWeChatPlaceholderEmail(email) {
-		_ = a.sendVerificationEmail(ctx, userID, email)
-	}
 	if a.notifier != nil {
 		a.notifier.UserRegistered(email, displayName, userID, provider)
 	}
 	return a.issueTokens(ctx, user, org, "", "")
+}
+
+func (a *AuthService) ResetPasswordWithCode(ctx context.Context, email, code, newPassword string) error {
+	if a.otp == nil {
+		return fmt.Errorf("email verification unavailable")
+	}
+	if err := ValidatePassword(newPassword); err != nil {
+		return err
+	}
+	if err := a.otp.Verify(ctx, email, OTPPurposePasswordReset, code); err != nil {
+		return err
+	}
+	email = strings.ToLower(strings.TrimSpace(email))
+	var userID string
+	err := a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	if err != nil {
+		return fmt.Errorf("invalid or expired verification code")
+	}
+	passHash, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	_, _ = a.db.Exec(ctx, `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, passHash, userID)
+	_, _ = a.db.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, userID)
+	return nil
 }
 
 // LoginOrRegisterWeChatMiniProgram signs in or auto-registers via WeChat mini program wx.login code.
@@ -215,7 +254,7 @@ func (a *AuthService) LoginOrRegisterOAuth(ctx context.Context, provider, provid
 	if err != nil {
 		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
 		if userID == "" {
-			resp, err := a.Register(ctx, email, GenerateRandomPassword(), displayName, provider)
+			resp, err := a.registerInternal(ctx, email, GenerateRandomPassword(), displayName, true, provider)
 			if err != nil && !strings.Contains(err.Error(), "already exists") {
 				return nil, err
 			}

@@ -19,10 +19,18 @@ log "API=$API_URL WEB=$WEB_URL"
 code=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/health")
 [[ "$code" == "200" ]] && pass "Health check" || fail "Health check ($code)"
 
-# Register
+# Register (email OTP)
+curl -s -X POST "$API_URL/api/v1/auth/register/send-code" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\"}" >/dev/null || true
+OTP_CODE="123456"
+if command -v psql >/dev/null 2>&1 && [[ -n "${DATABASE_URL:-}" ]]; then
+  HASH=$(printf '%s' "$OTP_CODE" | sha256sum | awk '{print $1}')
+  psql "$DATABASE_URL" -c "INSERT INTO email_otp_codes (id, email, purpose, code_hash, expires_at) VALUES (gen_random_uuid(), lower('$EMAIL'), 'register', '$HASH', now() + interval '5 minutes')" >/dev/null 2>&1 || true
+fi
 REG=$(curl -s -X POST "$API_URL/api/v1/auth/register" \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"displayName\":\"E2E User\"}")
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"displayName\":\"E2E User\",\"code\":\"$OTP_CODE\"}")
 TOKEN=$(echo "$REG" | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])" 2>/dev/null || echo "")
 ORG=$(echo "$REG" | python3 -c "import sys,json; print(json.load(sys.stdin)['organization']['id'])" 2>/dev/null || echo "")
 [[ -n "$TOKEN" && -n "$ORG" ]] && pass "Registration" || fail "Registration"

@@ -40,7 +40,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 
 	emailSvc := services.NewEmailService(cfg)
 	notifier := services.NewNotifier(cfg)
-	authSvc := services.NewAuthService(db, cfg, notifier)
+	otpSvc := services.NewEmailOTPService(db, cfg, emailSvc)
+	authSvc := services.NewAuthService(db, cfg, notifier, otpSvc)
 	oauthSvc := services.NewOAuthService(authSvc, cfg)
 	totpSvc := services.NewTOTPService(db)
 	twilioSvc := services.NewTwilioService(cfg)
@@ -50,7 +51,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	billingSvc := services.NewBillingService(cfg)
 	hbSvc := services.NewHeartbeatService(db)
 
-	authH := handlers.NewAuthHandler(authSvc, emailSvc, cfg)
+	authH := handlers.NewAuthHandler(authSvc, emailSvc, otpSvc, cfg)
 	oauthH := handlers.NewOAuthHandler(oauthSvc, cfg.WebURL)
 	meH := handlers.NewMeHandler(db, authSvc, totpSvc)
 	monitorH := handlers.NewMonitorHandler(db, notifier)
@@ -98,9 +99,11 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	{
 		auth := v1.Group("/auth")
 		auth.POST("/register", middleware.LoginRateLimit(), authH.Register)
+		auth.POST("/register/send-code", middleware.LoginRateLimit(), authH.SendRegisterCode)
 		auth.POST("/login", middleware.LoginRateLimit(), authH.Login)
 		auth.POST("/refresh", authH.Refresh)
 		auth.POST("/forgot-password", authH.ForgotPassword)
+		auth.POST("/forgot-password/send-code", middleware.LoginRateLimit(), authH.SendForgotPasswordCode)
 		auth.POST("/reset-password", authH.ResetPassword)
 		auth.GET("/verify-email", authH.VerifyEmail)
 		auth.POST("/magic-link", authH.MagicLinkRequest)

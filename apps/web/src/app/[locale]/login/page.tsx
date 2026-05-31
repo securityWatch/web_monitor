@@ -26,11 +26,16 @@ export default function LoginPage() {
   const [tempToken, setTempToken] = useState(totpToken || '');
   const [orgSlug, setOrgSlug] = useState('');
   const [ssoEnabled, setSsoEnabled] = useState(false);
+  const [wechatEnabled, setWechatEnabled] = useState(false);
 
   useEffect(() => {
     fetch('/api/v1/auth/providers')
       .then((r) => r.json())
       .then((d) => setProviders(d.providers || []))
+      .catch(() => {});
+    fetch('/api/v1/auth/wechat/miniprogram/status')
+      .then((r) => r.json())
+      .then((d) => setWechatEnabled(!!d.enabled))
       .catch(() => {});
     const err = searchParams.get('error');
     if (err === 'magic') {
@@ -224,6 +229,11 @@ export default function LoginPage() {
           </form>
         ) : (
           <>
+            {wechatEnabled && (
+              <p className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-400">
+                {t('wechatLoginHint')}
+              </p>
+            )}
             {(providers.includes('google') || providers.includes('github')) && (
               <div className="mt-4 flex flex-col gap-2">
                 {providers.includes('google') && (

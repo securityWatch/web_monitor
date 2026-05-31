@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/pulsewatch/api/internal/config"
 	"github.com/pulsewatch/api/internal/database"
 	"github.com/pulsewatch/api/internal/router"
+	"github.com/pulsewatch/api/internal/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -50,9 +52,22 @@ func uniqueEmail(prefix string) string {
 	return fmt.Sprintf("%s-%d@test.pulsewatch.io", prefix, time.Now().UnixNano())
 }
 
+func seedOTP(t *testing.T, email, purpose, code string) {
+	t.Helper()
+	ctx := context.Background()
+	_, err := testDB.Exec(ctx, `
+		INSERT INTO email_otp_codes (id, email, purpose, code_hash, expires_at)
+		VALUES ($1, $2, $3, $4, now() + interval '5 minutes')
+	`, uuid.New().String(), strings.ToLower(email), purpose, services.HashToken(code))
+	require.NoError(t, err)
+}
+
 func registerUser(t *testing.T, email, password string) map[string]interface{} {
 	t.Helper()
-	body, _ := json.Marshal(map[string]string{"email": email, "password": password, "displayName": "Test User"})
+	seedOTP(t, email, services.OTPPurposeRegister, "123456")
+	body, _ := json.Marshal(map[string]string{
+		"email": email, "password": password, "displayName": "Test User", "code": "123456",
+	})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
