@@ -298,6 +298,16 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
               </Link>
             </li>
             <li>
+              <Link href="/tools/website-down-checker" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesWebsiteDown')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/features/uptime-monitoring" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesUptimeFeature')}
+              </Link>
+            </li>
+            <li>
               <Link href="/compare/better-stack" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
                 {t('resourcesCompare')}
               </Link>

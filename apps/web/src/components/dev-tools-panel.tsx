@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   CalendarClock,
   Files,
+  Globe,
 } from 'lucide-react';
 import {
   base64Decode,
@@ -51,6 +52,8 @@ const TOOLS: { id: ToolId; icon: typeof Braces }[] = [
 ];
 
 const EXTRA_TOOLS = [
+  { href: '/tools/website-down-checker', key: 'websiteDownChecker', icon: Globe },
+  { href: '/tools/ssl-checker', key: 'sslChecker', icon: ShieldCheck },
   { href: '/tools/image-compress', key: 'imageCompress', icon: ImageIcon },
   { href: '/tools/pdf-tools', key: 'pdfTools', icon: Files },
   { href: '/tools/pdf-to-word', key: 'pdfToWord', icon: FileText },

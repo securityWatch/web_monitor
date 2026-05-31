@@ -147,6 +147,8 @@
     "resourcesDevTools": "免费开发者小工具",
     "resourcesPdfToWord": "PDF 转 Word",
     "resourcesSsl": "免费 SSL 检测工具",
+    "resourcesWebsiteDown": "网站宕机检测",
+    "resourcesUptimeFeature": "可用性监控功能",
     "resourcesCompare": "对比 Better Stack",
     "resourcesAppNote": "监控、事件与状态页需在登录后于控制台中使用。",
     "jsonLdOrgDescription": "网站与可用性监控：SSL、DNS、内容完整性告警，国内 IM 渠道与快速事件流程。",
@@ -190,7 +192,7 @@
     "cap7Title": "状态页与维护窗口",
     "cap7Desc": "发布品牌对外状态页供客户查看。计划维护窗口在部署与基础设施作业期间抑制告警噪音。",
     "cap8Title": "免费小工具、⌘K 命令面板与对比页",
-    "cap8Desc": "/tools 提供免费浏览器开发者小工具（无需注册）。⌘K / Ctrl+K 快速跳转。公开页对比 PulseWatch 与 UptimeRobot、Better Stack。",
+    "cap8Desc": "/tools 提供免费浏览器开发者小工具，含网站宕机检测与 SSL 检测（无需注册）。⌘K / Ctrl+K 快速跳转。公开页对比 PulseWatch 与 UptimeRobot、Better Stack。",
     "cap9Title": "微信小程序移动端查看",
     "cap9Desc": "登录用户可通过微信小程序在移动端查看监控状态 — 无需打开电脑也能掌握可用性。",
     "resourcesCompareUptimeRobot": "对比 UptimeRobot",
@@ -220,7 +222,9 @@
       "pdfTools": "PDF 合并/拆分",
       "qrCode": "二维码",
       "jwtDecoder": "JWT 解码",
-      "cronParser": "Cron 解析"
+      "cronParser": "Cron 解析",
+      "websiteDownChecker": "网站宕机检测",
+      "sslChecker": "SSL 检测"
     },
     "json": {
       "format": "格式化",
@@ -353,7 +357,74 @@
       "summary": "字段说明",
       "next": "接下来运行",
       "note": "支持 *, */n, 列表和简单范围。"
+    },
+    "websiteDown": {
+      "badge": "即时检测",
+      "title": "网站宕机检测",
+      "subtitle": "从我们的服务器检测 URL 是否可达，查看 HTTP 状态码与响应时间。",
+      "placeholder": "https://example.com",
+      "check": "立即检测",
+      "checking": "检测中…",
+      "failed": "检测失败，请重试。",
+      "statusUp": "网站正常",
+      "statusDown": "网站可能宕机或无法访问",
+      "statusCode": "HTTP 状态码",
+      "responseTime": "响应时间",
+      "errorDetail": "详情",
+      "cta": "需要 24/7 监控与告警？",
+      "ctaLink": "免费注册 PulseWatch"
+    },
+    "ssl": {
+      "badge": "TLS 检测",
+      "title": "免费 SSL 证书检测",
+      "subtitle": "从外部探测检查 HTTPS 证书有效期、颁发者与 TLS 版本。",
+      "placeholder": "example.com",
+      "check": "检测",
+      "valid": "证书有效",
+      "invalid": "证书无效或无法连接",
+      "expires": "到期时间",
+      "daysLeft": "剩余天数",
+      "issuer": "颁发者",
+      "tls": "TLS 版本",
+      "cta": "证书到期前自动邮件提醒 —",
+      "ctaLink": "免费注册"
     }
+  },
+  "pricingPage": {
+    "foundingRemaining": "剩余 {count} 个创始名额",
+    "compareTitle": "与竞品对比",
+    "compareSubtitle": "看看 PulseWatch 如何补齐 UptimeRobot / Better Stack 差距",
+    "compareUptimeRobot": "vs UptimeRobot",
+    "compareBetterStack": "vs Better Stack",
+    "faq1Q": "免费版有什么限制？",
+    "faq1A": "免费版包含 10 个监控、最短 5 分钟检测间隔、邮件告警与公开状态页，适合个人项目。",
+    "faq2Q": "创始会员价是什么？",
+    "faq2A": "Pro 创始价 $1/月终身锁价（原价 $12），名额有限，含 50 个监控。",
+    "faq3Q": "可以随时取消吗？",
+    "faq3A": "可以，随时在账单设置中取消，无长期合约。",
+    "faq4Q": "支持哪些监控类型？",
+    "faq4A": "HTTP/HTTPS、TCP、Ping、关键词、SSL 到期、DNS、Heartbeat 等。"
+  },
+  "uptimeMonitoring": {
+    "eyebrow": "功能",
+    "title": "网站与 API 可用性监控",
+    "subtitle": "多区域外部 HTTP 检测、SSL 与 DNS 告警，故障时快速通知。",
+    "h1Title": "多协议检测",
+    "h1Desc": "HTTP/HTTPS、TCP、Ping、关键词、SSL 到期、DNS 与 Heartbeat 外部探测。",
+    "h2Title": "安全告警",
+    "h2Desc": "SSL 到期分级提醒、DNS 劫持检测，可选篡改监控与内容策略。",
+    "h3Title": "延迟洞察",
+    "h3Desc": "响应时间趋势、p95 尖峰与失败截图，更快定位故障。",
+    "h4Title": "多渠道告警",
+    "h4Desc": "邮件、Slack、Discord、Teams、钉钉、飞书、企微、Webhook、短信与语音。",
+    "freeTierTitle": "免费版 — 无需信用卡",
+    "freeTierDesc": "几分钟内开始监控生产 URL。",
+    "freeTier1": "免费版 10 个监控",
+    "freeTier2": "最短 5 分钟检测间隔",
+    "freeTier3": "含邮件告警与公开状态页",
+    "ctaPrimary": "免费开始",
+    "ctaTool": "试用网站宕机检测",
+    "ctaPricing": "查看定价"
   },
   "auth": {
     "loginTitle": "欢迎回来",
@@ -943,6 +1014,48 @@
       "title": "Cron 表达式解析器 | PulseWatch",
       "description": "免费 Cron 表达式解析工具，查看字段含义和接下来运行时间。",
       "keywords": "Cron解析, Cron表达式, 定时任务, cron parser"
+    },
+    "pricing": {
+      "title": "定价 — 创始会员方案 | PulseWatch",
+      "description": "简洁的可用性监控定价。免费版 10 个监控。Pro 创始价 $1/月终身锁价。",
+      "keywords": "网站监控定价, 可用性监控价格, 创始会员, 免费监控"
+    },
+    "login": {
+      "title": "登录 | PulseWatch",
+      "description": "登录 PulseWatch 控制台 — 监控、事件、告警与状态页。",
+      "keywords": "PulseWatch 登录, 网站监控登录,  sign in"
+    },
+    "register": {
+      "title": "免费注册 | PulseWatch",
+      "description": "创建免费 PulseWatch 账户 — 10 个监控、5 分钟检测、邮件告警，无需信用卡。",
+      "keywords": "PulseWatch 注册, 免费网站监控, 注册"
+    },
+    "websiteDownChecker": {
+      "title": "网站宕机检测 — 网站是否在线？ | PulseWatch",
+      "description": "免费在线网站宕机检测。从外部服务器测试任意 URL 的 HTTP 状态与响应时间。",
+      "keywords": "网站宕机检测, 网站是否挂了, 在线检测, HTTP 状态检测, 网站可用性"
+    },
+    "uptimeMonitoring": {
+      "title": "可用性监控功能 | PulseWatch",
+      "description": "HTTP、SSL、DNS 与多区域可用性监控，支持邮件、Slack 与国内 IM 告警。",
+      "keywords": "可用性监控, 网站监控功能, API 监控, SSL 监控"
+    },
+    "sslChecker": {
+      "title": "免费 SSL 证书检测 | PulseWatch",
+      "description": "检查 HTTPS 证书有效期、颁发者与 TLS 版本。免费外部 SSL 检测工具。",
+      "keywords": "SSL 检测, 证书到期, TLS 检测, HTTPS 证书测试"
+    },
+    "compare": {
+      "uptimerobot": {
+        "title": "PulseWatch vs UptimeRobot — 功能对比",
+        "description": "对比 PulseWatch 与 UptimeRobot 的事件管理、国内 IM 告警、值班与创始定价。",
+        "keywords": "PulseWatch vs UptimeRobot, 网站监控对比, UptimeRobot 替代"
+      },
+      "betterstack": {
+        "title": "PulseWatch vs Better Stack — 定价与功能",
+        "description": "对比 PulseWatch 与 Better Stack 的事件流程、状态页与国内告警，更低成本。",
+        "keywords": "PulseWatch vs Better Stack, Better Stack 替代, 监控对比"
+      }
     }
   }
 }

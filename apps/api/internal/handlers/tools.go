@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pulsewatch/api/internal/services"
 )
 
 type ToolsHandler struct{}
@@ -52,6 +55,35 @@ func (h *ToolsHandler) SSLCheck(c *gin.Context) {
 		"daysLeft":   daysLeft,
 		"tlsVersion": tlsVersionName(state.Version),
 	})
+}
+
+func (h *ToolsHandler) HTTPCheck(c *gin.Context) {
+	rawURL := strings.TrimSpace(c.Query("url"))
+	if rawURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "url is required"})
+		return
+	}
+	target := rawURL
+	if !strings.HasPrefix(target, "http://") && !strings.HasPrefix(target, "https://") {
+		target = "https://" + target
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
+	defer cancel()
+
+	outcome := services.RunCheck(ctx, "http", target, json.RawMessage(`{"timeout":15}`))
+	resp := gin.H{
+		"url":        target,
+		"isUp":       outcome.IsUp,
+		"responseMs": outcome.ResponseMs,
+	}
+	if outcome.StatusCode != nil {
+		resp["statusCode"] = *outcome.StatusCode
+	}
+	if outcome.ErrorMessage != "" {
+		resp["error"] = outcome.ErrorMessage
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func tlsVersionName(v uint16) string {

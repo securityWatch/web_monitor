@@ -147,6 +147,8 @@
     "resourcesDevTools": "Free developer tools",
     "resourcesPdfToWord": "PDF to Word converter",
     "resourcesSsl": "Free SSL checker tool",
+    "resourcesWebsiteDown": "Website down checker",
+    "resourcesUptimeFeature": "Uptime monitoring features",
     "resourcesCompare": "Compare with Better Stack",
     "resourcesAppNote": "Monitors, incidents, and status pages are available after sign-in from your authenticated dashboard.",
     "jsonLdOrgDescription": "Uptime and website monitoring with SSL, DNS, and content integrity alerts, CN IM channels, and fast incident workflows.",
@@ -190,7 +192,7 @@
     "cap7Title": "Status pages & maintenance windows",
     "cap7Desc": "Publish branded public status pages for customers. Schedule maintenance windows to suppress alert noise during planned deploys and infrastructure work.",
     "cap8Title": "Free tools, ⌘K palette & compare pages",
-    "cap8Desc": "Browser-based developer tools at /tools (no signup). Power users jump anywhere with ⌘K / Ctrl+K. Compare PulseWatch vs UptimeRobot or Better Stack on public pages.",
+    "cap8Desc": "Browser-based developer tools at /tools including a free website down checker and SSL checker (no signup). Power users jump anywhere with ⌘K / Ctrl+K. Compare PulseWatch vs UptimeRobot or Better Stack on public pages.",
     "cap9Title": "WeChat miniprogram mobile view",
     "cap9Desc": "Signed-in users can check monitor status on the go via the WeChat miniprogram (微信小程序查看) — uptime visibility without opening a laptop.",
     "resourcesCompareUptimeRobot": "Compare with UptimeRobot",
@@ -220,7 +222,9 @@
       "pdfTools": "PDF Merge/Split",
       "qrCode": "QR Code",
       "jwtDecoder": "JWT Decoder",
-      "cronParser": "Cron Parser"
+      "cronParser": "Cron Parser",
+      "websiteDownChecker": "Website Down Checker",
+      "sslChecker": "SSL Checker"
     },
     "json": {
       "format": "Pretty print",
@@ -353,7 +357,74 @@
       "summary": "Summary",
       "next": "Next runs",
       "note": "Supports *, */n, lists, and simple ranges."
+    },
+    "websiteDown": {
+      "badge": "Instant check",
+      "title": "Website Down Checker",
+      "subtitle": "Check if a URL is reachable from our servers. See HTTP status and response time in seconds.",
+      "placeholder": "https://example.com",
+      "check": "Check now",
+      "checking": "Checking…",
+      "failed": "Check failed. Try again.",
+      "statusUp": "Site is up",
+      "statusDown": "Site appears down or unreachable",
+      "statusCode": "HTTP status",
+      "responseTime": "Response time",
+      "errorDetail": "Details",
+      "cta": "Want 24/7 monitoring with alerts?",
+      "ctaLink": "Start free on PulseWatch"
+    },
+    "ssl": {
+      "badge": "TLS inspector",
+      "title": "Free SSL Certificate Checker",
+      "subtitle": "Check HTTPS certificate expiry, issuer, and TLS version from external probes.",
+      "placeholder": "example.com",
+      "check": "Check",
+      "valid": "Certificate is valid",
+      "invalid": "Certificate invalid or unreachable",
+      "expires": "Expires",
+      "daysLeft": "Days left",
+      "issuer": "Issuer",
+      "tls": "TLS version",
+      "cta": "Get email alerts before certificates expire —",
+      "ctaLink": "sign up free"
     }
+  },
+  "pricingPage": {
+    "foundingRemaining": "{count} founding spots left",
+    "compareTitle": "Compare with alternatives",
+    "compareSubtitle": "See how PulseWatch stacks up against UptimeRobot and Better Stack",
+    "compareUptimeRobot": "vs UptimeRobot",
+    "compareBetterStack": "vs Better Stack",
+    "faq1Q": "What are the free tier limits?",
+    "faq1A": "Free includes 10 monitors, 5-minute minimum check interval, email alerts, and public status pages — ideal for personal projects.",
+    "faq2Q": "What is founding member pricing?",
+    "faq2A": "Pro founding price is $1/mo locked forever (was $12), limited spots, includes 50 monitors.",
+    "faq3Q": "Can I cancel anytime?",
+    "faq3A": "Yes — cancel anytime in billing settings with no long-term contract.",
+    "faq4Q": "Which monitor types are supported?",
+    "faq4A": "HTTP/HTTPS, TCP, Ping, Keyword, SSL expiry, DNS, Heartbeat, and more."
+  },
+  "uptimeMonitoring": {
+    "eyebrow": "Feature",
+    "title": "Uptime monitoring for websites & APIs",
+    "subtitle": "External HTTP checks from multiple regions, SSL and DNS alerts, and fast notifications when something breaks.",
+    "h1Title": "Multi-protocol checks",
+    "h1Desc": "HTTP/HTTPS, TCP, Ping, keyword, SSL expiry, DNS, and heartbeat monitors from external probes.",
+    "h2Title": "Security alerts",
+    "h2Desc": "SSL expiry tiers, DNS hijack detection, and optional tamper monitoring with content policies.",
+    "h3Title": "Latency insights",
+    "h3Desc": "Response time trends, p95 spikes, and failure screenshots to debug outages faster.",
+    "h4Title": "Multi-channel alerts",
+    "h4Desc": "Email, Slack, Discord, Teams, DingTalk, Feishu, WeCom, webhooks, SMS, and voice.",
+    "freeTierTitle": "Free tier — no credit card",
+    "freeTierDesc": "Start monitoring production URLs in minutes.",
+    "freeTier1": "10 monitors on the free plan",
+    "freeTier2": "5-minute minimum check interval",
+    "freeTier3": "Email alerts and public status pages included",
+    "ctaPrimary": "Start free",
+    "ctaTool": "Try website down checker",
+    "ctaPricing": "View pricing"
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -943,6 +1014,48 @@
       "title": "Cron Expression Parser | PulseWatch",
       "description": "Free cron expression parser with field summary and next run previews.",
       "keywords": "cron parser, cron expression, schedule parser"
+    },
+    "pricing": {
+      "title": "Pricing — Founding Member Plans | PulseWatch",
+      "description": "Simple uptime monitoring pricing. Free tier with 10 monitors. Pro founding price $1/mo locked forever.",
+      "keywords": "uptime monitoring pricing, website monitoring cost, founding member, free monitoring"
+    },
+    "login": {
+      "title": "Log in | PulseWatch",
+      "description": "Sign in to your PulseWatch dashboard — monitors, incidents, alerts, and status pages.",
+      "keywords": "PulseWatch login, uptime monitoring login, sign in"
+    },
+    "register": {
+      "title": "Sign up free | PulseWatch",
+      "description": "Create a free PulseWatch account — 10 monitors, 5-minute checks, email alerts, no credit card.",
+      "keywords": "PulseWatch signup, free uptime monitoring, register"
+    },
+    "websiteDownChecker": {
+      "title": "Website Down Checker — Is It Up? | PulseWatch",
+      "description": "Free online website down checker. Test any URL for HTTP status and response time from external servers.",
+      "keywords": "website down checker, is my site down, uptime check, HTTP status check, site availability"
+    },
+    "uptimeMonitoring": {
+      "title": "Uptime Monitoring Features | PulseWatch",
+      "description": "HTTP, SSL, DNS, and multi-region uptime monitoring with alerts via email, Slack, and CN IM tools.",
+      "keywords": "uptime monitoring, website monitoring features, API monitoring, SSL monitoring"
+    },
+    "sslChecker": {
+      "title": "Free SSL Certificate Checker | PulseWatch",
+      "description": "Check HTTPS certificate expiry, issuer, and TLS version. Free external SSL inspection tool.",
+      "keywords": "SSL checker, certificate expiry, TLS check, HTTPS certificate test"
+    },
+    "compare": {
+      "uptimerobot": {
+        "title": "PulseWatch vs UptimeRobot — Feature Comparison",
+        "description": "Compare PulseWatch and UptimeRobot on incidents, CN IM alerts, on-call, and founding pricing.",
+        "keywords": "PulseWatch vs UptimeRobot, uptime monitoring comparison, UptimeRobot alternative"
+      },
+      "betterstack": {
+        "title": "PulseWatch vs Better Stack — Pricing & Features",
+        "description": "Compare PulseWatch and Better Stack for incident workflow, status pages, and CN-ready alerting at lower cost.",
+        "keywords": "PulseWatch vs Better Stack, Better Stack alternative, uptime monitoring comparison"
+      }
     }
   }
 }

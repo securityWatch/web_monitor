@@ -36,11 +36,6 @@ export async function LandingJsonLd({ locale }: { locale: string }) {
       url: base,
       inLanguage: locale === 'zh' ? 'zh-CN' : 'en',
       publisher: { '@id': `${base}/#organization` },
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: `${pageUrl}/login`,
-        'query-input': 'required name=search_term_string',
-      },
     },
     {
       '@type': 'WebPage',

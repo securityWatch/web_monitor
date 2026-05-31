@@ -88,6 +88,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r.POST("/api/v1/heartbeat/:token", hbH.Ping)
 	r.POST("/api/v1/billing/webhook", billingH.Webhook)
 	r.GET("/api/v1/public/ssl-check", toolsH.SSLCheck)
+	r.GET("/api/v1/public/http-check", toolsH.HTTPCheck)
 
 	internal := r.Group("/api/internal/probe")
 	{

@@ -30,9 +30,11 @@ export const publicMarketingPaths = [
   '/login',
   '/register',
   '/pricing',
+  '/features/uptime-monitoring',
   '/compare/better-stack',
   '/compare/uptimerobot',
   '/tools',
+  '/tools/website-down-checker',
   '/tools/image-compress',
   '/tools/pdf-tools',
   '/tools/pdf-to-word',
@@ -51,6 +53,7 @@ export function buildPageMetadata(opts: {
 }): Metadata {
   const path = opts.path ?? '';
   const canonical = localeUrl(opts.locale, path);
+  const ogImage = `${getSiteUrl()}/opengraph-image.png`;
   return {
     title: opts.title,
     description: opts.description,
@@ -66,15 +69,25 @@ export function buildPageMetadata(opts: {
       siteName: 'PulseWatch',
       title: opts.title,
       description: opts.description,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: 'PulseWatch' }],
     },
     twitter: {
       card: 'summary_large_image',
       title: opts.title,
       description: opts.description,
+      images: [ogImage],
     },
     robots: {
       index: true,
       follow: true,
     },
+  };
+}
+
+/** Metadata for authenticated app routes (dashboard, monitors, etc.). */
+export function privateAppMetadata(title?: string): Metadata {
+  return {
+    title: title ? `${title} | PulseWatch` : 'PulseWatch',
+    robots: { index: false, follow: false },
   };
 }

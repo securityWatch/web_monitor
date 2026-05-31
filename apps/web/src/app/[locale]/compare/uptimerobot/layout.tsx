@@ -1,24 +1,19 @@
+import type { ReactNode } from 'react';
 import { getTranslations } from 'next-intl/server';
-import { SslCheckerTool } from '@/components/tools/ssl-checker-tool';
-import { ToolShell } from '@/components/tools/tool-shell';
 import { buildPageMetadata } from '@/lib/seo';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'meta.sslChecker' });
+  const t = await getTranslations({ locale, namespace: 'meta.compare.uptimerobot' });
   return buildPageMetadata({
     locale,
-    path: '/tools/ssl-checker',
+    path: '/compare/uptimerobot',
     title: t('title'),
     description: t('description'),
     keywords: t('keywords').split(',').map((k) => k.trim()),
   });
 }
 
-export default function Page() {
-  return (
-    <ToolShell>
-      <SslCheckerTool />
-    </ToolShell>
-  );
+export default function Layout({ children }: { children: ReactNode }) {
+  return children;
 }
