@@ -90,6 +90,19 @@ export NODE_ENV=production
 export NEXT_PUBLIC_API_URL=${site}
 export NEXT_PUBLIC_SITE_URL=${site}
 export NEXT_PUBLIC_APP_DOMAINS=${APP_DOMAINS}
+# SEO verification meta tags (read at Next.js build time)
+for ENV_FILE in ${BUILD_DIR}/.env ${APP}/api/.env; do
+  if [ -f "$ENV_FILE" ]; then
+    for KEY in GOOGLE_SITE_VERIFICATION BAIDU_SITE_VERIFICATION; do
+      VAL=$(grep -E "^\${KEY}=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\\r')
+      if [ -n "$VAL" ]; then
+        export "$KEY=$VAL"
+        echo "[web] Loaded $KEY from $ENV_FILE"
+      fi
+    done
+    break
+  fi
+done
 echo "[web] next build on server..."
 rm -rf apps/web/.next
 npm run build -w @pulsewatch/web

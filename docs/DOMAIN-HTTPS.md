@@ -57,7 +57,7 @@ node setup-https.js
 ## 步骤 4 — 搜索引擎
 
 1. 服务器 `.env` / 构建：`NEXT_PUBLIC_SITE_URL=https://你的域名`（无尾斜杠）
-2. 可选：`GOOGLE_SITE_VERIFICATION`、`BAIDU_SITE_VERIFICATION` → `node redeploy-web.js`
+2. 可选：`GOOGLE_SITE_VERIFICATION`、`BAIDU_SITE_VERIFICATION` → `node patch-seo-verification.js` 再 `node redeploy-web.js`
 3. Google Search Console / 百度站长：提交 `https://你的域名/sitemap.xml`
 4. 检查 `/en`、`/zh` 的 canonical 与 hreflang
 

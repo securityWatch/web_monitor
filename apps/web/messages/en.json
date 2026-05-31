@@ -152,6 +152,7 @@
     "resourcesPingTest": "Ping test tool",
     "resourcesPortChecker": "Port checker tool",
     "resourcesHttpHeaders": "HTTP headers checker",
+    "resourcesUptimeCalculator": "Downtime cost calculator",
     "resourcesUptimeFeature": "Uptime monitoring features",
     "resourcesSslMonitoring": "SSL monitoring features",
     "resourcesStatusPages": "Status pages",
@@ -187,11 +188,13 @@
     "faq13Q": "Is there a command palette or competitor comparison pages?",
     "faq13A": "Signed-in users can press ⌘K (Ctrl+K on Windows) to jump to monitors, incidents, settings, and more. Public compare pages at /compare/uptimerobot and /compare/better-stack summarize how PulseWatch stacks up on pricing and features.",
     "faq14Q": "What free online monitoring tools does PulseWatch offer?",
-    "faq14A": "No signup required: website down checker, SSL certificate checker, DNS lookup, ping test, and TCP port checker — all run from our servers so you can troubleshoot before creating monitors.",
+    "faq14A": "No signup required: website down checker, SSL certificate checker, DNS lookup, ping test, TCP port checker, HTTP headers inspector, and a downtime cost calculator — all run in-browser or from our servers.",
     "faq15Q": "Can I test DNS and port connectivity without an account?",
     "faq15A": "Yes. Use /tools/dns-lookup for A/AAAA/MX/TXT records, /tools/ping-test for ICMP reachability, and /tools/port-checker for open TCP ports like 443 or 22. Upgrade to PulseWatch monitors for 24/7 checks and alerts.",
     "faq16Q": "Where can I learn about SSL monitoring, status pages, and alerting?",
     "faq16A": "Feature pages at /features/ssl-monitoring, /features/status-pages, and /features/alerting explain tiered SSL expiry alerts, public status pages on the free tier, and multi-channel notifications including Slack and CN IM tools.",
+    "faq17Q": "How do I estimate the cost of website downtime?",
+    "faq17A": "Use the free downtime cost calculator at /tools/uptime-calculator — enter monthly revenue and target uptime (e.g. 99.9%) to see estimated annual loss. Pair it with 24/7 PulseWatch monitors so outages are caught in minutes, not hours.",
     "capabilitiesTitle": "Platform capabilities for uptime, security, and on-call",
     "capabilitiesSubtitle": "External probes, tiered SSL alerts, DNS and tamper detection, multi-channel notifications, status pages, and developer-friendly workflows — all indexable, all built for production teams.",
     "cap1Title": "Uptime monitoring & multi-region probes",
@@ -245,7 +248,8 @@
       "dnsLookup": "DNS Lookup",
       "pingTest": "Ping Test",
       "portChecker": "Port Checker",
-      "httpHeaders": "HTTP Headers"
+      "httpHeaders": "HTTP Headers",
+      "uptimeCalculator": "Downtime Calculator"
     },
     "json": {
       "format": "Pretty print",
@@ -392,6 +396,30 @@
       "statusCode": "HTTP status",
       "responseTime": "Response time",
       "errorDetail": "Details",
+      "cta": "Want 24/7 monitoring with alerts?",
+      "ctaLink": "Start free on PulseWatch"
+    },
+    "uptimeCalculator": {
+      "badge": "Cost estimator",
+      "title": "Downtime Cost Calculator",
+      "subtitle": "Estimate annual revenue loss from SLA gaps and incident downtime. Pure client-side — your numbers never leave the browser.",
+      "uptimeLabel": "Target uptime (%)",
+      "uptimeHint": "e.g. 99.9% = ~8.76 hours downtime/year",
+      "revenueLabel": "Monthly revenue (USD)",
+      "revenueHint": "Gross or net revenue tied to online availability",
+      "incidentsLabel": "Incidents per year",
+      "incidentsHint": "Unplanned outages or major degradations",
+      "avgDowntimeLabel": "Avg downtime per incident (minutes)",
+      "avgDowntimeHint": "Mean minutes until service is fully restored",
+      "slaResultTitle": "SLA-based estimate",
+      "incidentResultTitle": "Incident-based estimate",
+      "perYear": "year",
+      "downtimePercent": "Allowed downtime",
+      "downtimeHours": "Downtime hours / year",
+      "revenuePerHour": "Revenue / hour",
+      "totalIncidentHours": "Total incident hours",
+      "costPerIncident": "Cost per incident",
+      "insight": "Even one hour of undetected downtime during peak traffic can exceed a year of Pro monitoring. External checks with alerts catch issues in minutes.",
       "cta": "Want 24/7 monitoring with alerts?",
       "ctaLink": "Start free on PulseWatch"
     },
@@ -621,7 +649,7 @@
   "blog": {
     "eyebrow": "Blog",
     "title": "Uptime monitoring guides",
-    "subtitle": "Practical tips on API health checks, website down testing, and getting started with PulseWatch.",
+    "subtitle": "Practical tips on API health checks, SSL monitoring, downtime cost estimation, and getting started with PulseWatch.",
     "readArticle": "Read article",
     "backToBlog": "Back to blog",
     "ctaPrimary": "Start free monitoring",
@@ -648,6 +676,24 @@
         "p2": "Use instant checks during deploys, DNS cutovers, or firewall changes. When the site is up, you are done. When it is down, the checker shows error detail to speed triage.",
         "p3": "Scheduled monitoring adds history, recovery notifications, SSL and DNS alerts, and on-call workflows. That is what prevents the next outage from being discovered on social media.",
         "p4": "Try the free tool at /tools/website-down-checker, then create monitors for URLs that matter 24/7. Combine with /tools/dns-lookup and /tools/port-checker when routing or firewalls are suspect."
+      },
+      "sslMonitoring": {
+        "title": "SSL certificate monitoring: expiry tiers that actually page you",
+        "excerpt": "Why calendar reminders fail, how tiered SSL alerts work, and when to pair checks with DNS baselines.",
+        "date": "2026-05-28",
+        "p1": "SSL certificates expire quietly until browsers show warnings or APIs start failing TLS handshakes. External monitoring catches expiry before customers do—especially on microservices where dozens of certs rotate on different schedules.",
+        "p2": "PulseWatch uses tiered warnings at 30, 14, 7, and 1 days before expiry so teams can renew through ACME, Cloudflare, or manual purchase workflows without last-minute fire drills.",
+        "p3": "Pair SSL monitors with DNS record baselines: hijacked or drifted CNAME records often precede certificate mismatches and phishing clones of your login pages.",
+        "p4": "Use the free /tools/ssl-checker for spot checks, then add SSL monitors for production hostnames. See /features/ssl-monitoring for alert routing and history."
+      },
+      "downtimeCost": {
+        "title": "How to estimate downtime cost (and why 99.9% is not enough)",
+        "excerpt": "Turn monthly revenue and uptime targets into dollar impact—then justify monitoring spend in one slide.",
+        "date": "2026-05-31",
+        "p1": "Executives ask what an hour offline costs. A simple model: annual revenue × (100 − uptime%) / 100 equals proportional revenue at risk from downtime. At $50k MRR and 99.9% uptime, that is roughly $6k/year—before reputation and support load.",
+        "p2": "The free PulseWatch downtime calculator at /tools/uptime-calculator lets you plug monthly revenue, SLA percentage, and optional incident count to see annual loss, downtime hours, and cost per outage.",
+        "p3": "Monitoring ROI is trivial when one prevented incident pays for years of Pro: founding Pro is $1/mo with 50 monitors and 1-minute intervals—far less than a single undetected checkout outage.",
+        "p4": "After estimating cost, create HTTP monitors on revenue paths—checkout, auth, webhooks—and enable recovery alerts so you know when service is healthy again."
       }
     }
   },
@@ -1270,6 +1316,11 @@
       "description": "Check HTTPS certificate expiry, issuer, and TLS version. Free external SSL inspection tool.",
       "keywords": "SSL checker, certificate expiry, TLS check, HTTPS certificate test"
     },
+    "uptimeCalculator": {
+      "title": "Downtime Cost Calculator — Estimate Revenue Loss | PulseWatch",
+      "description": "Free uptime SLA calculator. Enter monthly revenue and target uptime to estimate annual downtime cost. Client-side, no signup.",
+      "keywords": "downtime cost calculator, uptime SLA calculator, revenue loss estimate, outage cost, website downtime cost"
+    },
     "dnsLookup": {
       "title": "Free DNS Lookup Tool — A, MX, TXT & More | PulseWatch",
       "description": "Query DNS A, AAAA, CNAME, MX, TXT, and NS records from external servers. Free online DNS lookup.",
@@ -1312,8 +1363,8 @@
     },
     "blog": {
       "title": "Uptime Monitoring Guides & Blog | PulseWatch",
-      "description": "Practical guides on API health checks, website down testing, and getting started with external uptime monitoring.",
-      "keywords": "uptime monitoring blog, API monitoring guide, website down checker guide"
+      "description": "Guides on API health checks, SSL certificate monitoring, downtime cost estimation, and external uptime monitoring.",
+      "keywords": "uptime monitoring blog, API monitoring guide, SSL monitoring guide, downtime cost calculator"
     },
     "useCases": {
       "apiMonitoring": {

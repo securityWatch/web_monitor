@@ -152,6 +152,7 @@
     "resourcesPingTest": "Ping 测试工具",
     "resourcesPortChecker": "端口检测工具",
     "resourcesHttpHeaders": "HTTP 响应头检测",
+    "resourcesUptimeCalculator": "停机成本计算器",
     "resourcesUptimeFeature": "可用性监控功能",
     "resourcesSslMonitoring": "SSL 监控功能",
     "resourcesStatusPages": "状态页",
@@ -187,11 +188,13 @@
     "faq13Q": "是否有命令面板或竞品对比页？",
     "faq13A": "登录用户可按 ⌘K（Windows 为 Ctrl+K）快速跳转监控、事件、设置等。公开对比页 /compare/uptimerobot 与 /compare/better-stack 汇总 PulseWatch 在定价与功能上的差异。",
     "faq14Q": "PulseWatch 提供哪些免费在线监控小工具？",
-    "faq14A": "无需注册：网站宕机检测、SSL 证书检测、DNS 查询、Ping 测试与 TCP 端口检测 — 均从我们的服务器运行，便于在创建监控前先排查问题。",
+    "faq14A": "无需注册：网站宕机检测、SSL 证书检测、DNS 查询、Ping 测试、TCP 端口检测、HTTP 响应头检测，以及停机成本计算器 — 均在浏览器或我们的服务器上运行。",
     "faq15Q": "不注册账号能否测试 DNS 与端口连通性？",
     "faq15A": "可以。使用 /tools/dns-lookup 查询 A/AAAA/MX/TXT 等记录，/tools/ping-test 测试 ICMP 可达性，/tools/port-checker 检测 443 或 22 等 TCP 端口。升级至 PulseWatch 监控可获得 24/7 检测与告警。",
     "faq16Q": "在哪里了解 SSL 监控、状态页与告警功能？",
     "faq16A": "功能页 /features/ssl-monitoring、/features/status-pages 与 /features/alerting 介绍 SSL 分级到期告警、免费版公开状态页，以及 Slack 与国内 IM 等多渠道通知。",
+    "faq17Q": "如何估算网站停机的经济损失？",
+    "faq17A": "使用免费停机成本计算器 /tools/uptime-calculator — 输入月收入与目标可用性（如 99.9%）即可估算年度损失。配合 PulseWatch 24/7 监控，在分钟级而非小时级发现故障。",
     "capabilitiesTitle": "可用性、安全与值班一体化能力",
     "capabilitiesSubtitle": "外部多区域探针、SSL 分级预警、DNS 与篡改检测、多渠道通知、状态页与维护窗口、开发者友好工作流 — 面向生产团队，便于搜索引擎与用户发现。",
     "cap1Title": "可用性监控与多区域探针",
@@ -209,7 +212,7 @@
     "cap7Title": "状态页与维护窗口",
     "cap7Desc": "发布品牌对外状态页供客户查看。计划维护窗口在部署与基础设施作业期间抑制告警噪音。",
     "cap8Title": "免费小工具、⌘K 命令面板与对比页",
-    "cap8Desc": "/tools 提供免费浏览器开发者小工具，含网站宕机检测与 SSL 检测（无需注册）。⌘K / Ctrl+K 快速跳转。公开页对比 PulseWatch 与 UptimeRobot、Better Stack。",
+    "cap8Desc": "/tools 提供免费浏览器小工具，含停机成本计算器、网站宕机检测与 SSL 检测（无需注册）。⌘K / Ctrl+K 快速跳转。公开页对比 PulseWatch 与 UptimeRobot、Better Stack。",
     "cap9Title": "微信小程序移动端查看",
     "cap9Desc": "登录用户可通过微信小程序在移动端查看监控状态 — 无需打开电脑也能掌握可用性。",
     "resourcesCompareUptimeRobot": "对比 UptimeRobot",
@@ -245,7 +248,8 @@
       "dnsLookup": "DNS 查询",
       "pingTest": "Ping 测试",
       "portChecker": "端口检测",
-      "httpHeaders": "HTTP 响应头"
+      "httpHeaders": "HTTP 响应头",
+      "uptimeCalculator": "停机成本计算器"
     },
     "json": {
       "format": "格式化",
@@ -409,6 +413,23 @@
       "tls": "TLS 版本",
       "cta": "证书到期前自动邮件提醒 —",
       "ctaLink": "免费注册"
+    },
+    "uptimeCalculator": {
+      "badge": "ROI 估算",
+      "title": "停机成本计算器",
+      "subtitle": "根据月收入与目标可用性（如 99.9%）估算因宕机造成的年度收入损失。",
+      "monthlyRevenue": "月收入（美元）",
+      "uptimePercent": "目标可用性（%）",
+      "incidentsPerYear": "每年故障次数（可选）",
+      "incidentsHint": "用于估算单次故障平均成本。",
+      "estimatedLoss": "估算收入风险",
+      "perYear": "年",
+      "downtimeHours": "年度停机小时",
+      "costPerHour": "平均每小时收入",
+      "costPerIncident": "单次故障平均成本",
+      "disclaimer": "简化模型：损失 = 年收入 × 停机比例。实际影响因行业、SLA 罚金与品牌损害而异。",
+      "cta": "用 24/7 监控避免昂贵宕机 —",
+      "ctaLink": "免费注册 PulseWatch"
     },
     "dnsLookup": {
       "badge": "DNS 解析",
@@ -621,7 +642,7 @@
   "blog": {
     "eyebrow": "博客",
     "title": "可用性监控指南",
-    "subtitle": "API 健康检查、网站宕机测试与 PulseWatch 入门实用技巧。",
+    "subtitle": "API 健康检查、SSL 监控、停机成本估算与 PulseWatch 入门实用技巧。",
     "readArticle": "阅读全文",
     "backToBlog": "返回博客",
     "ctaPrimary": "免费开始监控",
@@ -648,6 +669,24 @@
         "p2": "部署、DNS 切换或防火墙变更时使用即时检测。正常则结束；宕机时检测器展示错误详情以加快排查。",
         "p3": "定时监控增加历史、恢复通知、SSL 与 DNS 告警及值班流程 — 防止下次故障在社交媒体才被发现。",
         "p4": "试用 /tools/website-down-checker 免费工具，再为 24/7 重要 URL 创建监控。怀疑路由或防火墙时结合 /tools/dns-lookup 与 /tools/port-checker。"
+      },
+      "sslMonitoring": {
+        "title": "SSL 证书监控：分级到期告警如何真正叫醒值班",
+        "excerpt": "为什么日历提醒会失效、分级 SSL 告警如何工作，以及何时配合 DNS 基线。",
+        "date": "2026-05-28",
+        "p1": "SSL 证书在浏览器告警或 API TLS 握手失败前静默到期。外部监控能在客户察觉前发现过期 — 尤其微服务环境中数十张证书轮换周期不同。",
+        "p2": "PulseWatch 在到期前 30/14/7/1 天分级预警，便于通过 ACME、Cloudflare 或人工采购流程续期，避免最后一刻救火。",
+        "p3": "将 SSL 监控与 DNS 记录基线配合：被劫持或漂移的 CNAME 常先于证书不匹配与钓鱼登录页出现。",
+        "p4": "用免费 /tools/ssl-checker 做点检，再为生产域名添加 SSL 监控。详见 /features/ssl-monitoring 的告警路由与历史。"
+      },
+      "downtimeCost": {
+        "title": "如何估算停机成本（以及为何 99.9% 仍不够）",
+        "excerpt": "用月收入与可用性目标换算美元影响 — 一张幻灯片说清监控投入 ROI。",
+        "date": "2026-05-31",
+        "p1": "管理层常问：宕机一小时损失多少？简单模型：年收入 × (100 − 可用性%) / 100 = 与停机成比例的收入风险。月收入 5 万美元、99.9% 可用性时，约 6000 美元/年 — 尚未计入声誉与支持成本。",
+        "p2": "PulseWatch 免费停机成本计算器 /tools/uptime-calculator 可输入月收入、SLA 百分比与可选故障次数，查看年度损失、停机小时与单次故障成本。",
+        "p3": "监控 ROI 极高：创始 Pro 仅 $1/月含 50 个监控与 1 分钟间隔 — 远低于一次未发现的 checkout 故障。",
+        "p4": "估算成本后，为收入路径 — checkout、登录、Webhook — 创建 HTTP 监控，并启用恢复通知以确认服务已恢复。"
       }
     }
   },
@@ -1290,6 +1329,11 @@
       "description": "从外部服务器查看 HTTP 响应头、状态码与延迟。排查缓存、CDN 与安全头配置。",
       "keywords": "HTTP 响应头检测, 响应头查询, CDN 缓存头, 安全响应头"
     },
+    "uptimeCalculator": {
+      "title": "停机成本计算器 — 估算宕机损失 | PulseWatch",
+      "description": "免费停机成本计算器。输入月收入与可用性 SLA，估算因宕机造成的年度收入损失。",
+      "keywords": "停机成本计算器, 宕机损失, 网站停机成本, 可用性 SLA 计算, 收入损失"
+    },
     "sslMonitoring": {
       "title": "SSL 证书监控与到期告警 | PulseWatch",
       "description": "监控 HTTPS 证书到期，30/14/7/1 天分级告警。免费版含 SSL 监控。",
@@ -1312,8 +1356,8 @@
     },
     "blog": {
       "title": "可用性监控指南与博客 | PulseWatch",
-      "description": "API 健康检查、网站宕机测试与外部可用性监控入门实用指南。",
-      "keywords": "可用性监控博客, API 监控指南, 网站宕机检测教程"
+      "description": "API 健康检查、SSL 证书监控、停机成本估算与外部可用性监控实用指南。",
+      "keywords": "可用性监控博客, API 监控指南, SSL 监控指南, 停机成本计算器"
     },
     "useCases": {
       "apiMonitoring": {
