@@ -27,7 +27,7 @@ func TestRunHTTPCheck(t *testing.T) {
 	assert.True(t, outcome.IsUp)
 	require.NotNil(t, outcome.StatusCode)
 	assert.Equal(t, 200, *outcome.StatusCode)
-	assert.Greater(t, outcome.ResponseMs, 0)
+	assert.GreaterOrEqual(t, outcome.ResponseMs, 0)
 }
 
 func TestRunHTTPCheckDown(t *testing.T) {

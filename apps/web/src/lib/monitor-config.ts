@@ -249,7 +249,7 @@ export function mergeMonitorConfigForSave(
 }
 
 export function buildHttpConfigPayload(cfg: HttpMonitorConfig, type: string): HttpMonitorConfig | undefined {
-  if (type !== 'http' && type !== 'keyword' && type !== 'ssl') return undefined;
+  if (type !== 'http' && type !== 'keyword' && type !== 'ssl' && type !== 'api_json') return undefined;
   const statuses = resolveExpectedStatusesList(cfg);
   const payload: HttpMonitorConfig = {
     method: cfg.method || 'GET',

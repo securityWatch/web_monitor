@@ -1,0 +1,6 @@
+.cache/
+*.tar.gz
+*.gz
+pulsewatch-api
+upload-*.log
+web-bundle.tar.gz

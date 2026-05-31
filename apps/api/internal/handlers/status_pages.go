@@ -239,12 +239,27 @@ func (h *StatusPageHandler) PublicGet(c *gin.Context) {
 
 func (h *StatusPageHandler) uptime90d(ctx context.Context, pageID string) []gin.H {
 	rows, err := h.db.Query(ctx, `
-		SELECT date_trunc('day', cr.checked_at)::date as day,
-		       ROUND(100.0 * COUNT(*) FILTER (WHERE cr.is_up) / NULLIF(COUNT(*), 0), 2) as uptime
-		FROM check_results cr
-		JOIN status_page_monitors spm ON spm.monitor_id = cr.monitor_id
-		WHERE spm.status_page_id = $1 AND cr.checked_at > now() - interval '90 days'
-		GROUP BY 1 ORDER BY 1
+		SELECT day, ROUND(100.0 * SUM(up_count) / NULLIF(SUM(total_count), 0), 2) AS uptime
+		FROM (
+		  SELECT date_trunc('day', cr.checked_at)::date AS day,
+		         COUNT(*)::bigint AS total_count,
+		         COUNT(*) FILTER (WHERE cr.is_up)::bigint AS up_count
+		  FROM check_results cr
+		  JOIN status_page_monitors spm ON spm.monitor_id = cr.monitor_id
+		  WHERE spm.status_page_id = $1 AND cr.checked_at > now() - interval '90 days'
+		  GROUP BY 1
+		  UNION ALL
+		  SELECT date_trunc('day', r.bucket_at)::date AS day,
+		         SUM(r.total_count)::bigint,
+		         SUM(r.up_count)::bigint
+		  FROM check_results_rollup_5m r
+		  JOIN status_page_monitors spm ON spm.monitor_id = r.monitor_id
+		  WHERE spm.status_page_id = $1
+		    AND r.bucket_at > now() - interval '90 days'
+		    AND r.bucket_at < now() - interval '7 days'
+		  GROUP BY 1
+		) combined
+		GROUP BY day ORDER BY day
 	`, pageID)
 	if err != nil {
 		return []gin.H{}

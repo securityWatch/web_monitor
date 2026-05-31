@@ -226,6 +226,26 @@ func evaluateHTTPBody(body []byte, code, elapsed int, keyword string, keywordMus
 		metadata = map[string]interface{}{}
 	}
 
+	if monitorType == "api_json" {
+		if len(jsonAssertions) == 0 {
+			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "at least one JSON assertion is required", Metadata: metadata}
+		}
+		if !json.Valid(body) {
+			attachBodySnippet(metadata, body)
+			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "response is not valid JSON", Metadata: metadata}
+		}
+	}
+
+	if monitorType == "api_json" {
+		if len(jsonAssertions) == 0 {
+			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "at least one JSON assertion is required", Metadata: metadata}
+		}
+		if !json.Valid(body) {
+			attachBodySnippet(metadata, body)
+			return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsed, ErrorMessage: "response is not valid JSON", Metadata: metadata}
+		}
+	}
+
 	checkKeyword := monitorType == "keyword" || keyword != ""
 	if checkKeyword && keyword != "" {
 		found := strings.Contains(string(body), keyword)

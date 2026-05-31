@@ -20,12 +20,14 @@ type Scheduler struct {
 	incidents *IncidentService
 	probes    *ProbeDispatch
 	security  *SecurityEvents
+	retention *RetentionService
 	stop      chan struct{}
 }
 
 func NewScheduler(db *pgxpool.Pool, cfg *config.Config, email *EmailService, alerts *AlertService, incidents *IncidentService) *Scheduler {
 	s := &Scheduler{db: db, cfg: cfg, email: email, alerts: alerts, incidents: incidents, probes: NewProbeDispatch(db), stop: make(chan struct{})}
 	s.security = NewSecurityEvents(db, alerts, incidents)
+	s.retention = NewRetentionService(db, cfg.CheckRawRetentionDays, cfg.CheckTotalRetentionDays)
 	return s
 }
 
@@ -53,6 +55,7 @@ func (s *Scheduler) loop() {
 			}
 			s.processPendingAlerts(ctx)
 			s.processOnCallEscalation(ctx)
+			s.retention.MaybeRun(ctx)
 		}
 	}
 }

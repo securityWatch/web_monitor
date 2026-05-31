@@ -1,13 +1,17 @@
 {
   "name": "deploy",
   "version": "1.0.0",
-  "description": "",
-  "main": "deploy.js",
+  "private": true,
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "api": "node redeploy-api.js",
+    "web": "node redeploy-web.js",
+    "web:upload": "REMOTE_WEB_BUILD=0 node redeploy-web.js",
+    "web:static": "node redeploy-web-static.js",
+    "all": "node redeploy-all.js",
+    "check": "node check.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "dependencies": {
+    "ssh2": "^1.17.0"
+  }
 }

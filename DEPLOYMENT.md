@@ -175,3 +175,33 @@ cp -r /opt/pulsewatch/web/public /opt/pulsewatch/web/.next/standalone/apps/web/
 
 - **80**：Nginx 反代 Web �?`/health`、`/api/`（推荐对外访问）
 - **3000 / 4000**：仅服务器本机或内网；云防火墙未开放时公网直连会超时，属正�?
+
+## 分布式探针（可选）
+
+真多区域地理探测需启用调度分发并在各区域运行 worker：
+
+| 变量 | 说明 |
+|------|------|
+| `PROBE_DISPATCH` | API 设为 `true` 时由 worker 拉取任务 |
+| `PROBE_SECRET` | API 与 worker 共享密钥 |
+| `PROBE_REGION` | worker 区域标签（如 `us-east`、`ap-singapore`） |
+
+```bash
+# API .env
+PROBE_DISPATCH=true
+PROBE_SECRET=...
+
+# 各区域 worker（apps/api/cmd/probe-worker）
+PROBE_REGION=ap-singapore go run ./cmd/probe-worker
+```
+
+未启用时，调度器仍在 API 进程内执行检查，区域标签为逻辑分区（非独立 IP）。详见 [docs/GAP-BACKLOG.md](docs/GAP-BACKLOG.md)。
+
+## 快速重部署（推荐）
+
+```bash
+cd deploy && node redeploy-api.js   # API（gzip + SHA 跳过）
+cd deploy && node redeploy-web.js   # Web（默认 REMOTE_WEB_BUILD=1）
+cd deploy && node redeploy-all.js   # 两者顺序执行
+```
+

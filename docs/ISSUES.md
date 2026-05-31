@@ -1,61 +1,73 @@
 # PulseWatch 功能任务清单
 
-## Phase 1 — 核心闭环 ✅ 已完成
-
-见 Git 历史 / 上一版本文档（P0–P2 全部 ✅）
+> **状态说明**：✅ 已交付 | 🔶 部分/MVP/需配置 | ❌ 未做  
+> **差距明细**：[GAP-BACKLOG.md](GAP-BACKLOG.md) | **MVP 勾选**：[ROADMAP.md](ROADMAP.md)
 
 ---
 
-## Phase 2 — 增长与开发者体验 ✅ 已完成
+## Phase 1 — 核心闭环
+
+| ID | 任务 | 状态 |
+|----|------|------|
+| P1-core | 注册/登录/JWT、Monitors、调度、告警、Dashboard、状态页、i18n | ✅ |
+| P1-lockout | 登录失败 5 次锁定 15min（PRD） | ✅ |
+| P1-session-ui | Session 列表与撤销（PRD UM-05） | ✅ |
+| P1-retention | check_results 自动保留/降采样 | 🔶 |
+| P1-live-demo | 交互式 Live Demo（PRD UX-01） | 🔶 静态 Hero 预览 |
+
+---
+
+## Phase 2 — 增长与开发者体验
 
 | ID | 任务 | 状态 |
 |----|------|------|
 | P2-5 | API Keys 管理 + Bearer 认证 | ✅ |
-| P2-6 | 密码重置（忘记密码 → 邮件链接 → 重置） | ✅ |
-| P2-7 | DNS 监控（A/AAAA/CNAME/MX） | ✅ |
-| P2-8 | 告警降噪：15 分钟去重 + Flapping 抑制 | ✅ |
-| P2-9 | 多区域 N-of-M 投票（多数失败才 DOWN） | ✅ |
-| P2-10 | 监控模板（API/WordPress/Stripe/SSL/DNS/Heartbeat） | ✅ |
-| P2-11 | 免费 SSL Checker 工具页（SEO 获客） | ✅ |
-| P2-12 | Founding Member 徽章（账单页） | ✅ |
-
-## Phase 3 — 企业级功能 ✅ 已完成
-
-| ID | 任务 | 状态 |
-|----|------|------|
-| P3-1 | 邮箱验证流程（未验证限 3 监控） | ✅ |
-| P3-2 | Magic Link 登录 | ✅ |
-| P3-3 | 2FA TOTP | ✅ |
-| P3-4 | Org Switcher 多组织切换 | ✅ |
-| P3-5 | 审计日志 | ✅ |
-| P3-6 | SLA HTML 报告（CSV + HTML 导出） | ✅ |
-| P3-7 | 状态页邮件订阅 + 自定义域名 | ✅ |
-| P3-8 | 独立定价页 `/pricing` + FAQ schema | ✅ |
-| P3-9 | 配额触顶升级弹窗（Founding $1 CTA） | ✅ |
-| P3-10 | OpenAPI 文档 + Terraform 示例 | ✅ |
-
-## Phase 4 — 竞品核心功能 ✅ 已完成
-
-| ID | 任务 | 状态 |
-|----|------|------|
-| P4-1 | SMS 告警（Twilio，可选） | ✅ |
-| P4-2 | MS Teams MessageCard 告警 | ✅ |
-| P4-3 | 故障响应取证（responseBodySnippet） | ✅ |
-| P4-4 | 域名到期监控（RDAP WHOIS） | ✅ |
-| P4-5 | 页面速度监控（TTFB 阈值） | ✅ |
-| P4-6 | 事件协作流（时间线/备注/工作流） | ✅ |
-| P4-7 | 告警智能合并（5 分钟同窗） | ✅ |
-| P4-8 | On-Call 排班 MVP | ✅ |
-| P4-9 | 状态页事件公告联动 | ✅ |
-| P4-10 | 钉钉/飞书/企微告警 | ✅ migration 008 已部署 |
+| P2-6 | 密码重置 | ✅ |
+| P2-7 | DNS 监控 | ✅ |
+| P2-8 | 告警降噪 + Flapping | ✅ |
+| P2-9 | 多区域 N-of-M | 🔶 逻辑 ✅；真地理探针见 P5-1 |
+| P2-10 | 监控模板 | ✅ |
+| P2-11 | SSL Checker | ✅ |
+| P2-12 | Founding Member 徽章 | ✅ |
+| P2-pdf-sla | SLA **PDF** 导出 | ❌ 仅 CSV/HTML |
 
 ---
 
-## Phase 5 — 差距补齐 ✅ 已完成（2026-05-30）
+## Phase 3 — 企业级功能
 
-**完整 backlog、验收标准、测试与部署循环** → [IMPLEMENTATION-ROADMAP.md](IMPLEMENTATION-ROADMAP.md)  
-**产品阶段与套餐门控** → [PRODUCT-ROADMAP.md](PRODUCT-ROADMAP.md)  
-**竞品差距矩阵** → [COMPETITOR-ANALYSIS.md §15](COMPETITOR-ANALYSIS.md#15-pulsewatch-差距矩阵phase-5-基准)
+| ID | 任务 | 状态 |
+|----|------|------|
+| P3-1 | 邮箱验证（未验证限 3 监控） | ✅ |
+| P3-2 | Magic Link | ✅ |
+| P3-3 | 2FA TOTP | ✅ |
+| P3-4 | Org Switcher | ✅ |
+| P3-5 | 审计日志 | ✅ |
+| P3-6 | SLA CSV + HTML | ✅ |
+| P3-7 | 状态页订阅 + custom_domain 字段 | 🔶 |
+| P3-8 | `/pricing` + FAQ | ✅ |
+| P3-9 | 配额升级弹窗 | ✅ |
+| P3-10 | OpenAPI + Terraform **示例** | 🔶 非官方 Provider |
+
+---
+
+## Phase 4 — 竞品核心功能
+
+| ID | 任务 | 状态 |
+|----|------|------|
+| P4-1 | SMS（Twilio） | 🔶 需 env |
+| P4-2 | MS Teams | ✅ |
+| P4-3 | responseBodySnippet 取证 | ✅ |
+| P4-4 | 域名到期（RDAP） | ✅ |
+| P4-5 | Pagespeed / TTFB | ✅ |
+| P4-6 | 事件协作流 | ✅ |
+| P4-7 | 告警合并 | ✅ |
+| P4-8 | On-Call MVP | ✅ |
+| P4-9 | 状态页事件联动 | ✅ |
+| P4-10 | 钉钉/飞书/企微 | 🔶 migration `008` + env |
+
+---
+
+## Phase 5 — 差距补齐
 
 | ID | 任务 | 优先级 | 状态 |
 |----|------|:------:|------|
@@ -79,18 +91,15 @@
 
 ---
 
-## Phase 6 — 安全与完整性监控 ✅
-
-**产品规格** → [PRODUCT-SECURITY-MONITORS.md](PRODUCT-SECURITY-MONITORS.md)  
-**实施步骤与验收** → [IMPLEMENTATION-ROADMAP.md §Phase 6](IMPLEMENTATION-ROADMAP.md#phase-6--安全与完整性监控)
+## Phase 6 — 安全与完整性监控
 
 | ID | 任务 | 优先级 | 状态 |
 |----|------|:------:|------|
-| P6-1 | SSL 到期分级告警 + 可配置 warnDays + metadata 持久化 | P0 | ✅ 2026-05-30 |
-| P6-2 | DNS 基线/漂移检测 + `dns_change` 事件 + 可选受信解析器 | P0 | ✅ 2026-05-30 |
-| P6-3 | Tamper 监控：body/selector fingerprint + diff % 重大变更 | P1 | ✅ 2026-05-30 |
-| P6-4 | 内容策略：blocklist + 合规文案 + `tamper_policy_violation` | P1 | ✅ 2026-05-30 |
-| P6-5 | 安全监控 UI（DNS/SSL/domain/tamper 配置 + 告警事件类型） | P1 | ✅ 2026-05-30 |
+| P6-1 | SSL 分级告警 | P0 | ✅ |
+| P6-2 | DNS 基线/漂移 | P0 | ✅ |
+| P6-3 | Tamper fingerprint | P1 | ✅ |
+| P6-4 | 内容策略 blocklist | P1 | ✅ |
+| P6-5 | 安全监控 UI | P1 | ✅ |
 
 ---
 
@@ -101,7 +110,9 @@
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth / 也可作 org OIDC 测试 |
 | Org SSO | Settings → 组织 OIDC（Business）；回调 `GET /api/v1/auth/sso/callback` |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth |
-| `WEB_URL` | OAuth / 密码重置 / Stripe 跳转 |
+| `WEB_URL` | OAuth / 密码重置 / Stripe |
 | `STRIPE_SECRET_KEY` / `STRIPE_PRO_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` | 付费 |
-| `SMTP_*` | 密码重置与告警邮件 |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` | SMS 告警 |
+| `SMTP_*` | 邮件 |
+| `TWILIO_*` | SMS/语音 |
+| `PROBE_DISPATCH` / `PROBE_SECRET` / `PROBE_REGION` | 分布式探针 |
+| `S3_*` | 截图对象存储（未来） |

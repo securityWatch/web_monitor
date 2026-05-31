@@ -29,7 +29,7 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
   const locale = useLocale();
   const demos = getChainFieldDemos(locale);
 
-  if (type !== 'http' && type !== 'keyword' && type !== 'ssl') return null;
+  if (type !== 'http' && type !== 'keyword' && type !== 'ssl' && type !== 'api_json') return null;
 
   const method = (config.method || 'GET').toUpperCase();
   const useChain = (config.steps?.length || 0) > 0;
@@ -118,6 +118,9 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
               }}
             />
           </div>
+          {type === 'api_json' && (
+            <p className="text-xs text-zinc-500">{t('apiJsonHint')}</p>
+          )}
           {type === 'keyword' && (
             <div>
               <label className="mb-1 block text-sm text-zinc-400">{t('keywordLabel')}</label>

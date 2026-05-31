@@ -75,7 +75,7 @@
 
 | 数据类型 | 保留策略 | 代码位置 |
 |----------|----------|----------|
-| `check_results` | **无自动 purge/TTL**；数据持续写入直至手动删库/删监控级联 | 无 `DELETE FROM check_results` 定时任务 |
+| `check_results` | **7 天原始**；更老数据 rollup 到 `check_results_rollup_5m`；**90 天**后 DROP 月分区 + 删 rollup |；数据持续写入直至手动删库/删监控级联 | 无 `DELETE FROM check_results` 定时任务 |
 | 仪表盘/列表聚合 | 查询窗口默认 **24 小时** | `dashboard.go`, `monitors` 列表子查询 |
 | 监控统计 API | 客户端 `range`：**1h / 24h（默认）/ 7d / 30d** | `handlers/time_range.go` |
 | 状态页历史曲线 | 查询 **90 天** | `status_pages.go` |

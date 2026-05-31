@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import { MarketingNav } from '@/components/marketing-nav';
-import { apiFetch, setStoredAuth, type AuthData } from '@/lib/api';
+import { apiFetch, setStoredAuth, ApiError, type AuthData } from '@/lib/api';
 
 export default function LoginPage() {
   const t = useTranslations('auth');
@@ -68,8 +68,14 @@ export default function LoginPage() {
       }
       setStoredAuth(data);
       router.push('/dashboard');
-    } catch {
-      setError(t('loginError'));
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'ACCOUNT_LOCKED') {
+        const secs = err.retryAfterSeconds ?? 900;
+        const mins = Math.max(1, Math.ceil(secs / 60));
+        setError(t('accountLocked', { minutes: mins }));
+      } else {
+        setError(t('loginError'));
+      }
     } finally {
       setLoading(false);
     }

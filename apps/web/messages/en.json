@@ -282,7 +282,8 @@
     "passwordMismatch": "Passwords do not match",
     "loginError": "Invalid email or password",
     "registerSuccess": "Account created successfully",
-    "forgotSuccess": "If that email exists, a reset link has been sent"
+    "forgotSuccess": "If that email exists, a reset link has been sent",
+    "accountLocked": "Too many failed attempts. Try again in about {minutes} minutes."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -448,7 +449,9 @@
     "alertSettingsTitle": "Alert settings",
     "webhookAlertsEnabled": "Send Webhook alerts for this monitor",
     "webhookAlertsHint": "When off, generic Webhook integrations in Settings will not fire for this monitor. Email, Slack, and other channels are unaffected.",
-    "webhookAlertsDisabledBadge": "Webhook alerts off"
+    "webhookAlertsDisabledBadge": "Webhook alerts off",
+    "typeApiJson": "API / JSON",
+    "apiJsonHint": "At least one JSONPath assertion is required. Available on Pro and above."
   },
   "incidents": {
     "title": "Incidents",
@@ -524,6 +527,18 @@
       "testSent": "Test alert sent",
       "channelCreated": "Channel created",
       "deleteConfirm": "Delete this alert channel?"
+    },
+    "sessions": {
+      "title": "Active sessions",
+      "desc": "Devices signed in to your account. Revoke any you do not recognize.",
+      "loading": "Loading…",
+      "empty": "No active sessions.",
+      "currentDevice": "This device",
+      "otherDevice": "Other device",
+      "revoke": "Revoke",
+      "revokeOthers": "Sign out other devices",
+      "revoked": "Session revoked.",
+      "revokedOthers": "Other devices signed out."
     }
   },
   "statusPages": {

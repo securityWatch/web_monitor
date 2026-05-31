@@ -14,7 +14,10 @@
     "test:unit": "cd apps/api && go test ./internal/services/...",
     "test:integration": "cd apps/api && go test ./internal/handlers/...",
     "start:web": "npm run start -w @pulsewatch/web",
-    "miniprogram:validate": "node scripts/validate-miniprogram.js"
+    "miniprogram:validate": "node scripts/validate-miniprogram.js",
+    "deploy:api": "cd deploy && npm run api",
+    "deploy:web": "cd deploy && npm run web",
+    "deploy:all": "cd deploy && npm run all"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
