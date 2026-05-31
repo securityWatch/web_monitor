@@ -62,6 +62,9 @@ export default function EditMonitorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiDraftMsg, setAiDraftMsg] = useState('');
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
   const tamperAIOn = type === 'tamper' && !!tamperConfig.aiContentRecognitionEnabled;
   const intervalOptions = tamperAIOn && !paidPlan
     ? [{ value: 1800, label: `30 ${t('minutes')}` }]
@@ -96,6 +99,62 @@ export default function EditMonitorPage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Error'))
       .finally(() => setLoading(false));
   }, [orgId, id]);
+
+  const applyDraftConfig = (config: Record<string, unknown>) => {
+    setHttpConfig(parseHttpConfig(config));
+    if (type === 'ssl') setSslConfig(parseSslConfig(config));
+    if (type === 'dns') setDnsConfig(parseDnsConfig(config));
+    if (type === 'tamper') setTamperConfig(parseTamperConfig(config));
+    if (type === 'pagespeed') setPageSpeedConfig(parsePageSpeedConfig(config));
+  };
+
+  const generateAIDraft = async () => {
+    if (!orgId || !aiPrompt.trim()) return;
+    setAiDraftLoading(true);
+    setAiDraftMsg('');
+    try {
+      const contextPrompt = [
+        'Update an existing PulseWatch monitor. Monitor type is FIXED and must not change.',
+        `type=${type}`,
+        `name=${form.name}`,
+        `targetUrl=${form.targetUrl}`,
+        `intervalSeconds=${form.intervalSeconds}`,
+        'User change request:',
+        aiPrompt.trim(),
+      ].join('\n');
+      const res = await apiFetch<{
+        draft: {
+          name: string;
+          type: string;
+          targetUrl: string;
+          intervalSeconds: number;
+          config?: Record<string, unknown>;
+          explanation?: string;
+        };
+      }>(`/api/v1/orgs/${orgId}/monitors/ai-draft`, {
+        method: 'POST',
+        body: JSON.stringify({ prompt: contextPrompt }),
+      });
+      const d = res.draft;
+      const cfg = (d.config || {}) as Record<string, unknown>;
+      let nextInterval = d.intervalSeconds > 0 ? d.intervalSeconds : form.intervalSeconds;
+      const nextTamper = type === 'tamper' ? parseTamperConfig(cfg) : tamperConfig;
+      if (type === 'tamper' && nextTamper.aiContentRecognitionEnabled && !paidPlan && nextInterval < 1800) {
+        nextInterval = 1800;
+      }
+      setForm({
+        name: d.name || form.name,
+        targetUrl: d.targetUrl || form.targetUrl,
+        intervalSeconds: nextInterval,
+      });
+      applyDraftConfig(cfg);
+      setAiDraftMsg(d.explanation || t('aiDraftApplied'));
+    } catch (err) {
+      setAiDraftMsg(err instanceof Error ? err.message : 'AI error');
+    } finally {
+      setAiDraftLoading(false);
+    }
+  };
 
   const securityPayload = () => {
     if (type === 'ssl') return { ssl: sslConfig };
@@ -132,6 +191,27 @@ export default function EditMonitorPage() {
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">{t('editTitle')}</h1>
         <Link href={`/monitors/${id}`} className="text-sm text-zinc-400 hover:text-white">{tc('back')}</Link>
+      </div>
+      <div className="card border-blue-500/20 bg-blue-500/5 space-y-3">
+        <div>
+          <p className="font-semibold text-blue-100">{t('aiDraftTitle')}</p>
+          <p className="mt-1 text-xs text-blue-100/60">{t('aiDraftEditDesc')}</p>
+        </div>
+        <textarea
+          className="input min-h-[72px]"
+          placeholder={t('aiDraftEditPlaceholder')}
+          value={aiPrompt}
+          onChange={(e) => setAiPrompt(e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn-secondary text-sm"
+          disabled={aiDraftLoading || !aiPrompt.trim()}
+          onClick={generateAIDraft}
+        >
+          {aiDraftLoading ? '...' : t('aiDraftEditButton')}
+        </button>
+        {aiDraftMsg && <p className="text-xs text-blue-100/70">{aiDraftMsg}</p>}
       </div>
       <form onSubmit={submit} className="card space-y-4">
         <div>
