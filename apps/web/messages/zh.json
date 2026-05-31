@@ -153,6 +153,8 @@
     "resourcesPortChecker": "端口检测工具",
     "resourcesHttpHeaders": "HTTP 响应头检测",
     "resourcesUptimeCalculator": "停机成本计算器",
+    "resourcesRedirectChecker": "重定向链检测",
+    "resourcesUptimeRobotAlt": "UptimeRobot 替代方案",
     "resourcesUptimeFeature": "可用性监控功能",
     "resourcesSslMonitoring": "SSL 监控功能",
     "resourcesStatusPages": "状态页",
@@ -188,13 +190,15 @@
     "faq13Q": "是否有命令面板或竞品对比页？",
     "faq13A": "登录用户可按 ⌘K（Windows 为 Ctrl+K）快速跳转监控、事件、设置等。公开对比页 /compare/uptimerobot 与 /compare/better-stack 汇总 PulseWatch 在定价与功能上的差异。",
     "faq14Q": "PulseWatch 提供哪些免费在线监控小工具？",
-    "faq14A": "无需注册：网站宕机检测、SSL 证书检测、DNS 查询、Ping 测试、TCP 端口检测、HTTP 响应头检测，以及停机成本计算器 — 均在浏览器或我们的服务器上运行。",
+    "faq14A": "无需注册：网站宕机检测、SSL 证书检测、DNS 查询、Ping 测试、TCP 端口检测、HTTP 响应头检测、重定向链检测与停机成本计算器。",
     "faq15Q": "不注册账号能否测试 DNS 与端口连通性？",
     "faq15A": "可以。使用 /tools/dns-lookup 查询 A/AAAA/MX/TXT 等记录，/tools/ping-test 测试 ICMP 可达性，/tools/port-checker 检测 443 或 22 等 TCP 端口。升级至 PulseWatch 监控可获得 24/7 检测与告警。",
     "faq16Q": "在哪里了解 SSL 监控、状态页与告警功能？",
     "faq16A": "功能页 /features/ssl-monitoring、/features/status-pages 与 /features/alerting 介绍 SSL 分级到期告警、免费版公开状态页，以及 Slack 与国内 IM 等多渠道通知。",
     "faq17Q": "如何估算网站停机的经济损失？",
     "faq17A": "使用免费停机成本计算器 /tools/uptime-calculator — 输入月收入与目标可用性（如 99.9%）即可估算年度损失。配合 PulseWatch 24/7 监控，在分钟级而非小时级发现故障。",
+    "faq18Q": "如何追踪 HTTP 重定向链？",
+    "faq18A": "使用免费重定向检测工具 /tools/redirect-checker — 输入任意 URL 即可查看每一跳 301/302、状态码与最终目标地址。适用于 SEO 迁移、CDN 规则与 HTTPS 切换，再为关键 URL 添加 24/7 监控。",
     "capabilitiesTitle": "可用性、安全与值班一体化能力",
     "capabilitiesSubtitle": "外部多区域探针、SSL 分级预警、DNS 与篡改检测、多渠道通知、状态页与维护窗口、开发者友好工作流 — 面向生产团队，便于搜索引擎与用户发现。",
     "cap1Title": "可用性监控与多区域探针",
@@ -249,7 +253,8 @@
       "pingTest": "Ping 测试",
       "portChecker": "端口检测",
       "httpHeaders": "HTTP 响应头",
-      "uptimeCalculator": "停机成本计算器"
+      "uptimeCalculator": "停机成本计算器",
+      "redirectChecker": "重定向检测"
     },
     "json": {
       "format": "格式化",
@@ -415,20 +420,44 @@
       "ctaLink": "免费注册"
     },
     "uptimeCalculator": {
-      "badge": "ROI 估算",
+      "badge": "成本估算",
       "title": "停机成本计算器",
-      "subtitle": "根据月收入与目标可用性（如 99.9%）估算因宕机造成的年度收入损失。",
-      "monthlyRevenue": "月收入（美元）",
-      "uptimePercent": "目标可用性（%）",
-      "incidentsPerYear": "每年故障次数（可选）",
-      "incidentsHint": "用于估算单次故障平均成本。",
-      "estimatedLoss": "估算收入风险",
+      "subtitle": "根据 SLA 缺口与故障停机估算年度收入损失。纯客户端计算 — 数据不会离开浏览器。",
+      "uptimeLabel": "目标可用性 (%)",
+      "uptimeHint": "例如 99.9% ≈ 每年约 8.76 小时停机",
+      "revenueLabel": "月收入（美元）",
+      "revenueHint": "与在线业务相关的总收入或净收入",
+      "incidentsLabel": "每年故障次数",
+      "incidentsHint": "非计划宕机或严重性能降级",
+      "avgDowntimeLabel": "单次故障平均停机（分钟）",
+      "avgDowntimeHint": "服务完全恢复的平均分钟数",
+      "slaResultTitle": "基于 SLA 的估算",
+      "incidentResultTitle": "基于故障次数的估算",
       "perYear": "年",
+      "downtimePercent": "允许停机比例",
       "downtimeHours": "年度停机小时",
-      "costPerHour": "平均每小时收入",
-      "costPerIncident": "单次故障平均成本",
-      "disclaimer": "简化模型：损失 = 年收入 × 停机比例。实际影响因行业、SLA 罚金与品牌损害而异。",
-      "cta": "用 24/7 监控避免昂贵宕机 —",
+      "revenuePerHour": "每小时收入",
+      "totalIncidentHours": "故障停机总小时",
+      "costPerIncident": "单次故障成本",
+      "insight": "高峰时段一次未发现的宕机，损失可能超过一整年 Pro 监控费用。外部检测 + 告警可在分钟级发现问题。",
+      "cta": "需要 24/7 监控与告警？",
+      "ctaLink": "免费注册 PulseWatch"
+    },
+    "redirectChecker": {
+      "badge": "重定向追踪",
+      "title": "HTTP 重定向链检测",
+      "subtitle": "从我们的服务器跟随 301/302 跳转 — 查看每一跳 URL、状态码、Location 头与最终地址。",
+      "placeholder": "https://example.com",
+      "check": "追踪重定向",
+      "checking": "追踪中…",
+      "failed": "检测失败，请重试。",
+      "hopCount": "{count} 跳",
+      "totalTime": "共 {ms} ms",
+      "statusCode": "HTTP 状态码",
+      "responseTime": "响应时间",
+      "location": "Location",
+      "finalUrl": "最终 URL",
+      "cta": "迁移完成后为 URL 添加告警监控 —",
       "ctaLink": "免费注册 PulseWatch"
     },
     "dnsLookup": {
@@ -687,6 +716,15 @@
         "p2": "PulseWatch 免费停机成本计算器 /tools/uptime-calculator 可输入月收入、SLA 百分比与可选故障次数，查看年度损失、停机小时与单次故障成本。",
         "p3": "监控 ROI 极高：创始 Pro 仅 $1/月含 50 个监控与 1 分钟间隔 — 远低于一次未发现的 checkout 故障。",
         "p4": "估算成本后，为收入路径 — checkout、登录、Webhook — 创建 HTTP 监控，并启用恢复通知以确认服务已恢复。"
+      },
+      "stripeWebhooks": {
+        "title": "如何用 HTTP 检测监控 Stripe Webhook",
+        "excerpt": "在外部探针、关键词检测与告警保护下，确保支付回调健康，避免收入中断。",
+        "date": "2026-06-01",
+        "p1": "Stripe Webhook 是应用暴露的 HTTP POST 端点，用于接收支付事件。若端点宕机、变慢或返回错误，Stripe 会重试 — 但订单可能停滞，财务团队失去可见性。",
+        "p2": "PulseWatch HTTP 监控可探测同主机上的轻量健康 URL，或专用的 /webhooks/stripe/health 路由，在不处理真实事件的情况下验证签名密钥配置。",
+        "p3": "健康端点返回结构化 JSON 时，可添加关键词检测。设置连续失败阈值，避免短暂部署抖动误呼值班，但持续故障仍会告警。",
+        "p4": "将 Webhook 监控与 checkout URL 检测、SSL 到期告警配合使用。参见 /use-cases/ecommerce-uptime，免费版 10 个监控即可起步。"
       }
     }
   },
@@ -1334,6 +1372,11 @@
       "description": "免费停机成本计算器。输入月收入与可用性 SLA，估算因宕机造成的年度收入损失。",
       "keywords": "停机成本计算器, 宕机损失, 网站停机成本, 可用性 SLA 计算, 收入损失"
     },
+    "redirectChecker": {
+      "title": "HTTP 重定向链检测 — 追踪 301/302 | PulseWatch",
+      "description": "免费重定向链分析工具。从外部服务器查看每一跳 HTTP 重定向、状态码、Location 头与最终 URL。",
+      "keywords": "重定向检测, 重定向链分析, HTTP 301 追踪, URL 跳转测试, SEO 重定向审计"
+    },
     "sslMonitoring": {
       "title": "SSL 证书监控与到期告警 | PulseWatch",
       "description": "监控 HTTPS 证书到期，30/14/7/1 天分级告警。免费版含 SSL 监控。",
@@ -1376,6 +1419,11 @@
         "title": "PulseWatch vs UptimeRobot — 功能对比",
         "description": "对比 PulseWatch 与 UptimeRobot 的事件管理、国内 IM 告警、值班与创始定价。",
         "keywords": "PulseWatch vs UptimeRobot, 网站监控对比, UptimeRobot 替代"
+      },
+      "uptimerobotAlternative": {
+        "title": "最佳 UptimeRobot 替代 — PulseWatch vs $9/月 Solo | PulseWatch",
+        "description": "高性价比 UptimeRobot 替代：创始 Pro $1/月、50 个监控、商用友好免费版与国内 IM 告警。",
+        "keywords": "UptimeRobot 替代, 便宜网站监控, UptimeRobot 替代 2026, 网站监控 $1"
       },
       "betterstack": {
         "title": "PulseWatch vs Better Stack — 定价与功能",

@@ -53,8 +53,9 @@ NEXT_PUBLIC_SITE_URL=https://gkao.com.cn node deploy/redeploy-web.js
 - Home, login, register, pricing, compare pages
 - Feature pages: uptime, SSL, status pages, alerting
 - Use cases: API monitoring, e-commerce uptime
-- Blog index + articles (`/blog/how-to-monitor-api-uptime`, `/blog/website-down-checker-guide`, `/blog/ssl-certificate-monitoring-guide`, `/blog/downtime-cost-calculator-guide`)
-- Free tools: website down checker, SSL, DNS, ping, port, **HTTP headers**, **downtime cost calculator**, plus dev tools (JSON, PDF, etc.)
+- Blog index + articles (API uptime, website down checker, SSL monitoring, downtime cost, Stripe webhooks)
+- Free tools: website down checker, SSL, DNS, ping, port, **HTTP headers**, **redirect checker**, **downtime cost calculator**, plus dev tools (JSON, PDF, etc.)
+- Compare: `/compare/uptimerobot-alternative` (SEO keyword landing)
 
 ### Free SEO tools (public API)
 
@@ -66,6 +67,7 @@ NEXT_PUBLIC_SITE_URL=https://gkao.com.cn node deploy/redeploy-web.js
 | Ping test | `GET /api/v1/public/ping?host=` |
 | Port checker | `GET /api/v1/public/port-check?host=&port=` |
 | HTTP headers | `GET /api/v1/public/http-headers?url=` |
+| Redirect chain | `GET /api/v1/public/redirect-check?url=` |
 
 ## Operator checklist
 

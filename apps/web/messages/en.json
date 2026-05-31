@@ -153,6 +153,8 @@
     "resourcesPortChecker": "Port checker tool",
     "resourcesHttpHeaders": "HTTP headers checker",
     "resourcesUptimeCalculator": "Downtime cost calculator",
+    "resourcesRedirectChecker": "Redirect chain checker",
+    "resourcesUptimeRobotAlt": "UptimeRobot alternative",
     "resourcesUptimeFeature": "Uptime monitoring features",
     "resourcesSslMonitoring": "SSL monitoring features",
     "resourcesStatusPages": "Status pages",
@@ -188,13 +190,15 @@
     "faq13Q": "Is there a command palette or competitor comparison pages?",
     "faq13A": "Signed-in users can press ⌘K (Ctrl+K on Windows) to jump to monitors, incidents, settings, and more. Public compare pages at /compare/uptimerobot and /compare/better-stack summarize how PulseWatch stacks up on pricing and features.",
     "faq14Q": "What free online monitoring tools does PulseWatch offer?",
-    "faq14A": "No signup required: website down checker, SSL certificate checker, DNS lookup, ping test, TCP port checker, HTTP headers inspector, and a downtime cost calculator — all run in-browser or from our servers.",
+    "faq14A": "No signup required: website down checker, SSL certificate checker, DNS lookup, ping test, TCP port checker, HTTP headers inspector, redirect chain checker, and downtime cost calculator.",
     "faq15Q": "Can I test DNS and port connectivity without an account?",
     "faq15A": "Yes. Use /tools/dns-lookup for A/AAAA/MX/TXT records, /tools/ping-test for ICMP reachability, and /tools/port-checker for open TCP ports like 443 or 22. Upgrade to PulseWatch monitors for 24/7 checks and alerts.",
     "faq16Q": "Where can I learn about SSL monitoring, status pages, and alerting?",
     "faq16A": "Feature pages at /features/ssl-monitoring, /features/status-pages, and /features/alerting explain tiered SSL expiry alerts, public status pages on the free tier, and multi-channel notifications including Slack and CN IM tools.",
     "faq17Q": "How do I estimate the cost of website downtime?",
     "faq17A": "Use the free downtime cost calculator at /tools/uptime-calculator — enter monthly revenue and target uptime (e.g. 99.9%) to see estimated annual loss. Pair it with 24/7 PulseWatch monitors so outages are caught in minutes, not hours.",
+    "faq18Q": "How do I trace HTTP redirect chains?",
+    "faq18A": "Use the free redirect checker at /tools/redirect-checker — enter any URL to see each 301/302 hop, status code, and final destination. Useful for SEO migrations, CDN rules, and HTTPS cutovers before you add 24/7 monitors.",
     "capabilitiesTitle": "Platform capabilities for uptime, security, and on-call",
     "capabilitiesSubtitle": "External probes, tiered SSL alerts, DNS and tamper detection, multi-channel notifications, status pages, and developer-friendly workflows — all indexable, all built for production teams.",
     "cap1Title": "Uptime monitoring & multi-region probes",
@@ -249,7 +253,8 @@
       "pingTest": "Ping Test",
       "portChecker": "Port Checker",
       "httpHeaders": "HTTP Headers",
-      "uptimeCalculator": "Downtime Calculator"
+      "uptimeCalculator": "Downtime Calculator",
+      "redirectChecker": "Redirect Checker"
     },
     "json": {
       "format": "Pretty print",
@@ -437,6 +442,23 @@
       "tls": "TLS version",
       "cta": "Get email alerts before certificates expire —",
       "ctaLink": "sign up free"
+    },
+    "redirectChecker": {
+      "badge": "Redirect tracer",
+      "title": "HTTP Redirect Chain Checker",
+      "subtitle": "Follow 301/302 hops from our servers — see each URL, status code, Location header, and final destination.",
+      "placeholder": "https://example.com",
+      "check": "Trace redirects",
+      "checking": "Tracing…",
+      "failed": "Check failed. Try again.",
+      "hopCount": "{count} hops",
+      "totalTime": "{ms} ms total",
+      "statusCode": "HTTP status",
+      "responseTime": "Response time",
+      "location": "Location",
+      "finalUrl": "Final URL",
+      "cta": "Monitor URLs after migrations with alerts —",
+      "ctaLink": "start free on PulseWatch"
     },
     "dnsLookup": {
       "badge": "DNS resolver",
@@ -694,6 +716,15 @@
         "p2": "The free PulseWatch downtime calculator at /tools/uptime-calculator lets you plug monthly revenue, SLA percentage, and optional incident count to see annual loss, downtime hours, and cost per outage.",
         "p3": "Monitoring ROI is trivial when one prevented incident pays for years of Pro: founding Pro is $1/mo with 50 monitors and 1-minute intervals—far less than a single undetected checkout outage.",
         "p4": "After estimating cost, create HTTP monitors on revenue paths—checkout, auth, webhooks—and enable recovery alerts so you know when service is healthy again."
+      },
+      "stripeWebhooks": {
+        "title": "How to monitor Stripe webhooks with HTTP checks",
+        "excerpt": "Keep payment callbacks healthy with external probes, keyword checks, and alerts before revenue stops flowing.",
+        "date": "2026-06-01",
+        "p1": "Stripe webhooks are HTTP POST endpoints your app exposes to receive payment events. If the endpoint is down, slow, or returns errors, Stripe retries — but orders can stall and finance teams lose visibility.",
+        "p2": "PulseWatch HTTP monitors can probe a lightweight health URL on the same host or a dedicated /webhooks/stripe/health route that verifies signing secret configuration without processing live events.",
+        "p3": "Add keyword checks for expected JSON fields when health endpoints return structured status. Set consecutive failure thresholds so brief deploy blips do not page on-call, but sustained outages do.",
+        "p4": "Pair webhook monitoring with checkout URL checks and SSL expiry alerts. See /use-cases/ecommerce-uptime and start free with 10 monitors on the free tier."
       }
     }
   },
@@ -1321,6 +1352,11 @@
       "description": "Free uptime SLA calculator. Enter monthly revenue and target uptime to estimate annual downtime cost. Client-side, no signup.",
       "keywords": "downtime cost calculator, uptime SLA calculator, revenue loss estimate, outage cost, website downtime cost"
     },
+    "redirectChecker": {
+      "title": "HTTP Redirect Chain Checker — Trace 301/302 Hops | PulseWatch",
+      "description": "Free redirect chain analyzer. See each HTTP redirect hop, status code, Location header, and final URL from external servers.",
+      "keywords": "redirect checker, redirect chain analyzer, HTTP 301 trace, URL redirect test, SEO redirect audit"
+    },
     "dnsLookup": {
       "title": "Free DNS Lookup Tool — A, MX, TXT & More | PulseWatch",
       "description": "Query DNS A, AAAA, CNAME, MX, TXT, and NS records from external servers. Free online DNS lookup.",
@@ -1383,6 +1419,11 @@
         "title": "PulseWatch vs UptimeRobot — Feature Comparison",
         "description": "Compare PulseWatch and UptimeRobot on incidents, CN IM alerts, on-call, and founding pricing.",
         "keywords": "PulseWatch vs UptimeRobot, uptime monitoring comparison, UptimeRobot alternative"
+      },
+      "uptimerobotAlternative": {
+        "title": "Best UptimeRobot Alternative — PulseWatch vs $9/mo Solo | PulseWatch",
+        "description": "Affordable UptimeRobot alternative with founding Pro at $1/mo, 50 monitors, commercial-friendly free tier, and CN IM alerts.",
+        "keywords": "UptimeRobot alternative, cheap uptime monitoring, UptimeRobot alternative 2026, website monitoring $1"
       },
       "betterstack": {
         "title": "PulseWatch vs Better Stack — Pricing & Features",

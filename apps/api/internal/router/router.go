@@ -93,6 +93,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r.GET("/api/v1/public/ping", toolsH.PingTest)
 	r.GET("/api/v1/public/port-check", toolsH.PortCheck)
 	r.GET("/api/v1/public/http-headers", toolsH.HTTPHeaders)
+	r.GET("/api/v1/public/redirect-check", toolsH.RedirectCheck)
 
 	internal := r.Group("/api/internal/probe")
 	{

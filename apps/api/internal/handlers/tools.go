@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -284,6 +285,121 @@ func (h *ToolsHandler) HTTPHeaders(c *gin.Context) {
 		"responseMs": elapsed,
 		"headers":    headers,
 	})
+}
+
+func normalizeToolURL(raw string) string {
+	target := strings.TrimSpace(raw)
+	if target == "" {
+		return ""
+	}
+	if !strings.HasPrefix(target, "http://") && !strings.HasPrefix(target, "https://") {
+		target = "https://" + target
+	}
+	return target
+}
+
+func (h *ToolsHandler) RedirectCheck(c *gin.Context) {
+	target := normalizeToolURL(c.Query("url"))
+	if target == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "url is required"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 20*time.Second)
+	defer cancel()
+
+	client := &http.Client{
+		Timeout: 15 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	const maxHops = 10
+	hops := make([]gin.H, 0, maxHops)
+	current := target
+	totalMs := 0
+	finalURL := target
+	var chainErr string
+
+	for i := 0; i < maxHops; i++ {
+		start := time.Now()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, current, nil)
+		if err != nil {
+			chainErr = err.Error()
+			break
+		}
+		req.Header.Set("User-Agent", "PulseWatch-RedirectCheck/1.0")
+
+		resp, err := client.Do(req)
+		ms := int(time.Since(start).Milliseconds())
+		totalMs += ms
+
+		if err != nil {
+			hops = append(hops, gin.H{"url": current, "responseMs": ms, "error": err.Error()})
+			chainErr = err.Error()
+			break
+		}
+
+		hop := gin.H{
+			"url":        current,
+			"statusCode": resp.StatusCode,
+			"responseMs": ms,
+		}
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+
+		if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+			loc := strings.TrimSpace(resp.Header.Get("Location"))
+			if loc != "" {
+				hop["location"] = loc
+			}
+			hops = append(hops, hop)
+
+			if loc == "" {
+				finalURL = current
+				break
+			}
+			base, parseErr := url.Parse(current)
+			if parseErr != nil {
+				chainErr = parseErr.Error()
+				break
+			}
+			rel, parseErr := url.Parse(loc)
+			if parseErr != nil {
+				chainErr = parseErr.Error()
+				break
+			}
+			next := base.ResolveReference(rel).String()
+			if next == current {
+				chainErr = "redirect loop"
+				break
+			}
+			current = next
+			finalURL = current
+			continue
+		}
+
+		hops = append(hops, hop)
+		finalURL = current
+		break
+	}
+
+	if len(hops) >= maxHops {
+		chainErr = "too many redirects"
+	}
+
+	resp := gin.H{
+		"startUrl":        target,
+		"finalUrl":        finalURL,
+		"hops":            hops,
+		"hopCount":        len(hops),
+		"totalResponseMs": totalMs,
+	}
+	if chainErr != "" {
+		resp["error"] = chainErr
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func tlsVersionName(v uint16) string {

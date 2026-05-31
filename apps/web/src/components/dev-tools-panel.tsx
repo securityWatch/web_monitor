@@ -25,6 +25,7 @@ import {
   FileCode,
   Activity as ActivityIcon,
   Calculator,
+  ArrowRightLeft,
 } from 'lucide-react';
 import {
   base64Decode,
@@ -59,6 +60,7 @@ const TOOLS: { id: ToolId; icon: typeof Braces }[] = [
 const EXTRA_TOOLS = [
   { href: '/tools/website-down-checker', key: 'websiteDownChecker', icon: Globe },
   { href: '/tools/uptime-calculator', key: 'uptimeCalculator', icon: Calculator },
+  { href: '/tools/redirect-checker', key: 'redirectChecker', icon: ArrowRightLeft },
   { href: '/tools/ssl-checker', key: 'sslChecker', icon: ShieldCheck },
   { href: '/tools/dns-lookup', key: 'dnsLookup', icon: Network },
   { href: '/tools/ping-test', key: 'pingTest', icon: ActivityIcon },

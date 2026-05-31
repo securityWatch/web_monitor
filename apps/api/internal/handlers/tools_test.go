@@ -195,3 +195,49 @@ func TestHTTPHeadersLocalServer(t *testing.T) {
 		t.Fatalf("missing X-Test-Header in %v", headers)
 	}
 }
+
+func TestRedirectCheckMissingURL(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/redirect-check", nil)
+
+	h.RedirectCheck(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestRedirectCheckChain(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	final := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer final.Close()
+
+	redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, final.URL, http.StatusFound)
+	}))
+	defer redirect.Close()
+
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/redirect-check?url="+redirect.URL, nil)
+
+	h.RedirectCheck(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if int(body["hopCount"].(float64)) != 2 {
+		t.Fatalf("hopCount = %v, want 2", body["hopCount"])
+	}
+	if body["finalUrl"] != final.URL {
+		t.Fatalf("finalUrl = %v, want %s", body["finalUrl"], final.URL)
+	}
+}
