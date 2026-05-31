@@ -46,11 +46,16 @@ func (h *AlertHandler) ListChannels(c *gin.Context) {
 	}
 	defer rows.Close()
 
+	eventTypesByChannel := h.orgChannelEventTypes(c, orgID)
+
 	var channels []models.AlertChannel
 	for rows.Next() {
 		var ch models.AlertChannel
 		if err := rows.Scan(&ch.ID, &ch.OrgID, &ch.Name, &ch.Type, &ch.Config, &ch.Enabled, &ch.CreatedAt); err != nil {
 			continue
+		}
+		if types, ok := eventTypesByChannel[ch.ID]; ok {
+			ch.EventTypes = types
 		}
 		channels = append(channels, ch)
 	}
@@ -78,6 +83,7 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 		Enabled      *bool           `json:"enabled"`
 		DelayMinutes *int            `json:"delayMinutes"`
 		EventType    string          `json:"eventType"`
+		EventTypes   []string        `json:"eventTypes"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -105,15 +111,7 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	if req.DelayMinutes != nil && *req.DelayMinutes >= 0 {
 		delayMinutes = *req.DelayMinutes
 	}
-	eventType := strings.ToLower(strings.TrimSpace(req.EventType))
-	validEvents := map[string]bool{
-		"all": true, "down": true, "up": true, "security": true,
-		"ssl_warning": true, "dns_change": true,
-		"tamper_major_change": true, "tamper_policy_violation": true, "tamper_ai_content_violation": true,
-	}
-	if !validEvents[eventType] {
-		eventType = "all"
-	}
+	eventTypes := services.NormalizeAlertEventTypes(req.EventTypes, req.EventType)
 
 	id := uuid.New().String()
 	_, err := h.db.Exec(c.Request.Context(), `
@@ -125,10 +123,12 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 		return
 	}
 
-	_, _ = h.db.Exec(c.Request.Context(), `
-		INSERT INTO alert_rules (id, org_id, monitor_id, channel_id, event_type, enabled, delay_minutes)
-		VALUES ($1, $2, NULL, $3, $4, true, $5)
-	`, uuid.New().String(), orgID, id, eventType, delayMinutes)
+	for _, eventType := range eventTypes {
+		_, _ = h.db.Exec(c.Request.Context(), `
+			INSERT INTO alert_rules (id, org_id, monitor_id, channel_id, event_type, enabled, delay_minutes)
+			VALUES ($1, $2, NULL, $3, $4, true, $5)
+		`, uuid.New().String(), orgID, id, eventType, delayMinutes)
+	}
 
 	ch, _ := h.fetchChannel(c, orgID, id)
 	c.JSON(http.StatusCreated, ch)
@@ -216,5 +216,31 @@ func (h *AlertHandler) fetchChannel(c *gin.Context, orgID, id string) (*models.A
 	if err != nil {
 		return nil, err
 	}
+	if types, ok := h.orgChannelEventTypes(c, orgID)[id]; ok {
+		ch.EventTypes = types
+	}
 	return &ch, nil
+}
+
+func (h *AlertHandler) orgChannelEventTypes(c *gin.Context, orgID string) map[string][]string {
+	rows, err := h.db.Query(c.Request.Context(), `
+		SELECT channel_id, event_type
+		FROM alert_rules
+		WHERE org_id = $1 AND monitor_id IS NULL AND enabled = true
+		ORDER BY event_type
+	`, orgID)
+	if err != nil {
+		return map[string][]string{}
+	}
+	defer rows.Close()
+
+	out := map[string][]string{}
+	for rows.Next() {
+		var channelID, eventType string
+		if err := rows.Scan(&channelID, &eventType); err != nil {
+			continue
+		}
+		out[channelID] = append(out[channelID], eventType)
+	}
+	return out
 }

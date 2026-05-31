@@ -87,19 +87,12 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 	}
 
 	rows, err := a.db.Query(ctx, `
-		SELECT ac.id, ac.type, ac.config
+		SELECT ac.id, ac.type, ac.config, ar.event_type
 		FROM alert_rules ar
 		JOIN alert_channels ac ON ac.id = ar.channel_id AND ac.enabled = true
 		WHERE ar.org_id = $1 AND ar.enabled = true
 		  AND (ar.monitor_id IS NULL OR ar.monitor_id = $2)
-		  AND (
-		    ar.event_type = 'all'
-		    OR ar.event_type = $3
-		    OR (ar.event_type = 'down' AND $3 = 'down')
-		    OR (ar.event_type = 'up' AND $3 IN ('up', 'recovery'))
-		    OR (ar.event_type = 'security' AND $3 IN ('ssl_warning', 'dns_change', 'tamper_major_change', 'tamper_policy_violation'))
-		  )
-	`, orgID, monitorID, status)
+	`, orgID, monitorID)
 	if err != nil {
 		log.Printf("alert rules query: %v", err)
 		a.fallbackOwnerEmail(ctx, orgID, name, status, detail)
@@ -116,16 +109,24 @@ func (a *AlertService) NotifyStatusChange(ctx context.Context, orgID, monitorID,
 	}
 
 	sentEmail := false
+	delivered := map[string]bool{}
 	for rows.Next() {
-		var channelID, chType string
+		var channelID, chType, ruleEventType string
 		var chConfig json.RawMessage
-		if err := rows.Scan(&channelID, &chType, &chConfig); err != nil {
+		if err := rows.Scan(&channelID, &chType, &chConfig, &ruleEventType); err != nil {
+			continue
+		}
+		if !AlertEventMatchesRule(ruleEventType, status) {
+			continue
+		}
+		if delivered[channelID] {
 			continue
 		}
 		if chType == "webhook" && !webhookEnabled {
 			continue
 		}
 		a.deliver(ctx, orgID, channelID, chType, chConfig, payload, &sentEmail)
+		delivered[channelID] = true
 	}
 
 	if !sentEmail {

@@ -20,6 +20,7 @@ interface AlertChannel {
   type: string;
   config: AlertChannelConfig;
   enabled: boolean;
+  eventTypes?: string[];
 }
 
 const CHANNEL_TYPES = [
@@ -39,19 +40,6 @@ const CHANNEL_TYPES = [
 const CN_SIGN_TYPES = new Set(['dingtalk', 'feishu']);
 const URL_TYPES = new Set(['webhook', 'slack', 'discord', 'teams', 'dingtalk', 'feishu', 'wecom']);
 
-const emptyForm = () => ({
-  type: 'webhook',
-  name: '',
-  eventType: 'all',
-  url: '',
-  routingKey: '',
-  apiKey: '',
-  phone: '',
-  secret: '',
-  signEnabled: false,
-  delayMinutes: 0,
-});
-
 const EVENT_TYPES = [
   { id: 'all', labelKey: 'eventAll' },
   { id: 'down', labelKey: 'eventDown' },
@@ -63,6 +51,30 @@ const EVENT_TYPES = [
   { id: 'tamper_policy_violation', labelKey: 'eventTamperPolicy' },
   { id: 'tamper_ai_content_violation', labelKey: 'eventTamperAI' },
 ] as const;
+
+const SPECIFIC_EVENT_TYPES = EVENT_TYPES.filter((et) => et.id !== 'all');
+
+const emptyForm = () => ({
+  type: 'webhook',
+  name: '',
+  eventTypes: ['all'] as string[],
+  url: '',
+  routingKey: '',
+  apiKey: '',
+  phone: '',
+  secret: '',
+  signEnabled: false,
+  delayMinutes: 0,
+});
+
+function toggleEventType(current: string[], id: string): string[] {
+  if (id === 'all') return ['all'];
+  const withoutAll = current.filter((v) => v !== 'all');
+  const next = withoutAll.includes(id)
+    ? withoutAll.filter((v) => v !== id)
+    : [...withoutAll, id];
+  return next.length === 0 ? ['all'] : next;
+}
 
 export function AlertIntegrations() {
   const t = useTranslations('settings.integrations');
@@ -115,7 +127,7 @@ export function AlertIntegrations() {
         config,
         enabled: true,
         delayMinutes: form.delayMinutes,
-        eventType: form.eventType,
+        eventTypes: form.eventTypes,
       }),
     });
     setForm(emptyForm());
@@ -149,6 +161,14 @@ export function AlertIntegrations() {
     if (form.type === 'feishu') return 'feishuHint';
     if (form.type === 'wecom') return 'wecomHint';
     return 'webhookHint';
+  };
+
+  const eventTypeLabels = (types?: string[]) => {
+    if (!types?.length || types.includes('all')) return t('eventAll');
+    return types.map((id) => {
+      const et = EVENT_TYPES.find((e) => e.id === id);
+      return et ? t(et.labelKey) : id;
+    }).join(', ');
   };
 
   const channelSummary = (ch: AlertChannel) => {
@@ -234,12 +254,31 @@ export function AlertIntegrations() {
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">{t('eventType')}</label>
-          <select className="input max-w-md" value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })}>
-            {EVENT_TYPES.map((et) => (
-              <option key={et.id} value={et.id}>{t(et.labelKey)}</option>
+          <label className="mb-2 block text-xs text-zinc-500">{t('eventType')}</label>
+          <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              className="rounded border-zinc-600 bg-zinc-900"
+              checked={form.eventTypes.includes('all')}
+              onChange={() => setForm({ ...form, eventTypes: ['all'] })}
+            />
+            {t('eventAll')}
+          </label>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {SPECIFIC_EVENT_TYPES.map((et) => (
+              <label key={et.id} className="flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
+                <input
+                  type="checkbox"
+                  className="rounded border-zinc-600 bg-zinc-900"
+                  checked={!form.eventTypes.includes('all') && form.eventTypes.includes(et.id)}
+                  disabled={form.eventTypes.includes('all')}
+                  onChange={() => setForm({ ...form, eventTypes: toggleEventType(form.eventTypes, et.id) })}
+                />
+                {t(et.labelKey)}
+              </label>
             ))}
-          </select>
+          </div>
+          <p className="mt-2 text-xs text-zinc-600">{t('eventTypesHint')}</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">{t('delayMinutes')}</label>
@@ -259,6 +298,7 @@ export function AlertIntegrations() {
                 <div>
                   <p className="font-medium">{ch.name} <span className="text-xs text-zinc-500">({ch.type})</span></p>
                   <p className="mt-1 truncate font-mono text-xs text-zinc-500">{channelSummary(ch)}</p>
+                  <p className="mt-1 text-xs text-zinc-600">{t('eventType')}: {eventTypeLabels(ch.eventTypes)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button type="button" className="btn-secondary text-xs" onClick={() => test(ch.id)}>{t('sendTest')}</button>

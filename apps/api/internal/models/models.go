@@ -124,13 +124,14 @@ type MonitorStatsSummary struct {
 }
 
 type AlertChannel struct {
-	ID        string          `json:"id"`
-	OrgID     string          `json:"orgId"`
-	Name      string          `json:"name"`
-	Type      string          `json:"type"`
-	Config    json.RawMessage `json:"config"`
-	Enabled   bool            `json:"enabled"`
-	CreatedAt time.Time       `json:"createdAt"`
+	ID         string          `json:"id"`
+	OrgID      string          `json:"orgId"`
+	Name       string          `json:"name"`
+	Type       string          `json:"type"`
+	Config     json.RawMessage `json:"config"`
+	Enabled    bool            `json:"enabled"`
+	EventTypes []string        `json:"eventTypes,omitempty"`
+	CreatedAt  time.Time       `json:"createdAt"`
 }
 
 type StatusPage struct {
