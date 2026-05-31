@@ -26,6 +26,8 @@ type Config struct {
 	GoogleClientSecret      string
 	GitHubClientID          string
 	GitHubClientSecret      string
+	WeChatMiniAppID         string
+	WeChatMiniAppSecret     string
 	OAuthRedirectURL        string
 	StripeSecretKey         string
 	StripeProPriceID        string
@@ -70,6 +72,8 @@ func Load() *Config {
 		GoogleClientSecret:      getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GitHubClientID:          getEnv("GITHUB_CLIENT_ID", ""),
 		GitHubClientSecret:      getEnv("GITHUB_CLIENT_SECRET", ""),
+		WeChatMiniAppID:         getEnv("WECHAT_MINI_APP_ID", ""),
+		WeChatMiniAppSecret:     getEnv("WECHAT_MINI_APP_SECRET", ""),
 		OAuthRedirectURL:        getEnv("OAUTH_REDIRECT_URL", ""),
 		StripeSecretKey:         getEnv("STRIPE_SECRET_KEY", ""),
 		StripeProPriceID:        getEnv("STRIPE_PRO_PRICE_ID", ""),

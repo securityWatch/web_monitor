@@ -99,15 +99,16 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 		return nil, err
 	}
 
-	// Default email alert channel
-	channelID := uuid.New().String()
-	channelCfg := fmt.Sprintf(`{"email":"%s"}`, email)
-	_, err = tx.Exec(ctx, `
-		INSERT INTO alert_channels (id, org_id, name, type, config, enabled)
-		VALUES ($1, $2, 'Default Email', 'email', $3::jsonb, true)
-	`, channelID, orgID, channelCfg)
-	if err != nil {
-		return nil, err
+	if !IsWeChatPlaceholderEmail(email) {
+		channelID := uuid.New().String()
+		channelCfg := fmt.Sprintf(`{"email":"%s"}`, email)
+		_, err = tx.Exec(ctx, `
+			INSERT INTO alert_channels (id, org_id, name, type, config, enabled)
+			VALUES ($1, $2, 'Default Email', 'email', $3::jsonb, true)
+		`, channelID, orgID, channelCfg)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -119,8 +120,38 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 		return nil, err
 	}
 
-	_ = a.sendVerificationEmail(ctx, userID, email)
+	if !IsWeChatPlaceholderEmail(email) {
+		_ = a.sendVerificationEmail(ctx, userID, email)
+	}
 	return a.issueTokens(ctx, user, org, "", "")
+}
+
+// LoginOrRegisterWeChatMiniProgram signs in or auto-registers via WeChat mini program wx.login code.
+func (a *AuthService) LoginOrRegisterWeChatMiniProgram(ctx context.Context, providerUID, openID, displayName, avatarURL, userAgent, ip string) (*models.AuthResponse, error) {
+	if displayName == "" {
+		displayName = WeChatMiniDisplayName(openID)
+	}
+	email := WeChatPlaceholderEmail(openID)
+	return a.LoginOrRegisterOAuth(ctx, WeChatMiniProvider, providerUID, email, displayName, avatarURL, userAgent, ip)
+}
+
+// BindWeChatMiniProgram links wx.login openid to an existing logged-in user.
+func (a *AuthService) BindWeChatMiniProgram(ctx context.Context, userID, providerUID string) error {
+	var existingUser string
+	err := a.db.QueryRow(ctx, `
+		SELECT user_id FROM oauth_identities WHERE provider = $1 AND provider_user_id = $2
+	`, WeChatMiniProvider, providerUID).Scan(&existingUser)
+	if err == nil && existingUser != userID {
+		return fmt.Errorf("wechat account already linked to another user")
+	}
+	if err == nil && existingUser == userID {
+		return nil
+	}
+	_, err = a.db.Exec(ctx, `
+		INSERT INTO oauth_identities (id, user_id, provider, provider_user_id)
+		VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+	`, uuid.New().String(), userID, WeChatMiniProvider, providerUID)
+	return err
 }
 
 func (a *AuthService) Login(ctx context.Context, email, password, userAgent, ip string) (*models.AuthResponse, error) {

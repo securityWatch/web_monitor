@@ -100,6 +100,39 @@ function login(email, password) {
   });
 }
 
+function getWechatStatus() {
+  return request('/api/v1/auth/wechat/miniprogram/status', { auth: false });
+}
+
+function wechatLogin(code, profile) {
+  profile = profile || {};
+  return request('/api/v1/auth/wechat/miniprogram', {
+    method: 'POST',
+    auth: false,
+    data: {
+      code: code,
+      displayName: profile.displayName || '',
+      avatarUrl: profile.avatarUrl || '',
+    },
+  }).then(function (data) {
+    if (data.requiresTotp) {
+      throw new Error('该账号已启用双因素认证，请使用 Web 端登录');
+    }
+    if (!data.accessToken) {
+      throw new Error('微信登录失败');
+    }
+    auth.setAuth(data);
+    return data;
+  });
+}
+
+function bindWechat(code) {
+  return request('/api/v1/me/wechat/miniprogram/bind', {
+    method: 'POST',
+    data: { code: code },
+  });
+}
+
 function orgPath(suffix) {
   const orgId = auth.getOrgId();
   return '/api/v1/orgs/' + orgId + suffix;
@@ -141,6 +174,9 @@ function getMe() {
 module.exports = {
   request,
   login,
+  getWechatStatus,
+  wechatLogin,
+  bindWechat,
   getMonitors,
   getMonitor,
   getMonitorChecks,

@@ -53,6 +53,45 @@
   width: 100%;
 }
 
+.btn-wechat {
+  background: #07c160;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 12rpx;
+  border: none;
+}
+
+.btn-wechat[disabled] {
+  opacity: 0.6;
+}
+
+.btn-secondary-outline {
+  background: transparent;
+  color: #94a3b8;
+  font-size: 26rpx;
+  border: 1rpx solid #333;
+  border-radius: 12rpx;
+  margin-top: 8rpx;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 28rpx 0 20rpx;
+  gap: 16rpx;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1rpx;
+  background: #333;
+}
+
+.divider-text {
+  font-size: 24rpx;
+  color: #64748b;
+}
+
 .hint {
   text-align: center;
   color: #64748b;

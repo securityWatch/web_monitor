@@ -1,11 +1,22 @@
+const api = require('../../utils/api.js');
 const auth = require('../../utils/auth.js');
 const env = require('../../config/env.js');
+
+function formatAccountLabel(email) {
+  if (email && email.indexOf('@users.wechat.pulsewatch') > 0) {
+    return '微信快捷账号';
+  }
+  return email || '';
+}
 
 Page({
   data: {
     user: null,
     organization: null,
+    accountLabel: '',
     apiBase: '',
+    wechatEnabled: false,
+    bindingWechat: false,
     version: '1.0.0',
   },
 
@@ -18,10 +29,48 @@ Page({
       return;
     }
     const stored = auth.getAuth();
+    const self = this;
     this.setData({
       user: stored.user,
       organization: stored.organization,
+      accountLabel: formatAccountLabel(stored.user && stored.user.email),
       apiBase: env.baseUrl,
+    });
+    api
+      .getWechatStatus()
+      .then(function (res) {
+        self.setData({ wechatEnabled: !!(res && res.enabled) });
+      })
+      .catch(function () {});
+  },
+
+  bindWechat() {
+    const self = this;
+    if (self.data.bindingWechat) return;
+    self.setData({ bindingWechat: true });
+    wx.login({
+      success: function (loginRes) {
+        if (!loginRes.code) {
+          self.setData({ bindingWechat: false });
+          wx.showToast({ title: '获取微信凭证失败', icon: 'none' });
+          return;
+        }
+        api
+          .bindWechat(loginRes.code)
+          .then(function () {
+            wx.showToast({ title: '微信已绑定', icon: 'success' });
+          })
+          .catch(function (err) {
+            wx.showToast({ title: err.message || '绑定失败', icon: 'none' });
+          })
+          .finally(function () {
+            self.setData({ bindingWechat: false });
+          });
+      },
+      fail: function () {
+        self.setData({ bindingWechat: false });
+        wx.showToast({ title: '无法连接微信', icon: 'none' });
+      },
     });
   },
 

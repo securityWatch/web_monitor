@@ -71,6 +71,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	probeH := handlers.NewProbeHandler(probeDispatch, cfg.ProbeSecret)
 	ssoSvc := services.NewSSOService(authSvc, cfg, db)
 	ssoH := handlers.NewSSOHandler(db, ssoSvc, cfg.WebURL)
+	wechatSvc := services.NewWeChatMiniProgramService(cfg)
+	wechatH := handlers.NewWeChatAuthHandler(authSvc, wechatSvc)
 
 	rateLimit := middleware.NewRateLimiter(120, time.Minute)
 
@@ -109,6 +111,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 		auth.GET("/sso/start", ssoH.LoginStart)
 		auth.GET("/sso/callback", ssoH.Callback)
 		auth.GET("/sso/status", ssoH.Status)
+		auth.GET("/wechat/miniprogram/status", wechatH.MiniprogramStatus)
+		auth.POST("/wechat/miniprogram", middleware.LoginRateLimit(), wechatH.MiniprogramLogin)
 
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware(cfg.JWTSecret, db))
@@ -130,6 +134,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 			protected.GET("/me/sessions", meH.ListSessions)
 			protected.DELETE("/me/sessions/:id", meH.RevokeSession)
 			protected.POST("/me/sessions/revoke-others", meH.RevokeOtherSessions)
+			protected.POST("/me/wechat/miniprogram/bind", wechatH.MiniprogramBind)
 			protected.POST("/invites/accept", inviteH.Accept)
 
 			org := protected.Group("/orgs/:orgId")

@@ -74,11 +74,25 @@ module.exports = {
 
 > 小程序发布走微信控制台，**不需要** 运行本仓库的 `deploy/redeploy-*.js` 脚本。API 服务端仅在新增 CORS 或鉴权改动时才需 redeploy。
 
+## 微信一键登录（服务端配置）
+
+在 API 服务器 `.env`（`/opt/pulsewatch/api/.env`）中配置：
+
+```bash
+WECHAT_MINI_APP_ID=你的小程序AppID
+WECHAT_MINI_APP_SECRET=你的小程序AppSecret
+```
+
+配置后重启 `pulsewatch-api`。小程序打开登录页将自动尝试 `wx.login` 一键登录；首次使用会自动注册 PulseWatch 账号（与 Web 邮箱账号独立，可在 Web 登录后在设置中绑定微信）。
+
 ## 使用的 API 端点
 
 | 功能 | 方法 | 路径 |
 |------|------|------|
-| 登录 | POST | `/api/v1/auth/login` |
+| 微信登录是否可用 | GET | `/api/v1/auth/wechat/miniprogram/status` |
+| 微信一键登录/注册 | POST | `/api/v1/auth/wechat/miniprogram` |
+| 绑定微信到当前账号 | POST | `/api/v1/me/wechat/miniprogram/bind` |
+| 邮箱密码登录 | POST | `/api/v1/auth/login` |
 | 刷新 Token | POST | `/api/v1/auth/refresh` |
 | 当前用户 | GET | `/api/v1/me` |
 | 监控列表 | GET | `/api/v1/orgs/{orgId}/monitors` |
@@ -91,12 +105,13 @@ module.exports = {
 
 ## 功能范围（MVP）
 
+- ✅ 微信一键登录/自动注册（需配置 `WECHAT_MINI_APP_ID` / `SECRET`）
 - ✅ 邮箱密码登录（与 Web 相同账号）
 - ✅ 监控列表：状态、名称、上次检测、响应时间、24h 可用率
 - ✅ 监控详情：24h 统计、最近 20 条检测记录
 - ✅ 事件列表：全部 / 进行中 / 已恢复筛选
 - ✅ 设置：账号、组织、API 地址、退出登录
-- ❌ 双因素认证（TOTP）— 需在 Web 端登录
+- ❌ 双因素认证（TOTP）— 需在 Web 端登录；可在 Web 绑定微信后于小程序一键登录
 - ❌ 创建/编辑监控、告警配置 — 请使用 Web 端
 
 ## 手动测试清单
