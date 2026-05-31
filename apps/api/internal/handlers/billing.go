@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,12 +37,17 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "billing not configured", "code": "BILLING_NOT_CONFIGURED"})
 		return
 	}
+	var req struct {
+		Plan string `json:"plan"`
+	}
+	_ = c.ShouldBindJSON(&req)
+	plan := services.NormalizeBillingPlan(req.Plan)
 	var email string
 	_ = h.db.QueryRow(c.Request.Context(), `SELECT email FROM users WHERE id = $1`, userID).Scan(&email)
 	base := h.cfg.WebURL
-	success := base + "/settings?billing=success"
-	cancel := base + "/settings?billing=cancel"
-	url, err := h.billing.CreateCheckoutSession(c.Request.Context(), email, orgID, success, cancel)
+	success := base + "/settings?billing=success&plan=" + plan
+	cancel := base + "/settings?billing=cancel&plan=" + plan
+	url, err := h.billing.CreateCheckoutSession(c.Request.Context(), email, orgID, plan, success, cancel)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -60,15 +66,29 @@ func (h *BillingHandler) Webhook(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	_ = h.billing.HandleWebhookEvent(c.Request.Context(), event, func(ctx context.Context, orgID string) error {
+	if err := h.billing.HandleWebhookEvent(c.Request.Context(), event, func(ctx context.Context, orgID, plan string, active, founding bool) error {
+		if !active {
+			_, err := h.db.Exec(ctx, `
+				UPDATE organizations SET plan_tier = 'free', monitor_quota = $2, founding_member = false, updated_at = now()
+				WHERE id = $1
+			`, orgID, services.PlanMonitorQuota("free"))
+			return err
+		}
+		plan = strings.ToLower(plan)
+		if plan != "pro" && plan != "team" && plan != "business" {
+			plan = "pro"
+		}
 		_, err := h.db.Exec(ctx, `
-			UPDATE organizations SET plan_tier = 'pro', monitor_quota = 50, founding_member = true, updated_at = now()
+			UPDATE organizations SET plan_tier = $2, monitor_quota = $3, founding_member = $4, updated_at = now()
 			WHERE id = $1
-		`, orgID)
-		if err == nil {
+		`, orgID, plan, services.PlanMonitorQuota(plan), founding)
+		if err == nil && founding {
 			_, _ = h.db.Exec(ctx, `UPDATE founding_counter SET count = GREATEST(count - 1, 0) WHERE id = 1`)
 		}
 		return err
-	})
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }

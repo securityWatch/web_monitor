@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptrace"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -159,6 +160,9 @@ func runSingleHTTP(ctx context.Context, url, method, body string, headers map[st
 		return CheckOutcome{IsUp: false, StatusCode: &code, ResponseMs: elapsedMs(start), ErrorMessage: fmt.Sprintf("expected status one of [%s], got %d", formatExpectedStatuses(allowedStatuses), res.statusCode), Metadata: metadata}
 	}
 
+	if monitorType == "pagespeed" {
+		attachPageSpeedSnapshot(metadata, res.body, res.headers, res.timings)
+	}
 	return applySSLMonitorOutcome(evaluateHTTPBody(res.body, res.statusCode, elapsedMs(start), keyword, keywordMustContain, jsonAssertions, monitorType, metadata), monitorType)
 }
 
@@ -427,7 +431,11 @@ func stepLabel(step HTTPStep, index int) string {
 }
 
 func elapsedMs(start time.Time) int {
-	return int(time.Since(start).Milliseconds())
+	ms := int(time.Since(start).Milliseconds())
+	if ms < 1 {
+		return 1
+	}
+	return ms
 }
 
 func attachBodySnippet(metadata map[string]interface{}, body []byte) {
@@ -440,4 +448,66 @@ func attachBodySnippet(metadata map[string]interface{}, body []byte) {
 	} else {
 		metadata["responseBodySnippet"] = string(body)
 	}
+}
+
+func attachPageSpeedSnapshot(metadata map[string]interface{}, body []byte, headers http.Header, timings HTTPTimings) {
+	if metadata == nil {
+		return
+	}
+	bodyLen := len(body)
+	pageWeight := bodyLen
+	if clen := parseContentLength(headers.Get("Content-Length")); clen > bodyLen {
+		pageWeight = clen
+	}
+	metadata["htmlBytes"] = bodyLen
+	metadata["pageWeightBytes"] = pageWeight
+	metadata["resourceInventory"] = resourceInventory(body)
+	metadata["navigationPhases"] = []map[string]interface{}{
+		{"name": "dns", "durationMs": timings.DNSMs},
+		{"name": "tcp", "durationMs": timings.TCPMs},
+		{"name": "tls", "durationMs": timings.TLSMs},
+		{"name": "ttfb", "durationMs": timings.TTFBMs},
+		{"name": "download", "durationMs": timings.DownloadMs},
+	}
+}
+
+func parseContentLength(raw string) int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 0
+	}
+	n := 0
+	for _, r := range raw {
+		if r < '0' || r > '9' {
+			return 0
+		}
+		n = n*10 + int(r-'0')
+	}
+	return n
+}
+
+func resourceInventory(body []byte) map[string]interface{} {
+	html := string(body)
+	count := func(pattern string) int {
+		return len(regexp.MustCompile(pattern).FindAllStringIndex(html, -1))
+	}
+	items := map[string]int{
+		"scripts":     count(`(?i)<script\b`),
+		"stylesheets": count(`(?i)<link\b[^>]+rel=["']?stylesheet`),
+		"images":      count(`(?i)<img\b`),
+		"iframes":     count(`(?i)<iframe\b`),
+		"videos":      count(`(?i)<video\b`),
+	}
+	total := 0
+	keys := make([]string, 0, len(items))
+	for k, v := range items {
+		keys = append(keys, k)
+		total += v
+	}
+	sort.Strings(keys)
+	byType := map[string]interface{}{}
+	for _, k := range keys {
+		byType[k] = items[k]
+	}
+	return map[string]interface{}{"total": total, "byType": byType}
 }

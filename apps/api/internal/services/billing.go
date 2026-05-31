@@ -3,18 +3,23 @@ package services
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pulsewatch/api/internal/config"
 )
 
 type BillingService struct {
-	cfg *config.Config
+	cfg  *config.Config
 	http *http.Client
 }
 
@@ -26,12 +31,44 @@ func (b *BillingService) Configured() bool {
 	return b.cfg.StripeSecretKey != ""
 }
 
-func (b *BillingService) CreateCheckoutSession(ctx context.Context, customerEmail, orgID, successURL, cancelURL string) (string, error) {
+func (b *BillingService) priceIDForPlan(plan string) (string, error) {
+	switch plan {
+	case "pro":
+		if b.cfg.StripeProPriceID != "" {
+			return b.cfg.StripeProPriceID, nil
+		}
+	case "team":
+		if b.cfg.StripeTeamPriceID != "" {
+			return b.cfg.StripeTeamPriceID, nil
+		}
+	case "business":
+		if b.cfg.StripeBusinessPriceID != "" {
+			return b.cfg.StripeBusinessPriceID, nil
+		}
+	default:
+		return "", fmt.Errorf("unsupported billing plan")
+	}
+	return "", fmt.Errorf("stripe price not configured for %s", plan)
+}
+
+func NormalizeBillingPlan(plan string) string {
+	plan = strings.ToLower(strings.TrimSpace(plan))
+	switch plan {
+	case "team", "business":
+		return plan
+	default:
+		return "pro"
+	}
+}
+
+func (b *BillingService) CreateCheckoutSession(ctx context.Context, customerEmail, orgID, plan, successURL, cancelURL string) (string, error) {
 	if !b.Configured() {
 		return "", fmt.Errorf("stripe not configured")
 	}
-	if b.cfg.StripeProPriceID == "" {
-		return "", fmt.Errorf("stripe price not configured")
+	plan = NormalizeBillingPlan(plan)
+	priceID, err := b.priceIDForPlan(plan)
+	if err != nil {
+		return "", err
 	}
 
 	form := url.Values{}
@@ -40,10 +77,14 @@ func (b *BillingService) CreateCheckoutSession(ctx context.Context, customerEmai
 	form.Set("cancel_url", cancelURL)
 	form.Set("customer_email", customerEmail)
 	form.Set("client_reference_id", orgID)
-	form.Set("line_items[0][price]", b.cfg.StripeProPriceID)
+	form.Set("line_items[0][price]", priceID)
 	form.Set("line_items[0][quantity]", "1")
 	form.Set("metadata[org_id]", orgID)
+	form.Set("metadata[plan_tier]", plan)
+	form.Set("metadata[founding_member]", "true")
 	form.Set("subscription_data[metadata][org_id]", orgID)
+	form.Set("subscription_data[metadata][plan_tier]", plan)
+	form.Set("subscription_data[metadata][founding_member]", "true")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.stripe.com/v1/checkout/sessions", strings.NewReader(form.Encode()))
 	if err != nil {
@@ -77,32 +118,102 @@ func (b *BillingService) VerifyWebhook(payload []byte, sigHeader string) (map[st
 	if b.cfg.StripeWebhookSecret == "" {
 		return nil, fmt.Errorf("webhook secret not configured")
 	}
-	// MVP: parse event without full signature verification when secret set but simple dev mode
+	if err := verifyStripeSignature(payload, sigHeader, b.cfg.StripeWebhookSecret); err != nil {
+		return nil, err
+	}
 	var event map[string]interface{}
 	if err := json.Unmarshal(payload, &event); err != nil {
 		return nil, err
 	}
-	_ = sigHeader
 	return event, nil
 }
 
-func stripeEventOrgID(event map[string]interface{}) string {
+func verifyStripeSignature(payload []byte, sigHeader, secret string) error {
+	parts := strings.Split(sigHeader, ",")
+	var timestamp, signature string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if strings.HasPrefix(p, "t=") {
+			timestamp = strings.TrimPrefix(p, "t=")
+		}
+		if strings.HasPrefix(p, "v1=") {
+			signature = strings.TrimPrefix(p, "v1=")
+		}
+	}
+	if timestamp == "" || signature == "" {
+		return fmt.Errorf("missing Stripe signature")
+	}
+	ts, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid Stripe signature timestamp")
+	}
+	if time.Since(time.Unix(ts, 0)) > 5*time.Minute || time.Until(time.Unix(ts, 0)) > 5*time.Minute {
+		return fmt.Errorf("stale Stripe signature")
+	}
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte("."))
+	mac.Write(payload)
+	expected := hex.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(expected), []byte(signature)) {
+		return fmt.Errorf("invalid Stripe signature")
+	}
+	return nil
+}
+
+func stripeEventObject(event map[string]interface{}) map[string]interface{} {
 	if data, ok := event["data"].(map[string]interface{}); ok {
 		if obj, ok := data["object"].(map[string]interface{}); ok {
-			if meta, ok := obj["metadata"].(map[string]interface{}); ok {
-				if org, ok := meta["org_id"].(string); ok {
-					return org
-				}
-			}
-			if ref, ok := obj["client_reference_id"].(string); ok {
-				return ref
-			}
+			return obj
 		}
+	}
+	return nil
+}
+
+func stripeEventMetadata(event map[string]interface{}) map[string]interface{} {
+	if obj := stripeEventObject(event); obj != nil {
+		if meta, ok := obj["metadata"].(map[string]interface{}); ok {
+			return meta
+		}
+	}
+	return nil
+}
+
+func stripeEventOrgID(event map[string]interface{}) string {
+	obj := stripeEventObject(event)
+	if obj == nil {
+		return ""
+	}
+	if meta := stripeEventMetadata(event); meta != nil {
+		if org, ok := meta["org_id"].(string); ok {
+			return org
+		}
+	}
+	if ref, ok := obj["client_reference_id"].(string); ok {
+		return ref
 	}
 	return ""
 }
 
-func (b *BillingService) HandleWebhookEvent(ctx context.Context, event map[string]interface{}, upgradeFn func(ctx context.Context, orgID string) error) error {
+func stripeEventPlan(event map[string]interface{}) string {
+	if meta := stripeEventMetadata(event); meta != nil {
+		if plan, ok := meta["plan_tier"].(string); ok {
+			return NormalizeBillingPlan(plan)
+		}
+	}
+	return "pro"
+}
+
+func stripeEventFounding(event map[string]interface{}) bool {
+	if meta := stripeEventMetadata(event); meta != nil {
+		if v, ok := meta["founding_member"].(string); ok {
+			return v == "true" || v == "1"
+		}
+	}
+	return true
+}
+
+func (b *BillingService) HandleWebhookEvent(ctx context.Context, event map[string]interface{}, applyFn func(ctx context.Context, orgID, plan string, active, founding bool) error) error {
 	typ, _ := event["type"].(string)
 	orgID := stripeEventOrgID(event)
 	if orgID == "" {
@@ -110,7 +221,9 @@ func (b *BillingService) HandleWebhookEvent(ctx context.Context, event map[strin
 	}
 	switch typ {
 	case "checkout.session.completed", "invoice.paid", "customer.subscription.created":
-		return upgradeFn(ctx, orgID)
+		return applyFn(ctx, orgID, stripeEventPlan(event), true, stripeEventFounding(event))
+	case "customer.subscription.deleted":
+		return applyFn(ctx, orgID, "free", false, false)
 	}
 	return nil
 }

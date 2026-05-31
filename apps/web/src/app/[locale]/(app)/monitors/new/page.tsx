@@ -9,16 +9,19 @@ import { MonitorHttpConfig } from '@/components/monitor-http-config';
 import { MonitorSslConfig } from '@/components/monitor-ssl-config';
 import { MonitorDnsConfig } from '@/components/monitor-dns-config';
 import { MonitorTamperConfig } from '@/components/monitor-tamper-config';
+import { MonitorPageSpeedConfig } from '@/components/monitor-pagespeed-config';
 import {
   HttpMonitorConfig,
   buildHttpConfigPayload,
   defaultAlertConfig,
   defaultDnsConfig,
   defaultHttpConfig,
+  defaultPageSpeedConfig,
   defaultSslConfig,
   defaultTamperConfig,
   DnsMonitorConfig,
   mergeMonitorConfigForSave,
+  PageSpeedMonitorConfig,
   parseHttpConfig,
   SslMonitorConfig,
   TamperMonitorConfig,
@@ -36,6 +39,7 @@ export default function NewMonitorPage() {
   const [sslConfig, setSslConfig] = useState<SslMonitorConfig>(defaultSslConfig());
   const [dnsConfig, setDnsConfig] = useState<DnsMonitorConfig>(defaultDnsConfig());
   const [tamperConfig, setTamperConfig] = useState<TamperMonitorConfig>(defaultTamperConfig());
+  const [pageSpeedConfig, setPageSpeedConfig] = useState<PageSpeedMonitorConfig>(defaultPageSpeedConfig());
   const [alertConfig, setAlertConfig] = useState(defaultAlertConfig());
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +50,7 @@ export default function NewMonitorPage() {
     if (form.type === 'ssl') return { ssl: sslConfig };
     if (form.type === 'dns') return { dns: dnsConfig };
     if (form.type === 'tamper') return { tamper: tamperConfig };
+    if (form.type === 'pagespeed') return { pagespeed: pageSpeedConfig };
     return undefined;
   };
 
@@ -154,6 +159,7 @@ export default function NewMonitorPage() {
         {form.type === 'ssl' && <MonitorSslConfig config={sslConfig} onChange={setSslConfig} />}
         {form.type === 'dns' && <MonitorDnsConfig config={dnsConfig} onChange={setDnsConfig} />}
         {form.type === 'tamper' && <MonitorTamperConfig config={tamperConfig} onChange={setTamperConfig} />}
+        {form.type === 'pagespeed' && <MonitorPageSpeedConfig config={pageSpeedConfig} onChange={setPageSpeedConfig} />}
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
           <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>

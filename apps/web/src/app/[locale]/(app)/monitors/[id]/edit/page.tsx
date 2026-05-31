@@ -9,19 +9,23 @@ import { MonitorHttpConfig } from '@/components/monitor-http-config';
 import { MonitorSslConfig } from '@/components/monitor-ssl-config';
 import { MonitorDnsConfig } from '@/components/monitor-dns-config';
 import { MonitorTamperConfig } from '@/components/monitor-tamper-config';
+import { MonitorPageSpeedConfig } from '@/components/monitor-pagespeed-config';
 import {
   HttpMonitorConfig,
   buildHttpConfigPayload,
   defaultAlertConfig,
   defaultDnsConfig,
   defaultHttpConfig,
+  defaultPageSpeedConfig,
   defaultSslConfig,
   defaultTamperConfig,
   DnsMonitorConfig,
   mergeMonitorConfigForSave,
+  PageSpeedMonitorConfig,
   parseAlertConfig,
   parseDnsConfig,
   parseHttpConfig,
+  parsePageSpeedConfig,
   parseSslConfig,
   parseTamperConfig,
   SslMonitorConfig,
@@ -50,6 +54,7 @@ export default function EditMonitorPage() {
   const [sslConfig, setSslConfig] = useState<SslMonitorConfig>(defaultSslConfig());
   const [dnsConfig, setDnsConfig] = useState<DnsMonitorConfig>(defaultDnsConfig());
   const [tamperConfig, setTamperConfig] = useState<TamperMonitorConfig>(defaultTamperConfig());
+  const [pageSpeedConfig, setPageSpeedConfig] = useState<PageSpeedMonitorConfig>(defaultPageSpeedConfig());
   const [alertConfig, setAlertConfig] = useState(defaultAlertConfig());
   const [rawConfig, setRawConfig] = useState<unknown>({});
   const [loading, setLoading] = useState(true);
@@ -67,6 +72,7 @@ export default function EditMonitorPage() {
         setSslConfig(parseSslConfig(m.config));
         setDnsConfig(parseDnsConfig(m.config));
         setTamperConfig(parseTamperConfig(m.config));
+        setPageSpeedConfig(parsePageSpeedConfig(m.config));
         setAlertConfig(parseAlertConfig(m.config));
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Error'))
@@ -77,6 +83,7 @@ export default function EditMonitorPage() {
     if (type === 'ssl') return { ssl: sslConfig };
     if (type === 'dns') return { dns: dnsConfig };
     if (type === 'tamper') return { tamper: tamperConfig };
+    if (type === 'pagespeed') return { pagespeed: pageSpeedConfig };
     return undefined;
   };
 
@@ -127,6 +134,7 @@ export default function EditMonitorPage() {
         {type === 'ssl' && <MonitorSslConfig config={sslConfig} onChange={setSslConfig} />}
         {type === 'dns' && <MonitorDnsConfig config={dnsConfig} onChange={setDnsConfig} />}
         {type === 'tamper' && <MonitorTamperConfig monitorId={id} config={tamperConfig} onChange={setTamperConfig} />}
+        {type === 'pagespeed' && <MonitorPageSpeedConfig config={pageSpeedConfig} onChange={setPageSpeedConfig} />}
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
           <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>

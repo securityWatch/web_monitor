@@ -17,6 +17,7 @@ import { apiFetch, getStoredAuth } from '@/lib/api';
 import { parseCheckMetadata, parseSecurityMetadata } from '@/lib/check-metadata';
 
 import { MonitorSecurityStatus } from '@/components/monitor-security-status';
+import { PageSpeedInsights } from '@/components/page-speed-insights';
 
 import { TimingBreakdown } from '@/components/check-timing-breakdown';
 
@@ -47,6 +48,16 @@ interface Check {
 
   statusCode?: number; errorMessage?: string; metadata?: unknown;
 
+}
+
+interface Artifact {
+  id: string;
+  checkId?: string | null;
+  kind: string;
+  url: string;
+  contentType: string;
+  createdAt: string;
+  expiresAt?: string;
 }
 
 interface Pagination {
@@ -94,6 +105,7 @@ export default function MonitorDetailPage() {
   const [trend, setTrend] = useState<{ time: string; avgMs: number }[]>([]);
 
   const [summary, setSummary] = useState<StatsSummary | null>(null);
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
 
   const [range, setRange] = useState<TimeRange>('24h');
 
@@ -135,6 +147,12 @@ export default function MonitorDetailPage() {
       apiFetch<{ checks: Check[] }>(`/api/v1/orgs/${orgId}/monitors/${id}/checks?range=24h&limit=1`)
 
         .then((d) => setLatestCheck(d.checks[0] || null))
+
+        .catch(console.error);
+
+      apiFetch<{ artifacts: Artifact[] }>(`/api/v1/orgs/${orgId}/monitors/${id}/artifacts`)
+
+        .then((d) => setArtifacts(d.artifacts || []))
 
         .catch(console.error);
 
@@ -251,6 +269,8 @@ export default function MonitorDetailPage() {
   }));
 
   const webhookDisabled = !parseAlertConfig(monitor.config).webhookEnabled;
+  const artifactByCheck = new Map(artifacts.filter((a) => a.checkId).map((a) => [a.checkId as string, a]));
+  const latestArtifact = artifacts[0];
 
 
 
@@ -325,6 +345,11 @@ export default function MonitorDetailPage() {
           {latestMeta.responseBodySnippet && (
             <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/30 p-2 text-xs text-zinc-300">{latestMeta.responseBodySnippet}</pre>
           )}
+          {latestArtifact && (
+            <a href={latestArtifact.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-xs text-blue-300 hover:text-blue-200">
+              {t('viewLatestArtifact')}
+            </a>
+          )}
         </div>
       )}
 
@@ -348,32 +373,7 @@ export default function MonitorDetailPage() {
 
       <MonitorSecurityStatus type={monitor.type} meta={securityMeta} />
 
-      {monitor.type === 'pagespeed' && (latestMeta.lcpMs != null || latestMeta.fcpMs != null) && (
-        <div className="card">
-          <h2 className="font-semibold">{t('cwvTitle')}</h2>
-          <p className="mt-1 text-xs text-amber-400/90">{t('cwvEstimatedNote')}</p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            {latestMeta.lcpMs != null && (
-              <div>
-                <p className="text-sm text-zinc-500">{t('cwvLcp')}</p>
-                <p className="mt-1 font-mono text-lg">{latestMeta.lcpMs} ms</p>
-              </div>
-            )}
-            {latestMeta.fcpMs != null && (
-              <div>
-                <p className="text-sm text-zinc-500">{t('cwvFcp')}</p>
-                <p className="mt-1 font-mono text-lg">{latestMeta.fcpMs} ms</p>
-              </div>
-            )}
-            {latestMeta.ttfbMs != null && (
-              <div>
-                <p className="text-sm text-zinc-500">{t('timingTtfb')}</p>
-                <p className="mt-1 font-mono text-lg">{latestMeta.ttfbMs} ms</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <PageSpeedInsights meta={latestMeta} />
 
       {(artifacts.length > 0 || (latestCheck && !latestCheck.isUp && latestMeta.responseBodySnippet)) && (
         <div className="card">
@@ -557,8 +557,9 @@ export default function MonitorDetailPage() {
 
                 const open = expandedId === c.id;
 
+                const artifact = artifactByCheck.get(c.id);
                 const hasDetail = timingRowsCount(meta) > 0 || (meta.chainStepDetails?.length || 0) > 0
-                  || !!meta.responseBodySnippet || !c.isUp;
+                  || !!meta.responseBodySnippet || !c.isUp || !!artifact;
 
                 return (
 
@@ -631,6 +632,24 @@ export default function MonitorDetailPage() {
                             </div>
 
                           ))}
+
+                          {artifact && (
+                            <div className="mt-4 rounded border border-zinc-800 bg-black/20 p-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-xs font-medium text-zinc-400">{t('forensicsArtifact')}</p>
+                                <a href={artifact.url} target="_blank" rel="noreferrer" className="text-xs text-blue-300 hover:text-blue-200">
+                                  {t('openArtifact')}
+                                </a>
+                              </div>
+                              {artifact.contentType?.startsWith('image/') && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={artifact.url} alt={t('forensicsArtifact')} className="mt-3 max-h-64 rounded border border-zinc-800 object-contain" />
+                              )}
+                              <p className="mt-2 text-xs text-zinc-500">
+                                {t('artifactExpiresAt', { date: artifact.expiresAt ? new Date(artifact.expiresAt).toLocaleString() : '-' })}
+                              </p>
+                            </div>
+                          )}
 
                         </td>
 

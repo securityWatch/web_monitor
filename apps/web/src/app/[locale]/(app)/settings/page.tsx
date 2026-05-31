@@ -25,6 +25,19 @@ export default function SettingsPage() {
   const [notify, setNotify] = useState({ incidents: true, weekly: true, product: false, ssl: true });
   const [msg, setMsg] = useState('');
 
+  const startCheckout = async (plan: 'pro' | 'team' | 'business') => {
+    if (!auth?.organization.id) return;
+    try {
+      const res = await apiFetch<{ url: string }>(`/api/v1/orgs/${auth.organization.id}/billing/checkout`, {
+        method: 'POST',
+        body: JSON.stringify({ plan }),
+      });
+      window.location.href = res.url;
+    } catch {
+      setMsg(t('stripeNotConfigured'));
+    }
+  };
+
   const saveProfile = async () => {
     await apiFetch('/api/v1/me/profile', { method: 'PATCH', body: JSON.stringify({ displayName, locale }) });
     if (auth) setStoredAuth({ ...auth, user: { ...auth.user, displayName } });
@@ -53,11 +66,11 @@ export default function SettingsPage() {
     { id: 'security' as const, label: t('security') },
     { id: 'notifications' as const, label: t('notifications') },
     { id: 'integrations' as const, label: t('integrationsTab') },
-    { id: 'team' as const, label: '团队' },
-    { id: 'maintenance' as const, label: '维护窗口' },
-    { id: 'apikeys' as const, label: 'API Keys' },
-    { id: 'audit' as const, label: '审计日志' },
-    { id: 'oncall' as const, label: 'On-Call' },
+    { id: 'team' as const, label: t('team') },
+    { id: 'maintenance' as const, label: t('maintenance') },
+    { id: 'apikeys' as const, label: t('apiKeys') },
+    { id: 'audit' as const, label: t('auditLogs') },
+    { id: 'oncall' as const, label: t('onCall') },
     { id: 'billing' as const, label: t('billing') },
   ];
 
@@ -142,20 +155,13 @@ export default function SettingsPage() {
             <p className="text-sm text-zinc-500">{t('currentPlan')}</p>
             <p className="text-xl font-bold capitalize">{auth?.organization.planTier || 'free'}</p>
           </div>
-          <button
-            className="btn-primary"
-            onClick={async () => {
-              if (!auth?.organization.id) return;
-              try {
-                const res = await apiFetch<{ url: string }>(`/api/v1/orgs/${auth.organization.id}/billing/checkout`, { method: 'POST' });
-                window.location.href = res.url;
-              } catch {
-                setMsg('Stripe 未配置，请联系管理员');
-              }
-            }}
-          >
-            {t('upgradePro')}
-          </button>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {(['pro', 'team', 'business'] as const).map((plan) => (
+              <button key={plan} className="btn-primary" onClick={() => startCheckout(plan)}>
+                {t(`upgrade${plan[0].toUpperCase()}${plan.slice(1)}` as 'upgradePro')}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
             className="btn-secondary"
@@ -172,7 +178,7 @@ export default function SettingsPage() {
               a.click();
             }}
           >
-            导出 SLA 报告 (CSV)
+            {t('exportSlaCsv')}
           </button>
           <button
             type="button"
@@ -191,7 +197,7 @@ export default function SettingsPage() {
               a.click();
             }}
           >
-            导出 SLA 报告 (HTML)
+            {t('exportSlaHtml')}
           </button>
         </div>
       )}

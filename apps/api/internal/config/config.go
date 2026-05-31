@@ -7,40 +7,42 @@ import (
 )
 
 type Config struct {
-	DatabaseURL        string
-	JWTSecret          string
-	JWTRefreshSecret   string
-	Port               string
-	CorsOrigin         string
-	CorsOrigins        []string
-	SMTPMode           string
-	SMTPHost           string
-	SMTPPort           int
-	SMTPUser           string
-	SMTPPass           string
-	SMTPFrom           string
-	AccessTokenTTLMin   int
-	RefreshTokenTTLDays int
-	WebURL              string
-	GoogleClientID      string
-	GoogleClientSecret  string
-	GitHubClientID      string
-	GitHubClientSecret  string
-	OAuthRedirectURL    string
-	StripeSecretKey     string
-	StripeProPriceID    string
-	StripeWebhookSecret string
-	TwilioAccountSID    string
-	TwilioAuthToken     string
-	TwilioFromNumber    string
-	ProbeSecret         string
-	ProbeDispatch       bool
-	S3Endpoint          string
-	S3Bucket            string
-	S3AccessKey         string
-	S3SecretKey              string
-	CheckRawRetentionDays    int
-	CheckTotalRetentionDays  int
+	DatabaseURL             string
+	JWTSecret               string
+	JWTRefreshSecret        string
+	Port                    string
+	CorsOrigin              string
+	CorsOrigins             []string
+	SMTPMode                string
+	SMTPHost                string
+	SMTPPort                int
+	SMTPUser                string
+	SMTPPass                string
+	SMTPFrom                string
+	AccessTokenTTLMin       int
+	RefreshTokenTTLDays     int
+	WebURL                  string
+	GoogleClientID          string
+	GoogleClientSecret      string
+	GitHubClientID          string
+	GitHubClientSecret      string
+	OAuthRedirectURL        string
+	StripeSecretKey         string
+	StripeProPriceID        string
+	StripeTeamPriceID       string
+	StripeBusinessPriceID   string
+	StripeWebhookSecret     string
+	TwilioAccountSID        string
+	TwilioAuthToken         string
+	TwilioFromNumber        string
+	ProbeSecret             string
+	ProbeDispatch           bool
+	S3Endpoint              string
+	S3Bucket                string
+	S3AccessKey             string
+	S3SecretKey             string
+	CheckRawRetentionDays   int
+	CheckTotalRetentionDays int
 }
 
 func Load() *Config {
@@ -49,37 +51,39 @@ func Load() *Config {
 	refreshTTL, _ := strconv.Atoi(getEnv("REFRESH_TOKEN_TTL_DAYS", "30"))
 
 	return &Config{
-		DatabaseURL:        getEnv("DATABASE_URL", "postgresql://pulsewatch:pulsewatch@localhost:5432/pulsewatch"),
-		JWTSecret:          getEnv("JWT_SECRET", "dev-jwt-secret-change-in-production"),
-		JWTRefreshSecret:   getEnv("JWT_REFRESH_SECRET", "dev-refresh-secret-change-in-production"),
-		Port:               getEnv("PORT", "4000"),
-		CorsOrigin:         getEnv("CORS_ORIGIN", "http://localhost:3000"),
-		CorsOrigins:        parseCorsOrigins(),
-		SMTPMode:           getEnv("SMTP_MODE", "console"),
-		SMTPHost:           getEnv("SMTP_HOST", ""),
-		SMTPPort:           smtpPort,
-		SMTPUser:           getEnv("SMTP_USER", ""),
-		SMTPPass:           getEnv("SMTP_PASS", ""),
-		SMTPFrom:           getEnv("SMTP_FROM", "noreply@pulsewatch.io"),
-		AccessTokenTTLMin:   accessTTL,
-		RefreshTokenTTLDays: refreshTTL,
-		WebURL:              getEnv("WEB_URL", "http://localhost:3000"),
-		GoogleClientID:      getEnv("GOOGLE_CLIENT_ID", ""),
-		GoogleClientSecret:  getEnv("GOOGLE_CLIENT_SECRET", ""),
-		GitHubClientID:      getEnv("GITHUB_CLIENT_ID", ""),
-		GitHubClientSecret:  getEnv("GITHUB_CLIENT_SECRET", ""),
-		OAuthRedirectURL:    getEnv("OAUTH_REDIRECT_URL", ""),
-		StripeSecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
-		StripeProPriceID:    getEnv("STRIPE_PRO_PRICE_ID", ""),
-		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
-		TwilioAccountSID:    getEnv("TWILIO_ACCOUNT_SID", ""),
-		TwilioAuthToken:     getEnv("TWILIO_AUTH_TOKEN", ""),
-		TwilioFromNumber:    getEnv("TWILIO_FROM_NUMBER", ""),
-		ProbeSecret:         getEnv("PROBE_SECRET", ""),
-		ProbeDispatch:       getEnv("PROBE_DISPATCH", "false") == "true",
-		S3Endpoint:          getEnv("S3_ENDPOINT", ""),
-		S3Bucket:            getEnv("S3_BUCKET", ""),
-		S3AccessKey:         getEnv("S3_ACCESS_KEY", ""),
+		DatabaseURL:             getEnv("DATABASE_URL", "postgresql://pulsewatch:pulsewatch@localhost:5432/pulsewatch"),
+		JWTSecret:               getEnv("JWT_SECRET", "dev-jwt-secret-change-in-production"),
+		JWTRefreshSecret:        getEnv("JWT_REFRESH_SECRET", "dev-refresh-secret-change-in-production"),
+		Port:                    getEnv("PORT", "4000"),
+		CorsOrigin:              getEnv("CORS_ORIGIN", "http://localhost:3000"),
+		CorsOrigins:             parseCorsOrigins(),
+		SMTPMode:                getEnv("SMTP_MODE", "console"),
+		SMTPHost:                getEnv("SMTP_HOST", ""),
+		SMTPPort:                smtpPort,
+		SMTPUser:                getEnv("SMTP_USER", ""),
+		SMTPPass:                getEnv("SMTP_PASS", ""),
+		SMTPFrom:                getEnv("SMTP_FROM", "noreply@pulsewatch.io"),
+		AccessTokenTTLMin:       accessTTL,
+		RefreshTokenTTLDays:     refreshTTL,
+		WebURL:                  getEnv("WEB_URL", "http://localhost:3000"),
+		GoogleClientID:          getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:      getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GitHubClientID:          getEnv("GITHUB_CLIENT_ID", ""),
+		GitHubClientSecret:      getEnv("GITHUB_CLIENT_SECRET", ""),
+		OAuthRedirectURL:        getEnv("OAUTH_REDIRECT_URL", ""),
+		StripeSecretKey:         getEnv("STRIPE_SECRET_KEY", ""),
+		StripeProPriceID:        getEnv("STRIPE_PRO_PRICE_ID", ""),
+		StripeTeamPriceID:       getEnv("STRIPE_TEAM_PRICE_ID", ""),
+		StripeBusinessPriceID:   getEnv("STRIPE_BUSINESS_PRICE_ID", ""),
+		StripeWebhookSecret:     getEnv("STRIPE_WEBHOOK_SECRET", ""),
+		TwilioAccountSID:        getEnv("TWILIO_ACCOUNT_SID", ""),
+		TwilioAuthToken:         getEnv("TWILIO_AUTH_TOKEN", ""),
+		TwilioFromNumber:        getEnv("TWILIO_FROM_NUMBER", ""),
+		ProbeSecret:             getEnv("PROBE_SECRET", ""),
+		ProbeDispatch:           getEnv("PROBE_DISPATCH", "false") == "true",
+		S3Endpoint:              getEnv("S3_ENDPOINT", ""),
+		S3Bucket:                getEnv("S3_BUCKET", ""),
+		S3AccessKey:             getEnv("S3_ACCESS_KEY", ""),
 		S3SecretKey:             getEnv("S3_SECRET_KEY", ""),
 		CheckRawRetentionDays:   envInt("CHECK_RAW_RETENTION_DAYS", 7),
 		CheckTotalRetentionDays: envInt("CHECK_TOTAL_RETENTION_DAYS", 90),

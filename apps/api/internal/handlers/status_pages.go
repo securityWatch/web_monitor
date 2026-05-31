@@ -77,9 +77,9 @@ func (h *StatusPageHandler) Create(c *gin.Context) {
 	}
 
 	var req struct {
-		Name      string   `json:"name" binding:"required"`
-		Slug      string   `json:"slug" binding:"required"`
-		IsPublic  *bool    `json:"isPublic"`
+		Name       string   `json:"name" binding:"required"`
+		Slug       string   `json:"slug" binding:"required"`
+		IsPublic   *bool    `json:"isPublic"`
 		MonitorIDs []string `json:"monitorIds"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -131,10 +131,10 @@ func (h *StatusPageHandler) Update(c *gin.Context) {
 	}
 
 	var req struct {
-		Name       *string  `json:"name"`
-		IsPublic   *bool    `json:"isPublic"`
-		MonitorIDs []string `json:"monitorIds"`
-		CustomDomain *string `json:"customDomain"`
+		Name         *string  `json:"name"`
+		IsPublic     *bool    `json:"isPublic"`
+		MonitorIDs   []string `json:"monitorIds"`
+		CustomDomain *string  `json:"customDomain"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -196,6 +196,36 @@ func (h *StatusPageHandler) PublicGet(c *gin.Context) {
 		return
 	}
 
+	h.writePublicStatus(c, page)
+}
+
+func (h *StatusPageHandler) PublicGetByDomain(c *gin.Context) {
+	domain := strings.ToLower(strings.TrimSpace(c.Query("domain")))
+	if domain == "" {
+		domain = strings.ToLower(strings.TrimSpace(c.Request.Host))
+	}
+	domain = strings.Split(domain, ":")[0]
+	if domain == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "domain required"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	var page models.StatusPage
+	err := h.db.QueryRow(ctx, `
+		SELECT id, org_id, name, slug, is_public, created_at, updated_at
+		FROM status_pages WHERE lower(custom_domain) = $1 AND is_public = true
+	`, domain).Scan(&page.ID, &page.OrgID, &page.Name, &page.Slug, &page.IsPublic, &page.CreatedAt, &page.UpdatedAt)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	h.writePublicStatus(c, page)
+}
+
+func (h *StatusPageHandler) writePublicStatus(c *gin.Context, page models.StatusPage) {
+	ctx := c.Request.Context()
 	rows, err := h.db.Query(ctx, `
 		SELECT m.id, COALESCE(spm.display_name, m.name), m.status, m.target_url,
 		       COALESCE((
@@ -226,14 +256,14 @@ func (h *StatusPageHandler) PublicGet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"name":         page.Name,
-		"slug":         page.Slug,
-		"components":   components,
-		"updatedAt":    page.UpdatedAt,
-		"incidents":    h.publicIncidents(ctx, page.ID),
+		"name":          page.Name,
+		"slug":          page.Slug,
+		"components":    components,
+		"updatedAt":     page.UpdatedAt,
+		"incidents":     h.publicIncidents(ctx, page.ID),
 		"announcements": h.publicAnnouncements(ctx, page.ID),
-		"maintenance":  h.activeMaintenance(ctx, page.OrgID),
-		"uptime90d":    h.uptime90d(ctx, page.ID),
+		"maintenance":   h.activeMaintenance(ctx, page.OrgID),
+		"uptime90d":     h.uptime90d(ctx, page.ID),
 	})
 }
 
@@ -434,10 +464,10 @@ func (h *StatusPageHandler) publicIncidents(ctx context.Context, pageID string) 
 				status = "resolved"
 			}
 			list = append(list, gin.H{
-				"title":     title,
-				"impact":    impact,
-				"status":    status,
-				"createdAt": createdAt,
+				"title":      title,
+				"impact":     impact,
+				"status":     status,
+				"createdAt":  createdAt,
 				"resolvedAt": resolvedAt,
 			})
 		}

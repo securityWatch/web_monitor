@@ -1,9 +1,9 @@
 export type PlanTier = 'free' | 'pro' | 'team' | 'business';
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
-export type MonitorType = 'http' | 'tcp' | 'ping' | 'keyword' | 'ssl';
+export type MonitorType = 'http' | 'tcp' | 'ping' | 'keyword' | 'ssl' | 'heartbeat' | 'dns' | 'domain' | 'pagespeed' | 'tamper';
 export type MonitorStatus = 'up' | 'down' | 'paused' | 'pending';
 export type IncidentStatus = 'open' | 'resolved';
-export type AlertChannelType = 'email' | 'webhook';
+export type AlertChannelType = 'email' | 'webhook' | 'slack' | 'discord' | 'teams' | 'pagerduty' | 'dingtalk' | 'feishu' | 'wecom' | 'sms' | 'voice' | 'opsgenie';
 
 export interface User {
   id: string;
@@ -108,4 +108,18 @@ export const PLAN_LIMITS: Record<PlanTier, { monitors: number; minInterval: numb
   pro: { monitors: 50, minInterval: 60 },
   team: { monitors: 150, minInterval: 60 },
   business: { monitors: 500, minInterval: 30 },
+};
+
+export const PLAN_REGION_LIMITS: Record<PlanTier, number> = {
+  free: 2,
+  pro: 5,
+  team: 10,
+  business: 20,
+};
+
+export const SCREENSHOT_RETENTION_DAYS: Record<PlanTier, number> = {
+  free: 0,
+  pro: 7,
+  team: 30,
+  business: 90,
 };

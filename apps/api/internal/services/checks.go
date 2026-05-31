@@ -31,7 +31,7 @@ func RunCheck(ctx context.Context, monitorType, targetURL string, config json.Ra
 		return executeHTTPMonitor(ctx, targetURL, httpCfg, monitorType, start)
 	case "pagespeed":
 		httpCfg := ParseHTTPConfig(cfg)
-		out := executeHTTPMonitor(ctx, targetURL, httpCfg, "http", start)
+		out := executeHTTPMonitor(ctx, targetURL, httpCfg, "pagespeed", start)
 		return evaluatePageSpeed(out, cfg, start)
 	case "tcp":
 		return runTCPCheck(ctx, targetURL, start)
@@ -117,9 +117,20 @@ func evaluatePageSpeed(out CheckOutcome, cfg map[string]interface{}, start time.
 	if !out.IsUp {
 		return out
 	}
+	if out.Metadata == nil {
+		out.Metadata = map[string]interface{}{}
+	}
 	maxTTFB := 2000
 	if v, ok := cfg["maxTtfbMs"].(float64); ok && v > 0 {
 		maxTTFB = int(v)
+	}
+	maxTotal := 5000
+	if v, ok := cfg["maxTotalMs"].(float64); ok && v > 0 {
+		maxTotal = int(v)
+	}
+	maxWeightKB := 2048
+	if v, ok := cfg["maxPageWeightKb"].(float64); ok && v > 0 {
+		maxWeightKB = int(v)
 	}
 	ttfb := 0
 	if v, ok := out.Metadata["ttfbMs"].(int); ok {
@@ -128,7 +139,7 @@ func evaluatePageSpeed(out CheckOutcome, cfg map[string]interface{}, start time.
 		ttfb = int(v)
 	}
 	out.Metadata["pageSpeed"] = true
-	// Estimate Core Web Vitals from TTFB + response timing (MVP without headless browser)
+	// MVP approximation: no browser engine yet, so infer UX metrics from network timing.
 	bodyMs := out.ResponseMs - ttfb
 	if bodyMs < 0 {
 		bodyMs = 0
@@ -145,14 +156,61 @@ func evaluatePageSpeed(out CheckOutcome, cfg map[string]interface{}, start time.
 	if v, ok := cfg["maxLcpMs"].(float64); ok && v > 0 {
 		maxLCP = int(v)
 	}
+	pageWeightBytes, _ := intFromMeta(out.Metadata, "pageWeightBytes")
+	score := pageSpeedScore(ttfb, lcpMs, out.ResponseMs, pageWeightBytes, maxTTFB, maxLCP, maxTotal, maxWeightKB)
+	out.Metadata["performanceScore"] = score
+	out.Metadata["performanceBudgets"] = map[string]interface{}{
+		"maxTtfbMs":       maxTTFB,
+		"maxLcpMs":        maxLCP,
+		"maxTotalMs":      maxTotal,
+		"maxPageWeightKb": maxWeightKB,
+	}
+	var violations []string
 	if lcpMs > maxLCP {
-		out.IsUp = false
-		out.ErrorMessage = fmt.Sprintf("LCP %dms exceeds threshold %dms", lcpMs, maxLCP)
-		return out
+		violations = append(violations, fmt.Sprintf("LCP %dms exceeds threshold %dms", lcpMs, maxLCP))
 	}
 	if ttfb > maxTTFB {
+		violations = append(violations, fmt.Sprintf("TTFB %dms exceeds threshold %dms", ttfb, maxTTFB))
+	}
+	if out.ResponseMs > maxTotal {
+		violations = append(violations, fmt.Sprintf("total load %dms exceeds threshold %dms", out.ResponseMs, maxTotal))
+	}
+	if pageWeightBytes > maxWeightKB*1024 {
+		violations = append(violations, fmt.Sprintf("page weight %.1fKB exceeds threshold %dKB", float64(pageWeightBytes)/1024, maxWeightKB))
+	}
+	out.Metadata["budgetStatus"] = "pass"
+	if len(violations) > 0 {
+		out.Metadata["budgetStatus"] = "fail"
+		out.Metadata["budgetViolations"] = violations
 		out.IsUp = false
-		out.ErrorMessage = fmt.Sprintf("TTFB %dms exceeds threshold %dms", ttfb, maxTTFB)
+		out.ErrorMessage = strings.Join(violations, "; ")
 	}
 	return out
+}
+
+func pageSpeedScore(ttfb, lcp, total, pageWeightBytes, maxTTFB, maxLCP, maxTotal, maxWeightKB int) int {
+	score := 100
+	score -= penalty(ttfb, maxTTFB, 20)
+	score -= penalty(lcp, maxLCP, 30)
+	score -= penalty(total, maxTotal, 25)
+	score -= penalty(pageWeightBytes/1024, maxWeightKB, 15)
+	if score < 0 {
+		return 0
+	}
+	return score
+}
+
+func penalty(value, budget, maxPenalty int) int {
+	if budget <= 0 || value <= budget {
+		return 0
+	}
+	overRatio := float64(value-budget) / float64(budget)
+	p := int(overRatio * float64(maxPenalty) * 1.5)
+	if p < 1 {
+		p = 1
+	}
+	if p > maxPenalty {
+		return maxPenalty
+	}
+	return p
 }
