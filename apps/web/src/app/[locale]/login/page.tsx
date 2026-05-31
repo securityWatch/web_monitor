@@ -18,7 +18,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [providers, setProviders] = useState<string[]>([]);
-  const [mode, setMode] = useState<'password' | 'magic' | 'totp'>(totpToken ? 'totp' : 'password');
+  const [mode, setMode] = useState<'password' | 'magic' | 'totp' | 'sso'>(
+    totpToken ? 'totp' : 'password',
+  );
   const [magicSent, setMagicSent] = useState(false);
   const [totpCode, setTotpCode] = useState('');
   const [tempToken, setTempToken] = useState(totpToken || '');
@@ -39,6 +41,10 @@ export default function LoginPage() {
   }, [searchParams, t]);
 
   useEffect(() => {
+    if (mode !== 'sso') {
+      setSsoEnabled(false);
+      return;
+    }
     const slug = orgSlug.trim().toLowerCase();
     if (!slug) {
       setSsoEnabled(false);
@@ -50,7 +56,7 @@ export default function LoginPage() {
       .then((d) => setSsoEnabled(!!d.enabled))
       .catch(() => setSsoEnabled(false));
     return () => ctrl.abort();
-  }, [orgSlug]);
+  }, [orgSlug, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,10 +127,14 @@ export default function LoginPage() {
       <MarketingNav />
       <div className="mx-auto flex max-w-md flex-col px-4 py-16">
         <h1 className="text-2xl font-bold text-white">
-          {mode === 'totp' ? '双因素验证' : t('loginTitle')}
+          {mode === 'totp' ? t('totpTitle') : mode === 'sso' ? t('ssoTitle') : t('loginTitle')}
         </h1>
         <p className="mt-2 text-sm text-zinc-400">
-          {mode === 'totp' ? '请输入验证器应用中的 6 位验证码' : t('loginSubtitle')}
+          {mode === 'totp'
+            ? t('totpSubtitle')
+            : mode === 'sso'
+              ? t('ssoSubtitle')
+              : t('loginSubtitle')}
         </p>
 
         {mode === 'totp' ? (
@@ -139,12 +149,59 @@ export default function LoginPage() {
             />
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button type="submit" disabled={loading || totpCode.length < 6} className="btn-primary w-full py-2.5">
-              {loading ? '...' : '验证'}
+              {loading ? '...' : t('totpSubmit')}
             </button>
-            <button type="button" onClick={() => { setMode('password'); setTotpCode(''); }} className="w-full text-sm text-zinc-500 hover:text-white">
-              返回密码登录
+            <button
+              type="button"
+              onClick={() => {
+                setMode('password');
+                setTotpCode('');
+                setError('');
+              }}
+              className="w-full text-sm text-zinc-500 hover:text-white"
+            >
+              {t('backToPassword')}
             </button>
           </form>
+        ) : mode === 'sso' ? (
+          <div className="mt-8 space-y-4">
+            <div>
+              <label className="mb-1 block text-sm text-zinc-400">{t('ssoOrgSlug')}</label>
+              <input
+                className="input font-mono text-sm"
+                placeholder={t('ssoOrgSlugPlaceholder')}
+                value={orgSlug}
+                onChange={(e) => setOrgSlug(e.target.value)}
+                autoFocus
+              />
+              <p className="mt-1 text-xs text-zinc-600">{t('ssoOrgHint')}</p>
+            </div>
+            {ssoEnabled ? (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = `/api/v1/auth/sso/start?org=${encodeURIComponent(orgSlug.trim().toLowerCase())}`;
+                }}
+                className="btn-primary w-full py-2.5"
+              >
+                {t('ssoLoginButton')}
+              </button>
+            ) : orgSlug.trim() ? (
+              <p className="text-xs text-zinc-500">{t('ssoNotConfigured')}</p>
+            ) : null}
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button
+              type="button"
+              onClick={() => {
+                setMode('password');
+                setOrgSlug('');
+                setError('');
+              }}
+              className="w-full text-sm text-zinc-500 hover:text-white"
+            >
+              {t('backToPassword')}
+            </button>
+          </div>
         ) : mode === 'magic' ? (
           <form onSubmit={sendMagicLink} className="mt-8 space-y-4">
             {magicSent ? (
@@ -167,32 +224,6 @@ export default function LoginPage() {
           </form>
         ) : (
           <>
-            <div className="mt-6 space-y-3">
-              <div>
-                <label className="mb-1 block text-sm text-zinc-400">{t('ssoOrgSlug')}</label>
-                <input
-                  className="input font-mono text-sm"
-                  placeholder={t('ssoOrgSlugPlaceholder')}
-                  value={orgSlug}
-                  onChange={(e) => setOrgSlug(e.target.value)}
-                />
-                <p className="mt-1 text-xs text-zinc-600">{t('ssoOrgHint')}</p>
-              </div>
-              {ssoEnabled ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.location.href = `/api/v1/auth/sso/start?org=${encodeURIComponent(orgSlug.trim().toLowerCase())}`;
-                  }}
-                  className="btn-secondary w-full py-2.5"
-                >
-                  {t('ssoLoginButton')}
-                </button>
-              ) : orgSlug.trim() ? (
-                <p className="text-xs text-zinc-500">{t('ssoNotConfigured')}</p>
-              ) : null}
-            </div>
-
             {(providers.includes('google') || providers.includes('github')) && (
               <div className="mt-4 flex flex-col gap-2">
                 {providers.includes('google') && (
@@ -218,8 +249,19 @@ export default function LoginPage() {
               <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">{loading ? '...' : t('loginButton')}</button>
             </form>
 
-            <button type="button" onClick={() => setMode('magic')} className="mt-4 w-full text-center text-sm text-blue-400 hover:underline">
-              使用 Magic Link 登录
+            <button
+              type="button"
+              onClick={() => setMode('magic')}
+              className="mt-4 w-full text-center text-sm text-blue-400 hover:underline"
+            >
+              {t('magicLinkLogin')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('sso')}
+              className="mt-2 w-full text-center text-sm text-zinc-400 hover:text-white"
+            >
+              {t('ssoShowLink')}
             </button>
           </>
         )}
