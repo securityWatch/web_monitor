@@ -39,7 +39,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	}))
 
 	emailSvc := services.NewEmailService(cfg)
-	authSvc := services.NewAuthService(db, cfg)
+	notifier := services.NewNotifier(cfg)
+	authSvc := services.NewAuthService(db, cfg, notifier)
 	oauthSvc := services.NewOAuthService(authSvc, cfg)
 	totpSvc := services.NewTOTPService(db)
 	twilioSvc := services.NewTwilioService(cfg)
@@ -52,7 +53,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	authH := handlers.NewAuthHandler(authSvc, emailSvc, cfg)
 	oauthH := handlers.NewOAuthHandler(oauthSvc, cfg.WebURL)
 	meH := handlers.NewMeHandler(db, authSvc, totpSvc)
-	monitorH := handlers.NewMonitorHandler(db)
+	monitorH := handlers.NewMonitorHandler(db, notifier)
 	dashH := handlers.NewDashboardHandler(db)
 	incH := handlers.NewIncidentHandler(db, incidentSvc)
 	oncallH := handlers.NewOnCallHandler(db)

@@ -42,7 +42,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := h.auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName)
+	resp, err := h.auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName, "email")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "code": "EMAIL_ALREADY_EXISTS"})

@@ -17,16 +17,17 @@ import (
 )
 
 type AuthService struct {
-	db      *pgxpool.Pool
-	cfg     *config.Config
-	lockout *LoginLockoutService
+	db       *pgxpool.Pool
+	cfg      *config.Config
+	lockout  *LoginLockoutService
+	notifier *Notifier
 }
 
-func NewAuthService(db *pgxpool.Pool, cfg *config.Config) *AuthService {
-	return &AuthService{db: db, cfg: cfg, lockout: NewLoginLockoutService(db)}
+func NewAuthService(db *pgxpool.Pool, cfg *config.Config, notifier *Notifier) *AuthService {
+	return &AuthService{db: db, cfg: cfg, lockout: NewLoginLockoutService(db), notifier: notifier}
 }
 
-func (a *AuthService) Register(ctx context.Context, email, password, displayName string) (*models.AuthResponse, error) {
+func (a *AuthService) Register(ctx context.Context, email, password, displayName, provider string) (*models.AuthResponse, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if !ValidateEmail(email) {
 		return nil, fmt.Errorf("invalid email")
@@ -123,6 +124,9 @@ func (a *AuthService) Register(ctx context.Context, email, password, displayName
 	if !IsWeChatPlaceholderEmail(email) {
 		_ = a.sendVerificationEmail(ctx, userID, email)
 	}
+	if a.notifier != nil {
+		a.notifier.UserRegistered(email, displayName, userID, provider)
+	}
 	return a.issueTokens(ctx, user, org, "", "")
 }
 
@@ -211,7 +215,7 @@ func (a *AuthService) LoginOrRegisterOAuth(ctx context.Context, provider, provid
 	if err != nil {
 		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
 		if userID == "" {
-			resp, err := a.Register(ctx, email, GenerateRandomPassword(), displayName)
+			resp, err := a.Register(ctx, email, GenerateRandomPassword(), displayName, provider)
 			if err != nil && !strings.Contains(err.Error(), "already exists") {
 				return nil, err
 			}

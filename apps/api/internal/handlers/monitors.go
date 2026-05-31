@@ -16,11 +16,12 @@ import (
 )
 
 type MonitorHandler struct {
-	db *pgxpool.Pool
+	db       *pgxpool.Pool
+	notifier *services.Notifier
 }
 
-func NewMonitorHandler(db *pgxpool.Pool) *MonitorHandler {
-	return &MonitorHandler{db: db}
+func NewMonitorHandler(db *pgxpool.Pool, notifier *services.Notifier) *MonitorHandler {
+	return &MonitorHandler{db: db, notifier: notifier}
 }
 
 func (h *MonitorHandler) AIDraft(c *gin.Context) {
@@ -349,6 +350,11 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 
 	m, _ := h.fetchMonitor(c, orgID, id)
 	services.LogAudit(c.Request.Context(), h.db, orgID, GetUserID(c), "monitor.create", c.ClientIP(), map[string]interface{}{"name": req.Name, "id": id})
+	if h.notifier != nil {
+		var ownerEmail, ownerName string
+		_ = h.db.QueryRow(c.Request.Context(), `SELECT email, display_name FROM users WHERE id = $1`, GetUserID(c)).Scan(&ownerEmail, &ownerName)
+		h.notifier.MonitorCreated(req.Name, req.Type, target, ownerEmail, ownerName, id)
+	}
 	c.JSON(http.StatusCreated, m)
 }
 

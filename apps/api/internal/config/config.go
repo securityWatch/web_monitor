@@ -45,6 +45,7 @@ type Config struct {
 	S3SecretKey             string
 	CheckRawRetentionDays   int
 	CheckTotalRetentionDays int
+	DingTalkWebhookURL      string
 }
 
 func Load() *Config {
@@ -91,6 +92,7 @@ func Load() *Config {
 		S3SecretKey:             getEnv("S3_SECRET_KEY", ""),
 		CheckRawRetentionDays:   envInt("CHECK_RAW_RETENTION_DAYS", 7),
 		CheckTotalRetentionDays: envInt("CHECK_TOTAL_RETENTION_DAYS", 90),
+		DingTalkWebhookURL:      getEnv("DINGTALK_WEBHOOK_URL", ""),
 	}
 }
 
