@@ -4,10 +4,10 @@ This document describes on-page and technical SEO implemented for the marketing 
 
 ## Production note
 
-The live site is currently served over **HTTP** at `http://49.234.112.108` (no HTTPS yet). When you bind a custom domain:
+The live site is at `http://49.234.112.108` (IP) and may also serve **`https://gkao.com.cn`** via Cloudflare + origin cert (`pulsewatch.conf` on the server). Set canonical URL when binding a custom domain:
 
 - Set `NEXT_PUBLIC_SITE_URL` to the canonical HTTPS origin (no trailing slash).
-- Apply HTTPS using `deploy/nginx/pulsewatch-https.conf.example` + Certbot.
+- Follow **[DOMAIN-HTTPS.md](DOMAIN-HTTPS.md)** (`apply-domain.js` → `setup-https.js`).
 - Re-submit `sitemap.xml` in Google Search Console and 百度站长.
 - In China, **ICP 备案** is often required for stable Baidu indexing on a custom domain.
 

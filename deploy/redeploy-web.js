@@ -91,6 +91,7 @@ export NEXT_PUBLIC_API_URL=${site}
 export NEXT_PUBLIC_SITE_URL=${site}
 export NEXT_PUBLIC_APP_DOMAINS=${APP_DOMAINS}
 echo "[web] next build on server..."
+rm -rf apps/web/.next
 npm run build -w @pulsewatch/web
 ${activateWebArtifacts(BUILD_DIR)}
 `;
