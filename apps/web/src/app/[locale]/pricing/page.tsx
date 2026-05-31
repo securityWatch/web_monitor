@@ -7,7 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { Activity, Zap } from 'lucide-react';
 
 const FAQ = [
-  { q: '免费版有什么限制？', a: '免费版包含 15 个监控、邮件告警与公开状态页，适合个人项目。' },
+  { q: '免费版有什么限制？', a: '免费版包含 10 个监控、最短 5 分钟检测间隔、邮件告警与公开状态页，适合个人项目。' },
   { q: '创始会员价是什么？', a: 'Pro 创始价 $1/月终身锁价（原价 $12），名额有限，含 50 个监控。' },
   { q: '可以随时取消吗？', a: '可以，随时在账单设置中取消，无长期合约。' },
   { q: '支持哪些监控类型？', a: 'HTTP/HTTPS、TCP、Ping、关键词、SSL 到期、DNS、Heartbeat 等。' },
@@ -43,7 +43,7 @@ export default function PricingPage() {
   }, []);
 
   const plans = [
-    { name: t('planFree'), price: '$0', founding: null, monitors: 15 },
+    { name: t('planFree'), price: '$0', founding: null, monitors: 10 },
     { name: t('planPro'), price: '$1', founding: '$12', monitors: 50, popular: true },
     { name: t('planTeam'), price: '$4', founding: '$39', monitors: 150 },
     { name: t('planBusiness'), price: '$10', founding: '$99', monitors: 500 },

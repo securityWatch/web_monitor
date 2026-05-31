@@ -136,7 +136,7 @@ func PlanMonitorQuota(planTier string) int {
 	case "business":
 		return 500
 	default:
-		return 15
+		return 10
 	}
 }
 

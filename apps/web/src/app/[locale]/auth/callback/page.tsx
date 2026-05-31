@@ -41,7 +41,7 @@ export default function AuthCallbackPage() {
                 planTier: data.organizations[0].planTier,
                 monitorQuota: data.organizations[0].monitorQuota,
               }
-            : { id: '', name: '', slug: '', planTier: 'free', monitorQuota: 15 },
+            : { id: '', name: '', slug: '', planTier: 'free', monitorQuota: 10 },
         };
         setStoredAuth(auth);
         router.push(data.user.onboardingDone ? '/dashboard' : '/onboarding');

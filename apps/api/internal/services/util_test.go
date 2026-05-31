@@ -43,7 +43,7 @@ func TestSlugify(t *testing.T) {
 func TestPlanLimits(t *testing.T) {
 	assert.Equal(t, 300, services.PlanMinInterval("free"))
 	assert.Equal(t, 60, services.PlanMinInterval("pro"))
-	assert.Equal(t, 15, services.PlanMonitorQuota("free"))
+	assert.Equal(t, 10, services.PlanMonitorQuota("free"))
 	assert.Equal(t, 50, services.PlanMonitorQuota("pro"))
 }
 

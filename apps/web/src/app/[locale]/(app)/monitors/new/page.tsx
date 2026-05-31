@@ -26,6 +26,7 @@ import {
   parseTamperConfig,
   SslMonitorConfig,
   TamperMonitorConfig,
+  intervalOptionsForPlan,
 } from '@/lib/monitor-config';
 import { MONITOR_TEMPLATES } from '@/lib/monitor-templates';
 import { useLocale } from 'next-intl';
@@ -52,14 +53,10 @@ export default function NewMonitorPage() {
   const planTier = auth?.organization.planTier || 'free';
   const paidPlan = planTier !== 'free';
   const tamperAIOn = form.type === 'tamper' && !!tamperConfig.aiContentRecognitionEnabled;
-  const intervalOptions = tamperAIOn && !paidPlan
-    ? [{ value: 1800, label: `30 ${t('minutes')}` }]
-    : [
-        { value: 1800, label: `30 ${t('minutes')}` },
-        { value: 300, label: `5 ${t('minutes')}` },
-        { value: 60, label: `1 ${t('minutes')}` },
-        { value: 30, label: `30 ${t('seconds')}` },
-      ];
+  const intervalOptions = intervalOptionsForPlan(planTier, tamperAIOn, {
+    minutes: t('minutes'),
+    seconds: t('seconds'),
+  });
 
   const updateTamperConfig = (next: TamperMonitorConfig) => {
     setTamperConfig(next);
@@ -245,6 +242,9 @@ export default function NewMonitorPage() {
           </select>
           {tamperAIOn && (
             <p className="mt-1 text-xs text-zinc-500">{paidPlan ? t('tamperAIPaidInterval') : t('tamperAIFreeInterval')}</p>
+          )}
+          {planTier === 'free' && !tamperAIOn && (
+            <p className="mt-1 text-xs text-zinc-500">{t('freePlanIntervalHint')}</p>
           )}
         </div>
         <div className="rounded-lg border border-zinc-800 p-4 space-y-4">

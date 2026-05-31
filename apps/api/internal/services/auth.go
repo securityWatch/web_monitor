@@ -133,8 +133,8 @@ func (a *AuthService) registerInternal(ctx context.Context, email, password, dis
 	orgName := displayName + "'s Workspace"
 	_, err = tx.Exec(ctx, `
 		INSERT INTO organizations (id, name, slug, plan_tier, monitor_quota, seat_quota, created_at, updated_at)
-		VALUES ($1, $2, $3, 'free', 15, 1, $4, $4)
-	`, orgID, orgName, slug, now)
+		VALUES ($1, $2, $3, 'free', $4, 1, $5, $5)
+	`, orgID, orgName, slug, PlanMonitorQuota("free"), now)
 	if err != nil {
 		return nil, err
 	}

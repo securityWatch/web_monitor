@@ -52,7 +52,7 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
   ];
 
   const plans = [
-    { name: t('planFree'), price: '$0', founding: null, monitors: 15 },
+    { name: t('planFree'), price: '$0', founding: null, monitors: 10 },
     { name: t('planPro'), price: '$1', founding: '$12', monitors: 50, popular: true },
     { name: t('planTeam'), price: '$4', founding: '$39', monitors: 150 },
     { name: t('planBusiness'), price: '$10', founding: '$99', monitors: 500 },

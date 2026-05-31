@@ -104,7 +104,7 @@ export interface AuthTokens {
 }
 
 export const PLAN_LIMITS: Record<PlanTier, { monitors: number; minInterval: number }> = {
-  free: { monitors: 15, minInterval: 300 },
+  free: { monitors: 10, minInterval: 300 },
   pro: { monitors: 50, minInterval: 60 },
   team: { monitors: 150, minInterval: 60 },
   business: { monitors: 500, minInterval: 30 },

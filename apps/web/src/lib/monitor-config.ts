@@ -160,6 +160,37 @@ export const defaultAlertConfig = (): MonitorAlertConfig => ({
   consecutiveFailuresBeforeAlert: 1,
 });
 
+export const PLAN_MONITOR_LIMITS = {
+  free: { monitors: 10, minIntervalSeconds: 300 },
+  pro: { monitors: 50, minIntervalSeconds: 60 },
+  team: { monitors: 150, minIntervalSeconds: 60 },
+  business: { monitors: 500, minIntervalSeconds: 30 },
+} as const;
+
+export function minIntervalSecondsForPlan(planTier: string, tamperAIOn: boolean): number {
+  const tier = (planTier in PLAN_MONITOR_LIMITS ? planTier : 'free') as keyof typeof PLAN_MONITOR_LIMITS;
+  if (tamperAIOn && tier === 'free') return 1800;
+  return PLAN_MONITOR_LIMITS[tier].minIntervalSeconds;
+}
+
+export function intervalOptionsForPlan(
+  planTier: string,
+  tamperAIOn: boolean,
+  labels: { minutes: string; seconds: string },
+) {
+  const min = minIntervalSecondsForPlan(planTier, tamperAIOn);
+  const all = [
+    { value: 1800, label: `30 ${labels.minutes}` },
+    { value: 300, label: `5 ${labels.minutes}` },
+    { value: 60, label: `1 ${labels.minutes}` },
+    { value: 30, label: `30 ${labels.seconds}` },
+  ];
+  if (tamperAIOn && (planTier === 'free' || !planTier)) {
+    return [all[0]];
+  }
+  return all.filter((o) => o.value >= min);
+}
+
 export function parseSslConfig(raw: unknown): SslMonitorConfig {
   if (!raw || typeof raw !== 'object') return defaultSslConfig();
   const obj = raw as Record<string, unknown>;

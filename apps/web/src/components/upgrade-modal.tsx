@@ -29,7 +29,7 @@ export function UpgradeModal({
               <h2 className="text-lg font-semibold">监控配额已满</h2>
             </div>
             <p className="text-sm text-zinc-400">
-              当前套餐最多 {auth?.organization.monitorQuota ?? 15} 个监控。升级 Pro 创始价仅需 $1/月，解锁 50 个监控。
+              当前套餐最多 {auth?.organization.monitorQuota ?? 10} 个监控。升级 Pro 创始价仅需 $1/月，解锁 50 个监控。
             </p>
             <Link href="/settings" onClick={onClose} className="btn-primary block w-full text-center">
               升级 Pro — $1/月
