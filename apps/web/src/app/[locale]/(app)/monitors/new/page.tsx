@@ -23,6 +23,7 @@ import {
   mergeMonitorConfigForSave,
   PageSpeedMonitorConfig,
   parseHttpConfig,
+  parseTamperConfig,
   SslMonitorConfig,
   TamperMonitorConfig,
 } from '@/lib/monitor-config';
@@ -45,6 +46,64 @@ export default function NewMonitorPage() {
   const [loading, setLoading] = useState(false);
   const [hbInfo, setHbInfo] = useState<{ token?: string; url?: string } | null>(null);
   const [upgradeModal, setUpgradeModal] = useState<'quota' | 'email' | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiDraftMsg, setAiDraftMsg] = useState('');
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
+  const planTier = auth?.organization.planTier || 'free';
+  const paidPlan = planTier !== 'free';
+  const tamperAIOn = form.type === 'tamper' && !!tamperConfig.aiContentRecognitionEnabled;
+  const intervalOptions = tamperAIOn && !paidPlan
+    ? [{ value: 1800, label: `30 ${t('minutes')}` }]
+    : [
+        { value: 1800, label: `30 ${t('minutes')}` },
+        { value: 300, label: `5 ${t('minutes')}` },
+        { value: 60, label: `1 ${t('minutes')}` },
+        { value: 30, label: `30 ${t('seconds')}` },
+      ];
+
+  const updateTamperConfig = (next: TamperMonitorConfig) => {
+    setTamperConfig(next);
+    if (form.type === 'tamper' && next.aiContentRecognitionEnabled && !paidPlan && form.intervalSeconds < 1800) {
+      setForm((f) => ({ ...f, intervalSeconds: 1800 }));
+    }
+  };
+
+  const updateMonitorType = (type: string) => {
+    setForm((f) => ({
+      ...f,
+      type,
+      intervalSeconds: type === 'tamper' && tamperConfig.aiContentRecognitionEnabled && !paidPlan && f.intervalSeconds < 1800 ? 1800 : f.intervalSeconds,
+    }));
+  };
+
+  const generateAIDraft = async () => {
+    if (!auth?.organization.id || !aiPrompt.trim()) return;
+    setAiDraftLoading(true);
+    setAiDraftMsg('');
+    try {
+      const res = await apiFetch<{
+        draft: { name: string; type: string; targetUrl: string; intervalSeconds: number; config?: Record<string, unknown>; regions?: string[]; explanation?: string };
+      }>(`/api/v1/orgs/${auth.organization.id}/monitors/ai-draft`, {
+        method: 'POST',
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      const d = res.draft;
+      setForm({
+        name: d.name || form.name,
+        targetUrl: d.targetUrl || form.targetUrl,
+        type: d.type || 'http',
+        intervalSeconds: d.intervalSeconds || 300,
+        regions: (d.regions || ['us-east', 'eu-west']).join(','),
+      });
+      setHttpConfig(parseHttpConfig(d.config || {}));
+      setTamperConfig(parseTamperConfig(d.config || {}));
+      setAiDraftMsg(d.explanation || t('aiDraftApplied'));
+    } catch (err) {
+      setAiDraftMsg(err instanceof Error ? err.message : 'AI error');
+    } finally {
+      setAiDraftLoading(false);
+    }
+  };
 
   const securityPayload = () => {
     if (form.type === 'ssl') return { ssl: sslConfig };
@@ -94,10 +153,10 @@ export default function NewMonitorPage() {
   if (hbInfo) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 card">
-        <h1 className="text-xl font-bold">Heartbeat 监控已创建</h1>
-        <p className="text-sm text-zinc-400">定时向以下 URL 发送 POST 请求（如 cron job）：</p>
+        <h1 className="text-xl font-bold">{t('heartbeatCreatedTitle')}</h1>
+        <p className="text-sm text-zinc-400">{t('heartbeatCreatedDesc')}</p>
         <code className="block break-all rounded bg-zinc-900 p-3 text-sm">{hbInfo.url}</code>
-        <button className="btn-primary" onClick={() => router.push('/monitors')}>返回列表</button>
+        <button className="btn-primary" onClick={() => router.push('/monitors')}>{t('heartbeatBackToList')}</button>
       </div>
     );
   }
@@ -105,6 +164,22 @@ export default function NewMonitorPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-2xl font-bold">{t('createTitle')}</h1>
+      <div className="card border-blue-500/20 bg-blue-500/5 space-y-3">
+        <div>
+          <p className="font-semibold text-blue-100">{t('aiDraftTitle')}</p>
+          <p className="mt-1 text-xs text-blue-100/60">{t('aiDraftDesc')}</p>
+        </div>
+        <textarea
+          className="input min-h-[72px]"
+          placeholder={t('aiDraftPlaceholder')}
+          value={aiPrompt}
+          onChange={(e) => setAiPrompt(e.target.value)}
+        />
+        <button type="button" className="btn-secondary text-sm" disabled={aiDraftLoading || !aiPrompt.trim()} onClick={generateAIDraft}>
+          {aiDraftLoading ? '...' : t('aiDraftButton')}
+        </button>
+        {aiDraftMsg && <p className="text-xs text-blue-100/70">{aiDraftMsg}</p>}
+      </div>
       <div className="flex flex-wrap gap-2">
         {MONITOR_TEMPLATES.map((tpl) => (
           <button
@@ -114,6 +189,7 @@ export default function NewMonitorPage() {
             onClick={() => {
               setForm({ name: locale === 'zh' ? tpl.nameZh : tpl.name, targetUrl: tpl.targetUrl, type: tpl.type, intervalSeconds: tpl.intervalSeconds, regions: 'us-east,eu-west' });
               setHttpConfig(tpl.config ? parseHttpConfig(tpl.config) : defaultHttpConfig());
+              setTamperConfig(tpl.config ? parseTamperConfig(tpl.config) : defaultTamperConfig());
             }}
           >
             {locale === 'zh' ? tpl.nameZh : tpl.name}
@@ -134,7 +210,7 @@ export default function NewMonitorPage() {
         )}
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('monitorType')}</label>
-          <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+          <select className="input" value={form.type} onChange={(e) => updateMonitorType(e.target.value)}>
             <option value="http">{t('typeHttp')}</option>
             <option value="tcp">{t('typeTcp')}</option>
             <option value="ping">{t('typePing')}</option>
@@ -152,21 +228,24 @@ export default function NewMonitorPage() {
           )}
         </div>
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">检测区域（多区域探针）</label>
+          <label className="mb-1 block text-sm text-zinc-400">{t('regionsLabel')}</label>
           <input className="input font-mono text-sm" value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} placeholder="us-east, eu-west" />
         </div>
         <MonitorHttpConfig type={form.type} config={httpConfig} onChange={setHttpConfig} />
         {form.type === 'ssl' && <MonitorSslConfig config={sslConfig} onChange={setSslConfig} />}
         {form.type === 'dns' && <MonitorDnsConfig config={dnsConfig} onChange={setDnsConfig} />}
-        {form.type === 'tamper' && <MonitorTamperConfig config={tamperConfig} onChange={setTamperConfig} />}
+        {form.type === 'tamper' && <MonitorTamperConfig config={tamperConfig} onChange={updateTamperConfig} />}
         {form.type === 'pagespeed' && <MonitorPageSpeedConfig config={pageSpeedConfig} onChange={setPageSpeedConfig} />}
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
           <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>
-            <option value={300}>5 {t('minutes')}</option>
-            <option value={60}>1 {t('minutes')}</option>
-            <option value={30}>30 {t('seconds')}</option>
+            {intervalOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
+          {tamperAIOn && (
+            <p className="mt-1 text-xs text-zinc-500">{paidPlan ? t('tamperAIPaidInterval') : t('tamperAIFreeInterval')}</p>
+          )}
         </div>
         <div className="rounded-lg border border-zinc-800 p-4">
           <p className="mb-2 text-sm font-medium text-zinc-300">{t('alertSettingsTitle')}</p>

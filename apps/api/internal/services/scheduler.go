@@ -13,15 +13,16 @@ import (
 )
 
 type Scheduler struct {
-	db        *pgxpool.Pool
-	cfg       *config.Config
-	email     *EmailService
-	alerts    *AlertService
-	incidents *IncidentService
-	probes    *ProbeDispatch
-	security  *SecurityEvents
-	retention *RetentionService
-	stop      chan struct{}
+	db                *pgxpool.Pool
+	cfg               *config.Config
+	email             *EmailService
+	alerts            *AlertService
+	incidents         *IncidentService
+	probes            *ProbeDispatch
+	security          *SecurityEvents
+	retention         *RetentionService
+	stop              chan struct{}
+	lastAIWeeklyCheck time.Time
 }
 
 func NewScheduler(db *pgxpool.Pool, cfg *config.Config, email *EmailService, alerts *AlertService, incidents *IncidentService) *Scheduler {
@@ -54,6 +55,7 @@ func (s *Scheduler) loop() {
 				s.probes.AggregatePending(ctx, s)
 			}
 			s.processPendingAlerts(ctx)
+			s.processSystemReports(ctx)
 			s.processOnCallEscalation(ctx)
 			s.retention.MaybeRun(ctx)
 		}
@@ -247,6 +249,57 @@ func (s *Scheduler) processPendingAlerts(ctx context.Context) {
 	}
 }
 
+func (s *Scheduler) processSystemReports(ctx context.Context) {
+	if s.email == nil || time.Since(s.lastAIWeeklyCheck) < time.Hour {
+		return
+	}
+	s.lastAIWeeklyCheck = time.Now()
+	rows, err := s.db.Query(ctx, `
+		SELECT o.id, u.email, COALESCE(u.notify_daily, false), u.notify_weekly
+		FROM organizations o
+		JOIN organization_members om ON om.org_id = o.id AND om.role = 'owner'
+		JOIN users u ON u.id = om.user_id AND (u.notify_weekly = true OR COALESCE(u.notify_daily, false) = true)
+		LIMIT 25
+	`)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var orgID, email string
+		var notifyDaily, notifyWeekly bool
+		if rows.Scan(&orgID, &email, &notifyDaily, &notifyWeekly) != nil || email == "" {
+			continue
+		}
+		if notifyDaily {
+			s.sendSystemReportIfDue(ctx, orgID, email, "daily", "24 hours")
+		}
+		if notifyWeekly {
+			s.sendSystemReportIfDue(ctx, orgID, email, "weekly", "7 days")
+		}
+	}
+}
+
+func (s *Scheduler) sendSystemReportIfDue(ctx context.Context, orgID, email, period, window string) {
+	action := "system_report." + period + ".sent"
+	var recent int
+	_ = s.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM audit_logs
+		WHERE org_id = $1 AND action = $2 AND created_at > now() - ($3)::interval
+	`, orgID, action, window).Scan(&recent)
+	if recent > 0 {
+		return
+	}
+	report, err := BuildSystemReport(ctx, s.db, orgID, period, deepSeekConfigured())
+	if err != nil {
+		return
+	}
+	if err := s.email.Send(ctx, email, "[PulseWatch] "+period+" monitoring report", FormatSystemReportHTML(report)); err != nil {
+		return
+	}
+	LogAudit(ctx, s.db, orgID, "", action, "", map[string]interface{}{"email": email})
+}
+
 func (s *Scheduler) fireDownAlert(ctx context.Context, monitorID, orgID, name, detail string) {
 	if s.isFlapping(ctx, monitorID) {
 		_, _ = s.db.Exec(ctx, `UPDATE monitors SET flap_suppressed_until = now() + interval '15 minutes' WHERE id = $1`, monitorID)
@@ -266,12 +319,7 @@ func (s *Scheduler) fireDownAlert(ctx context.Context, monitorID, orgID, name, d
 		var planTier, target, mType string
 		_ = s.db.QueryRow(ctx, `SELECT o.plan_tier, m.target_url, m.type FROM monitors m JOIN organizations o ON o.id = m.org_id WHERE m.id = $1`, monitorID).Scan(&planTier, &target, &mType)
 		if mType == "http" || mType == "keyword" {
-			var bodySnippet string
-			_ = s.db.QueryRow(ctx, `
-				SELECT COALESCE(metadata->>'responseBodySnippet', '')
-				FROM check_results WHERE monitor_id = $1 ORDER BY checked_at DESC LIMIT 1
-			`, monitorID).Scan(&bodySnippet)
-			go NewScreenshotService(s.db, s.cfg).CaptureOnDown(context.Background(), orgID, monitorID, "", target, detail, bodySnippet, planTier)
+			go NewScreenshotService(s.db, s.cfg).CaptureOnDown(context.Background(), orgID, monitorID, "", target, detail, planTier)
 		}
 	}
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import {
   ArrowLeftRight,
   Braces,
@@ -12,6 +13,12 @@ import {
   Quote,
   Trash2,
   Check,
+  FileText,
+  ImageIcon,
+  QrCode,
+  ShieldCheck,
+  CalendarClock,
+  Files,
 } from 'lucide-react';
 import {
   base64Decode,
@@ -41,6 +48,15 @@ const TOOLS: { id: ToolId; icon: typeof Braces }[] = [
   { id: 'base64', icon: Binary },
   { id: 'url', icon: Link2 },
   { id: 'timestamp', icon: Clock },
+];
+
+const EXTRA_TOOLS = [
+  { href: '/tools/image-compress', key: 'imageCompress', icon: ImageIcon },
+  { href: '/tools/pdf-tools', key: 'pdfTools', icon: Files },
+  { href: '/tools/pdf-to-word', key: 'pdfToWord', icon: FileText },
+  { href: '/tools/qr-code', key: 'qrCode', icon: QrCode },
+  { href: '/tools/jwt-decoder', key: 'jwtDecoder', icon: ShieldCheck },
+  { href: '/tools/cron-parser', key: 'cronParser', icon: CalendarClock },
 ];
 
 export function DevToolsPanel() {
@@ -149,6 +165,16 @@ export function DevToolsPanel() {
               <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
               {t(`tabs.${id}`)}
             </button>
+          ))}
+          {EXTRA_TOOLS.map(({ href, key, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-medium text-blue-100 transition-colors hover:border-blue-400 hover:bg-blue-500/20 sm:px-5 sm:py-3 sm:text-base"
+            >
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+              {t(`tabs.${key}`)}
+            </Link>
           ))}
         </div>
 

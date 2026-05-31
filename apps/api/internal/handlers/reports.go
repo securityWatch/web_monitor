@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pulsewatch/api/internal/services"
 )
 
 type ReportHandler struct {
@@ -75,6 +76,56 @@ func (h *ReportHandler) SLAExport(c *gin.Context) {
 		}
 		c.String(http.StatusOK, "%q,%s,%d,%d,%s,%s\n", name, mType, total, up, upPct, avg)
 	}
+}
+
+func (h *ReportHandler) AISecurityReport(c *gin.Context) {
+	orgID := c.Param("orgId")
+	userID := GetUserID(c)
+	var exists bool
+	_ = h.db.QueryRow(c.Request.Context(), `
+		SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)
+	`, userID, orgID).Scan(&exists)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	var planTier string
+	_ = h.db.QueryRow(c.Request.Context(), `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+	if err := services.CheckAIQuota(c.Request.Context(), h.db, orgID, planTier, "security_report"); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error(), "code": "AI_QUOTA_EXCEEDED"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	report, err := services.GenerateAISecurityReport(ctx, services.BuildAISecurityReportInput(ctx, h.db, orgID))
+	if err != nil {
+		services.RecordAIUsage(ctx, h.db, orgID, "security_report", "error", err.Error())
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
+		return
+	}
+	services.RecordAIUsage(ctx, h.db, orgID, "security_report", "ok", "")
+	c.JSON(http.StatusOK, gin.H{"report": report})
+}
+
+func (h *ReportHandler) SystemReport(c *gin.Context) {
+	orgID := c.Param("orgId")
+	userID := GetUserID(c)
+	var exists bool
+	_ = h.db.QueryRow(c.Request.Context(), `
+		SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)
+	`, userID, orgID).Scan(&exists)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	period := c.DefaultQuery("period", "weekly")
+	includeAI := c.Query("ai") == "true"
+	report, err := services.BuildSystemReport(c.Request.Context(), h.db, orgID, period, includeAI)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"report": report})
 }
 
 func (h *ReportHandler) SLAReportHTML(c *gin.Context) {

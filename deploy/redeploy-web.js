@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * Web deploy — default REMOTE_BUILD=1 (build on server, ~2–5 min).
  * Set REMOTE_WEB_BUILD=0 to upload prebuilt bundle (slow on narrow uplink).
@@ -61,7 +61,7 @@ async function deployRemoteBuild() {
   console.log('[web] Packing source (~500KB)...');
   fs.mkdirSync(path.dirname(srcTar), { recursive: true });
   execSync(
-    `tar czf "${srcTar}" package.json package-lock.json apps/web --exclude=node_modules --exclude=.next`,
+    `tar czf "${srcTar}" --exclude=node_modules --exclude=.next package.json package-lock.json apps/web`,
     { cwd: ROOT, stdio: 'inherit' },
   );
 

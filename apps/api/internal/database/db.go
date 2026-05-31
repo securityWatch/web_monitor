@@ -27,6 +27,8 @@ var migrationFiles = []string{
 	"migrations/010_phase6_security.sql",
 	"migrations/011_login_lockout.sql",
 	"migrations/012_api_json_retention.sql",
+	"migrations/013_ai_productization.sql",
+	"migrations/014_daily_reports.sql",
 }
 
 func Connect(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {

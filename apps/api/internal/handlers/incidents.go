@@ -19,6 +19,44 @@ func NewIncidentHandler(db *pgxpool.Pool, incidents *services.IncidentService) *
 	return &IncidentHandler{db: db, incidents: incidents}
 }
 
+func (h *IncidentHandler) AISummary(c *gin.Context) {
+	orgID := c.Param("orgId")
+	incidentID := c.Param("incidentId")
+	userID := GetUserID(c)
+	ctx := c.Request.Context()
+	if !h.verifyOrgAccess(c, orgID, userID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	var inc models.Incident
+	err := h.db.QueryRow(ctx, `
+		SELECT i.id, i.org_id, i.monitor_id, m.name, i.started_at, i.resolved_at, i.status, i.severity, i.message,
+		       COALESCE(i.title, m.name), COALESCE(i.workflow_status, 'investigating'), i.assignee_id, i.post_mortem
+		FROM incidents i JOIN monitors m ON m.id = i.monitor_id
+		WHERE i.id = $1 AND i.org_id = $2
+	`, incidentID, orgID).Scan(&inc.ID, &inc.OrgID, &inc.MonitorID, &inc.MonitorName, &inc.StartedAt, &inc.ResolvedAt, &inc.Status, &inc.Severity, &inc.Message, &inc.Title, &inc.WorkflowStatus, &inc.AssigneeID, &inc.PostMortem)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	var planTier string
+	_ = h.db.QueryRow(ctx, `SELECT plan_tier FROM organizations WHERE id = $1`, orgID).Scan(&planTier)
+	if err := services.CheckAIQuota(ctx, h.db, orgID, planTier, "incident_summary"); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error(), "code": "AI_QUOTA_EXCEEDED"})
+		return
+	}
+
+	summary, err := h.incidents.GenerateAndStoreAISummary(ctx, incidentID, orgID, &userID)
+	if err != nil {
+		services.RecordAIUsage(ctx, h.db, orgID, "incident_summary", "error", err.Error())
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error(), "code": "AI_UNAVAILABLE"})
+		return
+	}
+	services.RecordAIUsage(ctx, h.db, orgID, "incident_summary", "ok", "")
+	c.JSON(http.StatusOK, gin.H{"summary": summary, "postMortem": services.FormatIncidentPostMortem(summary)})
+}
+
 func (h *IncidentHandler) verifyOrgAccess(c *gin.Context, orgID, userID string) bool {
 	var exists bool
 	_ = h.db.QueryRow(c.Request.Context(), `SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = $1 AND org_id = $2)`, userID, orgID).Scan(&exists)
@@ -152,11 +190,11 @@ func (h *IncidentHandler) Update(c *gin.Context) {
 	}
 
 	var req struct {
-		WorkflowStatus  *string `json:"workflowStatus"`
-		AssigneeID      *string `json:"assigneeId"`
-		PostMortem      *string `json:"postMortem"`
-		Status          *string `json:"status"`
-		SyncStatusPage  *bool   `json:"syncStatusPage"`
+		WorkflowStatus *string `json:"workflowStatus"`
+		AssigneeID     *string `json:"assigneeId"`
+		PostMortem     *string `json:"postMortem"`
+		Status         *string `json:"status"`
+		SyncStatusPage *bool   `json:"syncStatusPage"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -180,6 +218,11 @@ func (h *IncidentHandler) Update(c *gin.Context) {
 	if req.Status != nil && *req.Status == "resolved" {
 		_, _ = h.db.Exec(ctx, `UPDATE incidents SET status = 'resolved', resolved_at = now(), workflow_status = 'resolved' WHERE id = $1 AND org_id = $2`, incidentID, orgID)
 		h.incidents.AddTimeline(ctx, incidentID, "resolved", "Incident resolved manually", &userID)
+		if _, err := h.incidents.GenerateAndStoreAISummary(ctx, incidentID, orgID, &userID); err != nil {
+			services.RecordAIUsage(ctx, h.db, orgID, "incident_summary_auto", "error", err.Error())
+		} else {
+			services.RecordAIUsage(ctx, h.db, orgID, "incident_summary_auto", "ok", "")
+		}
 		_, _ = h.db.Exec(ctx, `UPDATE status_page_incidents SET resolved_at = now() WHERE incident_id = $1 AND resolved_at IS NULL`, incidentID)
 	}
 

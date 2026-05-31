@@ -145,6 +145,7 @@
     "resourcesLogin": "登录控制台",
     "resourcesRegister": "免费注册账号",
     "resourcesDevTools": "免费开发者小工具",
+    "resourcesPdfToWord": "PDF 转 Word",
     "resourcesSsl": "免费 SSL 检测工具",
     "resourcesCompare": "对比 Better Stack",
     "resourcesAppNote": "监控、事件与状态页需在登录后于控制台中使用。",
@@ -197,7 +198,7 @@
   },
   "homeTools": {
     "title": "免费开发者小工具",
-    "subtitle": "JSON 格式化、字符串转义、编码转换 — 全部在浏览器本地运行，无需注册。",
+    "subtitle": "JSON 格式化、PDF 工具、图片压缩、二维码、JWT 与 Cron 解析 — 全部在浏览器本地运行，无需注册。",
     "transform": "转换",
     "copy": "复制",
     "copied": "已复制！",
@@ -213,7 +214,13 @@
       "escape": "字符串转义",
       "base64": "Base64",
       "url": "URL",
-      "timestamp": "时间戳"
+      "timestamp": "时间戳",
+      "pdfToWord": "PDF 转 Word",
+      "imageCompress": "图片压缩",
+      "pdfTools": "PDF 合并/拆分",
+      "qrCode": "二维码",
+      "jwtDecoder": "JWT 解码",
+      "cronParser": "Cron 解析"
     },
     "json": {
       "format": "格式化",
@@ -257,6 +264,96 @@
     "placeholderBase64": "你好，世界！",
     "placeholderUrl": "hello world & 特殊=字符",
     "placeholderTimestamp": "1717084800000 或 2024-05-30T12:00:00Z"
+  },
+  "pdfToWord": {
+    "badge": "免费本地转换",
+    "title": "PDF 转 Word",
+    "subtitle": "将 PDF 文本提取为可编辑的 Word 文档。转换在浏览器本地完成，文件不会上传到服务器。",
+    "dropTitle": "选择 PDF 文件",
+    "dropHint": "支持文本型 PDF，建议 20MB 以内。扫描件/OCR 将在后续版本支持。",
+    "privacyTitle": "隐私",
+    "privacyValue": "本地处理，不上传文件",
+    "outputTitle": "输出",
+    "outputValue": "生成 .docx Word 文档",
+    "limitTitle": "适用范围",
+    "limitValue": "最适合文本 PDF",
+    "status": {
+      "reading": "正在读取 PDF...",
+      "page": "正在解析第 {page}/{total} 页...",
+      "word": "正在生成 Word 文档...",
+      "done": "转换完成"
+    },
+    "errors": {
+      "notPdf": "请选择 PDF 文件。",
+      "tooLarge": "文件过大，请选择 20MB 以内的 PDF。",
+      "noText": "未提取到文本。该 PDF 可能是扫描件，后续版本将支持 OCR。",
+      "generic": "转换失败，请尝试其他 PDF。"
+    },
+    "warnings": {
+      "lowText": "提取到的文本较少，可能是图片型或扫描型 PDF。"
+    },
+    "result": "已解析 {pages} 页，生成 {paragraphs} 段文本。",
+    "download": "下载 Word"
+  },
+  "extraTools": {
+    "image": {
+      "badge": "图片本地处理",
+      "title": "图片压缩 / WebP 转换",
+      "subtitle": "在浏览器本地压缩图片、调整最大宽度并导出 WebP、JPEG 或 PNG。",
+      "choose": "选择图片",
+      "hint": "支持常见图片格式，文件不会上传。",
+      "format": "输出格式",
+      "quality": "质量（10-100）",
+      "maxWidth": "最大宽度",
+      "notImage": "请选择图片文件。",
+      "failed": "图片转换失败。",
+      "saved": "{before} → {after}，约减少 {pct}%",
+      "download": "下载图片"
+    },
+    "pdf": {
+      "badge": "PDF 本地整理",
+      "title": "PDF 合并 / 拆分",
+      "subtitle": "本地合并多个 PDF，或从单个 PDF 中提取指定页码范围。",
+      "choose": "选择 PDF 文件",
+      "hint": "合并可多选；拆分使用第一个 PDF。",
+      "mode": "模式",
+      "merge": "合并",
+      "extract": "提取页码",
+      "range": "页码范围（如 1-3,5）",
+      "run": "开始处理",
+      "processing": "正在处理 PDF...",
+      "done": "处理完成",
+      "noFile": "请先选择 PDF 文件。",
+      "failed": "PDF 处理失败。",
+      "result": "已生成 {pages} 页 PDF。",
+      "download": "下载 PDF"
+    },
+    "qr": {
+      "badge": "二维码生成",
+      "title": "二维码生成器",
+      "subtitle": "输入 URL、文本或联系方式，本地生成可下载 PNG 二维码。",
+      "content": "内容",
+      "size": "尺寸",
+      "download": "下载二维码"
+    },
+    "jwt": {
+      "badge": "本地解码",
+      "title": "JWT 解码器",
+      "subtitle": "在浏览器本地解码 JWT header/payload，不验证签名，不上传 token。",
+      "placeholder": "粘贴 JWT token...",
+      "header": "Header",
+      "payload": "Payload",
+      "privacy": "仅本地解码；不要把敏感 token 发给第三方。"
+    },
+    "cron": {
+      "badge": "定时表达式",
+      "title": "Cron 表达式解析器",
+      "subtitle": "验证 5 段 Cron 表达式，查看字段含义和接下来 5 次运行时间。",
+      "expression": "Cron 表达式",
+      "summary": "字段说明",
+      "next": "接下来运行",
+      "note": "支持 *, */n, 列表和简单范围。"
+    }
   },
   "auth": {
     "loginTitle": "欢迎回来",
@@ -326,6 +423,11 @@
     "heartbeatCreatedDesc": "定时向以下 URL 发送 POST 请求（如 cron job）：",
     "heartbeatBackToList": "返回列表",
     "regionsLabel": "检测区域（多区域探针）",
+    "aiDraftTitle": "AI 智能建监控",
+    "aiDraftDesc": "用自然语言描述要监控的对象，AI 自动填充类型、URL、间隔与高级配置。",
+    "aiDraftPlaceholder": "例如：每分钟检查登录 API，POST JSON 到 /login，200 或 401 都算健康。",
+    "aiDraftButton": "生成监控草稿",
+    "aiDraftApplied": "AI 草稿已填入",
     "editTitle": "编辑监控",
     "saveChanges": "保存修改",
     "typeReadonly": "创建后监控类型不可修改",
@@ -364,6 +466,11 @@
     "dnsTrustedResolvers": "受信解析器（可选）",
     "dnsTrustedResolversHint": "逗号分隔 IP。配置两个及以上时，结果须一致否则检查失败。",
     "tamperConfigTitle": "内容完整性设置",
+    "tamperAIRecognitionTitle": "DeepSeek AI 内容识别",
+    "tamperAIRecognitionDesc": "将页面可见文本发送给 DeepSeek，识别黑页篡改、钓鱼、涉赌、涉黄与可疑注入文案。",
+    "tamperAIIntervalHint": "免费用户 AI 识别每 30 分钟一次；付费用户最快可 30 秒一次。",
+    "tamperAIFreeInterval": "免费版开启 AI 识别后固定每 30 分钟检测一次。",
+    "tamperAIPaidInterval": "付费版开启 AI 识别后最快可每 30 秒检测一次。",
     "tamperSensitivity": "重大变更灵敏度",
     "tamperSensitivityValue": "变更超过 {pct}% 时告警",
     "tamperRecaptureBaseline": "重新捕获基线",
@@ -388,6 +495,10 @@
     "tamperDiffPercent": "差异",
     "tamperBodyHash": "指纹",
     "tamperMatchedKeywords": "命中词",
+    "tamperAIStatusTitle": "AI 内容识别",
+    "tamperAIFlagged": "AI 识别到风险",
+    "tamperAIClean": "AI 未识别到风险",
+    "tamperAIUnavailable": "AI 识别暂不可用",
     "pause": "暂停",
     "resume": "恢复",
     "deleteConfirm": "确定删除此监控？",
@@ -517,6 +628,7 @@
     "changeEmail": "修改邮箱",
     "newEmail": "新邮箱",
     "notifyIncidents": "故障告警",
+    "notifyDaily": "日报",
     "notifyWeekly": "周报摘要",
     "notifyProduct": "产品更新",
     "notifySsl": "SSL 到期提醒",
@@ -530,6 +642,11 @@
     "stripeNotConfigured": "Stripe 未配置，请联系管理员。",
     "exportSlaCsv": "导出 SLA 报告 (CSV)",
     "exportSlaHtml": "导出 SLA 报告 (HTML)",
+    "systemReport": "生成系统报告",
+    "systemReportAI": "生成含 AI 摘要报告",
+    "dailyReport": "日报",
+    "weeklyReport": "周报",
+    "monthlyReport": "月报",
     "foundingMember": "创始会员",
     "integrationsTab": "集成",
     "integrations": {
@@ -564,6 +681,15 @@
       "pagerDutyKey": "PagerDuty Routing Key",
       "smsPhone": "手机号 (E.164，如 +86138…)",
       "smsHint": "需配置服务端 TWILIO_* 环境变量",
+      "eventType": "事件类型",
+      "eventAll": "全部事件",
+      "eventDown": "故障",
+      "eventUp": "恢复",
+      "eventSslWarning": "SSL 预警",
+      "eventDnsChange": "DNS 变更",
+      "eventTamperMajor": "内容重大变更",
+      "eventTamperPolicy": "内容策略违规",
+      "eventTamperAI": "AI 内容风险",
       "delayMinutes": "告警延迟（分钟，DOWN 持续 N 分钟后通知）",
       "existingChannels": "已配置渠道",
       "noChannels": "暂无集成渠道。邮件告警默认发送到您的账户邮箱。",
@@ -653,8 +779,38 @@
     },
     "tools": {
       "title": "免费开发者小工具 — JSON、Base64、URL 与时间戳 | PulseWatch",
-      "description": "浏览器内 JSON 格式化、字符串转义、Base64/URL 编码、Unix 时间戳转换。无需注册，全部本地处理。",
-      "keywords": "JSON 格式化, JSON 压缩, Base64 编码, URL 编码, Unix 时间戳转换, 开发者工具, JSON formatter, Base64 encode"
+      "description": "浏览器内 JSON 格式化、PDF 转 Word、Base64/URL 编码、Unix 时间戳转换。无需注册，全部本地处理。",
+      "keywords": "JSON 格式化, PDF转Word, PDF转Word在线, Base64 编码, URL 编码, Unix 时间戳转换, 开发者工具, JSON formatter"
+    },
+    "pdfToWord": {
+      "title": "PDF 转 Word 在线工具 | 免费本地转换 | PulseWatch",
+      "description": "免费 PDF 转 Word 工具，在浏览器本地将 PDF 文本转换为可编辑 DOCX，不上传文件，保护隐私。",
+      "keywords": "PDF转Word, PDF转Word在线, PDF转DOCX, 免费PDF转换, Word转换器, 本地PDF转换"
+    },
+    "imageCompress": {
+      "title": "图片压缩与 WebP 转换 | PulseWatch",
+      "description": "免费在线图片压缩和 WebP 转换工具，浏览器本地处理，不上传图片。",
+      "keywords": "图片压缩, 图片转WebP, WebP转换, 在线图片压缩, compress image"
+    },
+    "pdfTools": {
+      "title": "PDF 合并与拆分工具 | PulseWatch",
+      "description": "免费 PDF 合并、PDF 拆分和页码提取工具，浏览器本地处理，不上传文件。",
+      "keywords": "PDF合并, PDF拆分, PDF提取页面, PDF工具, merge PDF, split PDF"
+    },
+    "qrCode": {
+      "title": "二维码生成器 | PulseWatch",
+      "description": "免费二维码生成器，输入 URL 或文本即可生成可下载 PNG 二维码。",
+      "keywords": "二维码生成器, QR Code, URL二维码, 免费二维码"
+    },
+    "jwtDecoder": {
+      "title": "JWT 解码器 | PulseWatch",
+      "description": "免费 JWT 解码工具，本地解析 header 和 payload，不上传 token。",
+      "keywords": "JWT解码, JWT decoder, token解析, JWT payload"
+    },
+    "cronParser": {
+      "title": "Cron 表达式解析器 | PulseWatch",
+      "description": "免费 Cron 表达式解析工具，查看字段含义和接下来运行时间。",
+      "keywords": "Cron解析, Cron表达式, 定时任务, cron parser"
     }
   }
 }

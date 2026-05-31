@@ -50,6 +50,14 @@ export interface SecurityCheckMetadata {
   diffPercent?: number;
   diffSummary?: string;
   matchedKeywords?: string[];
+  aiContentRecognition?: {
+    status?: string;
+    flagged?: boolean;
+    riskLevel?: string;
+    categories?: string[];
+    summary?: string;
+    confidence?: number;
+  };
 }
 
 export function parseSecurityMetadata(raw: unknown): SecurityCheckMetadata {
@@ -60,6 +68,12 @@ export function parseSecurityMetadata(raw: unknown): SecurityCheckMetadata {
     : undefined;
   const matched = Array.isArray(obj.matchedKeywords)
     ? (obj.matchedKeywords as unknown[]).map(String)
+    : undefined;
+  const aiRaw = obj.aiContentRecognition && typeof obj.aiContentRecognition === 'object'
+    ? (obj.aiContentRecognition as Record<string, unknown>)
+    : undefined;
+  const aiCategories = Array.isArray(aiRaw?.categories)
+    ? (aiRaw?.categories as unknown[]).map(String)
     : undefined;
   return {
     sslDaysLeft: typeof obj.sslDaysLeft === 'number' ? obj.sslDaysLeft : undefined,
@@ -73,6 +87,16 @@ export function parseSecurityMetadata(raw: unknown): SecurityCheckMetadata {
     diffPercent: typeof obj.diffPercent === 'number' ? obj.diffPercent : undefined,
     diffSummary: typeof obj.diffSummary === 'string' ? obj.diffSummary : undefined,
     matchedKeywords: matched,
+    aiContentRecognition: aiRaw
+      ? {
+          status: typeof aiRaw.status === 'string' ? aiRaw.status : undefined,
+          flagged: typeof aiRaw.flagged === 'boolean' ? aiRaw.flagged : undefined,
+          riskLevel: typeof aiRaw.riskLevel === 'string' ? aiRaw.riskLevel : undefined,
+          categories: aiCategories,
+          summary: typeof aiRaw.summary === 'string' ? aiRaw.summary : undefined,
+          confidence: typeof aiRaw.confidence === 'number' ? aiRaw.confidence : undefined,
+        }
+      : undefined,
   };
 }
 

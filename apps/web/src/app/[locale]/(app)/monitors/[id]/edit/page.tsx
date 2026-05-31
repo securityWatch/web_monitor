@@ -48,6 +48,8 @@ export default function EditMonitorPage() {
   const { id } = useParams<{ id: string }>();
   const auth = getStoredAuth();
   const orgId = auth?.organization.id;
+  const planTier = auth?.organization.planTier || 'free';
+  const paidPlan = planTier !== 'free';
   const [form, setForm] = useState({ name: '', targetUrl: '', intervalSeconds: 300 });
   const [type, setType] = useState('http');
   const [httpConfig, setHttpConfig] = useState<HttpMonitorConfig>(defaultHttpConfig());
@@ -60,6 +62,22 @@ export default function EditMonitorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const tamperAIOn = type === 'tamper' && !!tamperConfig.aiContentRecognitionEnabled;
+  const intervalOptions = tamperAIOn && !paidPlan
+    ? [{ value: 1800, label: `30 ${t('minutes')}` }]
+    : [
+        { value: 1800, label: `30 ${t('minutes')}` },
+        { value: 300, label: `5 ${t('minutes')}` },
+        { value: 60, label: `1 ${t('minutes')}` },
+        { value: 30, label: `30 ${t('seconds')}` },
+      ];
+
+  const updateTamperConfig = (next: TamperMonitorConfig) => {
+    setTamperConfig(next);
+    if (type === 'tamper' && next.aiContentRecognitionEnabled && !paidPlan && form.intervalSeconds < 1800) {
+      setForm((f) => ({ ...f, intervalSeconds: 1800 }));
+    }
+  };
 
   useEffect(() => {
     if (!orgId || !id) return;
@@ -133,15 +151,18 @@ export default function EditMonitorPage() {
         <MonitorHttpConfig type={type} config={httpConfig} onChange={setHttpConfig} />
         {type === 'ssl' && <MonitorSslConfig config={sslConfig} onChange={setSslConfig} />}
         {type === 'dns' && <MonitorDnsConfig config={dnsConfig} onChange={setDnsConfig} />}
-        {type === 'tamper' && <MonitorTamperConfig monitorId={id} config={tamperConfig} onChange={setTamperConfig} />}
+        {type === 'tamper' && <MonitorTamperConfig monitorId={id} config={tamperConfig} onChange={updateTamperConfig} />}
         {type === 'pagespeed' && <MonitorPageSpeedConfig config={pageSpeedConfig} onChange={setPageSpeedConfig} />}
         <div>
           <label className="mb-1 block text-sm text-zinc-400">{t('checkInterval')}</label>
           <select className="input" value={form.intervalSeconds} onChange={(e) => setForm({ ...form, intervalSeconds: Number(e.target.value) })}>
-            <option value={300}>5 {t('minutes')}</option>
-            <option value={60}>1 {t('minutes')}</option>
-            <option value={30}>30 {t('seconds')}</option>
+            {intervalOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
+          {tamperAIOn && (
+            <p className="mt-1 text-xs text-zinc-500">{paidPlan ? t('tamperAIPaidInterval') : t('tamperAIFreeInterval')}</p>
+          )}
         </div>
         <div className="rounded-lg border border-zinc-800 p-4">
           <p className="mb-2 text-sm font-medium text-zinc-300">{t('alertSettingsTitle')}</p>

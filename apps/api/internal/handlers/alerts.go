@@ -72,9 +72,9 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	}
 
 	var req struct {
-		Name    string          `json:"name" binding:"required"`
-		Type    string          `json:"type" binding:"required"`
-		Config  json.RawMessage `json:"config"`
+		Name         string          `json:"name" binding:"required"`
+		Type         string          `json:"type" binding:"required"`
+		Config       json.RawMessage `json:"config"`
 		Enabled      *bool           `json:"enabled"`
 		DelayMinutes *int            `json:"delayMinutes"`
 		EventType    string          `json:"eventType"`
@@ -104,6 +104,14 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	delayMinutes := 0
 	if req.DelayMinutes != nil && *req.DelayMinutes >= 0 {
 		delayMinutes = *req.DelayMinutes
+	}
+	eventType := req.EventType
+	validEvents := map[string]bool{
+		"all": true, "down": true, "up": true, "ssl_warning": true, "dns_change": true,
+		"tamper_major_change": true, "tamper_policy_violation": true, "tamper_ai_content_violation": true,
+	}
+	if !validEvents[eventType] {
+		eventType = "all"
 	}
 
 	id := uuid.New().String()

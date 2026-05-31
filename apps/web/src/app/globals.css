@@ -26,6 +26,10 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .card {
   @apply rounded-xl border border-zinc-800 bg-zinc-900/50 p-6;
 }

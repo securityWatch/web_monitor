@@ -13,7 +13,7 @@ export function MonitorSecurityStatus({ type, meta }: Props) {
 
   const hasSsl = meta.sslDaysLeft != null;
   const hasDns = meta.records && meta.records.length > 0;
-  const hasTamper = meta.bodyHash || meta.diffPercent != null;
+  const hasTamper = meta.bodyHash || meta.diffPercent != null || meta.aiContentRecognition;
 
   if (!hasSsl && !hasDns && !hasTamper) return null;
 
@@ -68,6 +68,23 @@ export function MonitorSecurityStatus({ type, meta }: Props) {
           )}
           {meta.diffSummary && (
             <p className="mt-2 text-xs text-zinc-400">{meta.diffSummary}</p>
+          )}
+          {meta.aiContentRecognition && (
+            <div className="mt-3 rounded-lg border border-blue-500/20 bg-blue-500/10 p-2 text-xs">
+              <p className="font-medium text-blue-100">{t('tamperAIStatusTitle')}</p>
+              <p className={meta.aiContentRecognition.flagged ? 'mt-1 text-red-300' : 'mt-1 text-blue-100/70'}>
+                {meta.aiContentRecognition.status === 'ok'
+                  ? t(meta.aiContentRecognition.flagged ? 'tamperAIFlagged' : 'tamperAIClean')
+                  : t('tamperAIUnavailable')}
+                {meta.aiContentRecognition.riskLevel ? ` · ${meta.aiContentRecognition.riskLevel}` : ''}
+              </p>
+              {meta.aiContentRecognition.summary && (
+                <p className="mt-1 text-blue-100/70">{meta.aiContentRecognition.summary}</p>
+              )}
+              {meta.aiContentRecognition.categories && meta.aiContentRecognition.categories.length > 0 && (
+                <p className="mt-1 text-blue-100/60">{meta.aiContentRecognition.categories.join(', ')}</p>
+              )}
+            </div>
           )}
         </div>
       )}

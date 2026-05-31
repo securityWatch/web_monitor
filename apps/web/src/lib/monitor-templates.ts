@@ -59,6 +59,15 @@ export const MONITOR_TEMPLATES: MonitorTemplate[] = [
     config: { recordType: 'A' },
   },
   {
+    id: 'ai-tamper',
+    name: 'AI Tamper Detection',
+    nameZh: 'AI 网页篡改识别',
+    type: 'tamper',
+    targetUrl: 'https://example.com',
+    intervalSeconds: 1800,
+    config: { changeThresholdPercent: 10, detectMajorChange: true, aiContentRecognitionEnabled: true },
+  },
+  {
     id: 'cron-job',
     name: 'Cron / Heartbeat',
     nameZh: '定时任务 Heartbeat',

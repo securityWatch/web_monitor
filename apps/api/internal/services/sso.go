@@ -2,9 +2,7 @@ package services
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -259,10 +257,4 @@ func claimsEmailNameSub(claims map[string]interface{}) (email, name, sub string)
 		name = v
 	}
 	return email, name, sub
-}
-
-func randomState() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
 }

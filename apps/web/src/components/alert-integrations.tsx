@@ -42,6 +42,7 @@ const URL_TYPES = new Set(['webhook', 'slack', 'discord', 'teams', 'dingtalk', '
 const emptyForm = () => ({
   type: 'webhook',
   name: '',
+  eventType: 'all',
   url: '',
   routingKey: '',
   apiKey: '',
@@ -61,6 +62,7 @@ const EVENT_TYPES = [
   { id: 'dns_change', labelKey: 'eventDnsChange' },
   { id: 'tamper_major_change', labelKey: 'eventTamperMajor' },
   { id: 'tamper_policy_violation', labelKey: 'eventTamperPolicy' },
+  { id: 'tamper_ai_content_violation', labelKey: 'eventTamperAI' },
 ] as const;
 
 export function AlertIntegrations() {

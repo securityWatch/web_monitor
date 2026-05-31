@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -85,10 +87,10 @@ func (s *IncidentService) SyncStatusPage(ctx context.Context, orgID, incidentID,
 }
 
 func (s *IncidentService) ResolveByMonitor(ctx context.Context, monitorID string) {
-	var incidentID string
+	var incidentID, orgID string
 	err := s.db.QueryRow(ctx, `
-		SELECT id FROM incidents WHERE monitor_id = $1 AND status = 'open' ORDER BY started_at DESC LIMIT 1
-	`, monitorID).Scan(&incidentID)
+		SELECT id, org_id FROM incidents WHERE monitor_id = $1 AND status = 'open' ORDER BY started_at DESC LIMIT 1
+	`, monitorID).Scan(&incidentID, &orgID)
 	if err != nil {
 		return
 	}
@@ -97,5 +99,71 @@ func (s *IncidentService) ResolveByMonitor(ctx context.Context, monitorID string
 		WHERE id = $1
 	`, incidentID)
 	s.AddTimeline(ctx, incidentID, "resolved", "Monitor recovered", nil)
+	if deepSeekConfigured() {
+		if _, err := s.GenerateAndStoreAISummary(ctx, incidentID, orgID, nil); err != nil {
+			RecordAIUsage(ctx, s.db, orgID, "incident_summary_auto", "error", err.Error())
+		} else {
+			RecordAIUsage(ctx, s.db, orgID, "incident_summary_auto", "ok", "")
+		}
+	}
 	_, _ = s.db.Exec(ctx, `UPDATE status_page_incidents SET resolved_at = now() WHERE incident_id = $1 AND resolved_at IS NULL`, incidentID)
+}
+
+func (s *IncidentService) GenerateAndStoreAISummary(ctx context.Context, incidentID, orgID string, userID *string) (AIIncidentSummary, error) {
+	var title, monitorName, status, severity string
+	var message *string
+	var started time.Time
+	var resolved *time.Time
+	err := s.db.QueryRow(ctx, `
+		SELECT COALESCE(i.title, m.name), m.name, i.status, i.severity, i.message, i.started_at, i.resolved_at
+		FROM incidents i JOIN monitors m ON m.id = i.monitor_id
+		WHERE i.id = $1 AND i.org_id = $2
+	`, incidentID, orgID).Scan(&title, &monitorName, &status, &severity, &message, &started, &resolved)
+	if err != nil {
+		return AIIncidentSummary{}, err
+	}
+	rows, _ := s.db.Query(ctx, `
+		SELECT kind, message, created_at FROM incident_timeline
+		WHERE incident_id = $1 ORDER BY created_at ASC LIMIT 100
+	`, incidentID)
+	var timeline []string
+	if rows != nil {
+		defer rows.Close()
+		for rows.Next() {
+			var kind, msg string
+			var created time.Time
+			if rows.Scan(&kind, &msg, &created) == nil {
+				timeline = append(timeline, fmt.Sprintf("%s %s: %s", created.Format(time.RFC3339), kind, msg))
+			}
+		}
+	}
+	msg := ""
+	if message != nil {
+		msg = *message
+	}
+	input := fmt.Sprintf("Incident: %s\nMonitor: %s\nStatus: %s\nSeverity: %s\nStarted: %s\nResolved: %v\nMessage: %s\nTimeline:\n%s",
+		title, monitorName, status, severity, started.Format(time.RFC3339), resolved, msg, strings.Join(timeline, "\n"))
+	summary, err := GenerateAIIncidentSummary(ctx, input)
+	if err != nil {
+		return summary, err
+	}
+	postMortem := FormatIncidentPostMortem(summary)
+	_, _ = s.db.Exec(ctx, `UPDATE incidents SET post_mortem = $1 WHERE id = $2 AND org_id = $3`, postMortem, incidentID, orgID)
+	s.AddTimeline(ctx, incidentID, "ai_summary", "AI incident summary generated", userID)
+	return summary, nil
+}
+
+func FormatIncidentPostMortem(s AIIncidentSummary) string {
+	parts := []string{
+		"Summary: " + s.Summary,
+		"Impact: " + s.Impact,
+		"Likely cause: " + s.LikelyCause,
+	}
+	if len(s.ActionItems) > 0 {
+		parts = append(parts, "Action items: "+strings.Join(s.ActionItems, "; "))
+	}
+	if s.CustomerUpdate != "" {
+		parts = append(parts, "Customer update: "+s.CustomerUpdate)
+	}
+	return strings.Join(parts, "\n")
 }

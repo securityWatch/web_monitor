@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { LanguageToggle } from './language-toggle';
 import { Activity } from 'lucide-react';
@@ -8,6 +9,7 @@ import { Activity } from 'lucide-react';
 export function MarketingNav() {
   const t = useTranslations('nav');
   const tc = useTranslations('common');
+  const locale = useLocale();
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-800/80 bg-[#0A0A0B]/80 backdrop-blur-xl">
@@ -17,10 +19,12 @@ export function MarketingNav() {
           {tc('appName')}
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
-          <Link href="/tools" className="hover:text-white transition-colors">{t('tools')}</Link>
-          <a href="#features" className="hover:text-white transition-colors">{t('features')}</a>
-          <a href="#faq" className="hover:text-white transition-colors">{t('faq')}</a>
+          <a href={`/${locale}#features`} className="hover:text-white transition-colors">{t('features')}</a>
+          <a href={`/${locale}#faq`} className="hover:text-white transition-colors">{t('faq')}</a>
           <Link href="/pricing" className="hover:text-white transition-colors">{t('pricing')}</Link>
+          <Link href="/tools" className="hover:text-white transition-colors">{t('tools')}</Link>
+          <Link href="/tools/pdf-to-word" className="hover:text-white transition-colors">PDF → Word</Link>
+          <Link href="/tools/image-compress" className="hover:text-white transition-colors">Image Tools</Link>
           <Link href="/tools/ssl-checker" className="hover:text-white transition-colors">SSL Checker</Link>
         </nav>
         <div className="flex items-center gap-3">

@@ -14,6 +14,7 @@ type User struct {
 	Locale          string     `json:"locale"`
 	EmailVerifiedAt *time.Time `json:"emailVerifiedAt"`
 	NotifyIncidents bool       `json:"notifyIncidents"`
+	NotifyDaily     bool       `json:"notifyDaily"`
 	NotifyWeekly    bool       `json:"notifyWeekly"`
 	NotifyProduct   bool       `json:"notifyProduct"`
 	NotifySSL       bool       `json:"notifySsl"`

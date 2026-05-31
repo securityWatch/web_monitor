@@ -130,6 +130,7 @@ export interface TamperMonitorConfig {
   policyCategories?: { gambling?: boolean; adult?: boolean };
   customBlocklist?: string;
   contentScanConsent?: boolean;
+  aiContentRecognitionEnabled?: boolean;
 }
 
 export interface PageSpeedMonitorConfig {
@@ -192,6 +193,7 @@ export function parseTamperConfig(raw: unknown): TamperMonitorConfig {
     policyCategories: pc || {},
     customBlocklist: blocklist,
     contentScanConsent: obj.contentScanConsent === true,
+    aiContentRecognitionEnabled: obj.aiContentRecognitionEnabled === true,
   };
 }
 
@@ -261,6 +263,7 @@ export function mergeMonitorConfigForSave(
     base.detectMajorChange = tm.detectMajorChange !== false;
     base.policyCategories = tm.policyCategories || {};
     base.contentScanConsent = !!tm.contentScanConsent;
+    base.aiContentRecognitionEnabled = !!tm.aiContentRecognitionEnabled;
     const keywords = (tm.customBlocklist || '')
       .split(/[\n,]+/)
       .map((s) => s.trim())
