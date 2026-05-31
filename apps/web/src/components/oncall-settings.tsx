@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch, getStoredAuth } from '@/lib/api';
 
 interface Member {
@@ -10,6 +11,7 @@ interface Member {
 }
 
 export function OnCallSettings() {
+  const t = useTranslations('settings.onCallSchedules');
   const orgId = getStoredAuth()?.organization.id;
   const [members, setMembers] = useState<Member[]>([]);
   const [schedules, setSchedules] = useState<{ id: string; name: string; enabled: boolean }[]>([]);
@@ -32,28 +34,28 @@ export function OnCallSettings() {
       method: 'POST',
       body: JSON.stringify({ name: form.name, userIds: form.userIds, escalationMinutes: 15 }),
     });
-    setMsg('排班表已创建');
+    setMsg(t('created'));
     setForm({ name: 'Primary', userIds: [] });
     load();
   };
 
   return (
     <div className="card space-y-4">
-      <h2 className="font-semibold">On-Call 排班</h2>
-      <p className="text-sm text-zinc-400">设置轮值顺序，故障时优先通知当前值班人（配合 SMS 渠道）。</p>
+      <h2 className="font-semibold">{t('title')}</h2>
+      <p className="text-sm text-zinc-400">{t('desc')}</p>
       {msg && <p className="text-sm text-emerald-400">{msg}</p>}
 
       {schedules.length > 0 && (
         <div className="space-y-2">
           {schedules.map((s) => (
             <div key={s.id} className="rounded-lg border border-zinc-800 px-3 py-2 text-sm">
-              {s.name} {s.enabled ? '· 已启用' : ''}
+              {s.name}{s.enabled ? ` ${t('enabled')}` : ''}
             </div>
           ))}
         </div>
       )}
 
-      <input className="input" placeholder="排班表名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+      <input className="input" placeholder={t('namePlaceholder')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
       <div className="max-h-40 space-y-2 overflow-y-auto">
         {members.map((m) => (
           <label key={m.id} className="flex items-center gap-2 text-sm">
@@ -69,7 +71,7 @@ export function OnCallSettings() {
           </label>
         ))}
       </div>
-      <button type="button" onClick={create} className="btn-primary">创建排班表</button>
+      <button type="button" onClick={create} className="btn-primary">{t('createBtn')}</button>
     </div>
   );
 }

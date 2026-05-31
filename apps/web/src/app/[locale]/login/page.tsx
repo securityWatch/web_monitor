@@ -98,7 +98,7 @@ export default function LoginPage() {
       });
       setMagicSent(true);
     } catch {
-      setError('发送失败');
+      setError(t('magicLinkSendFailed'));
     } finally {
       setLoading(false);
     }
@@ -116,7 +116,7 @@ export default function LoginPage() {
       setStoredAuth(data);
       router.push('/dashboard');
     } catch {
-      setError('验证码错误');
+      setError(t('totpInvalid'));
     } finally {
       setLoading(false);
     }
@@ -205,7 +205,7 @@ export default function LoginPage() {
         ) : mode === 'magic' ? (
           <form onSubmit={sendMagicLink} className="mt-8 space-y-4">
             {magicSent ? (
-              <p className="text-sm text-emerald-400">若该邮箱存在，登录链接已发送至邮箱，请查收。</p>
+              <p className="text-sm text-emerald-400">{t('magicLinkSent')}</p>
             ) : (
               <>
                 <div>
@@ -214,12 +214,12 @@ export default function LoginPage() {
                 </div>
                 {error && <p className="text-sm text-red-400">{error}</p>}
                 <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
-                  {loading ? '...' : '发送 Magic Link'}
+                  {loading ? '...' : t('magicLinkSendButton')}
                 </button>
               </>
             )}
             <button type="button" onClick={() => { setMode('password'); setMagicSent(false); }} className="w-full text-sm text-zinc-500 hover:text-white">
-              使用密码登录
+              {t('usePasswordLogin')}
             </button>
           </form>
         ) : (

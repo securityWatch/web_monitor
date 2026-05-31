@@ -129,9 +129,9 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
           )}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm text-zinc-400">JSON 断言 (JSONPath)</label>
+              <label className="text-sm text-zinc-400">{t('jsonAssertionsTitle')}</label>
               <button type="button" className="text-xs text-blue-400" onClick={() => update({ jsonAssertions: [...(config.jsonAssertions || []), emptyJsonAssertion()] })}>
-                + 添加
+                + {t('jsonAssertionsAdd')}
               </button>
             </div>
             {(config.jsonAssertions || []).map((a, i) => (
@@ -146,17 +146,17 @@ export function MonitorHttpConfig({ type, config, onChange }: Props) {
                   list[i] = { ...list[i], operator: e.target.value as JSONAssertion['operator'] };
                   update({ jsonAssertions: list });
                 }}>
-                  <option value="eq">equals</option>
-                  <option value="ne">not equals</option>
-                  <option value="contains">contains</option>
-                  <option value="exists">exists</option>
+                  <option value="eq">{t('jsonOperatorEq')}</option>
+                  <option value="ne">{t('jsonOperatorNe')}</option>
+                  <option value="contains">{t('jsonOperatorContains')}</option>
+                  <option value="exists">{t('jsonOperatorExists')}</option>
                 </select>
-                <input className="input text-sm" placeholder="期望值" disabled={a.operator === 'exists'} value={a.value || ''} onChange={(e) => {
+                <input className="input text-sm" placeholder={t('jsonAssertionExpectedValue')} disabled={a.operator === 'exists'} value={a.value || ''} onChange={(e) => {
                   const list = [...(config.jsonAssertions || [])];
                   list[i] = { ...list[i], value: e.target.value };
                   update({ jsonAssertions: list });
                 }} />
-                <button type="button" className="text-xs text-red-400" onClick={() => update({ jsonAssertions: (config.jsonAssertions || []).filter((_, j) => j !== i) })}>删除</button>
+                <button type="button" className="text-xs text-red-400" onClick={() => update({ jsonAssertions: (config.jsonAssertions || []).filter((_, j) => j !== i) })}>{t('jsonAssertionRemove')}</button>
               </div>
             ))}
           </div>

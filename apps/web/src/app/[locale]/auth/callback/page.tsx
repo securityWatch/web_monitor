@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { setStoredAuth } from '@/lib/api';
 import type { AuthData } from '@/lib/api';
 
 export default function AuthCallbackPage() {
+  const t = useTranslations('auth');
   const params = useSearchParams();
   const router = useRouter();
   const [error, setError] = useState('');
@@ -49,7 +51,7 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0B] text-zinc-400">
-      {error ? '登录失败，请重试' : '正在完成登录…'}
+      {error ? t('callbackFailed') : t('callbackCompleting')}
     </div>
   );
 }

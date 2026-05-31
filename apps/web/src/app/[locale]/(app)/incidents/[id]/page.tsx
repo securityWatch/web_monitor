@@ -25,6 +25,12 @@ interface IncidentDetail {
   postMortem?: string;
 }
 
+const WORKFLOW_KEYS = {
+  investigating: 'workflowInvestigating',
+  identified: 'workflowIdentified',
+  monitoring: 'workflowMonitoring',
+} as const;
+
 export default function IncidentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslations('incidents');
   const orgId = getStoredAuth()?.organization.id;
@@ -95,28 +101,28 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   };
 
   if (!incident) {
-    return <div className="text-zinc-500">加载中...</div>;
+    return <div className="text-zinc-500">{t('loading')}</div>;
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href="/incidents" className="text-sm text-blue-400 hover:underline">← 返回故障列表</Link>
+      <Link href="/incidents" className="text-sm text-blue-400 hover:underline">{t('backToList')}</Link>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{incident.title || incident.monitorName}</h1>
           <p className="text-sm text-zinc-500">{t('started')}: {new Date(incident.startedAt).toLocaleString()}</p>
         </div>
-        <span className={incident.status === 'open' ? 'badge-down' : 'badge-up'}>{incident.status}</span>
+        <span className={incident.status === 'open' ? 'badge-down' : 'badge-up'}>{incident.status === 'open' ? t('open') : t('resolved')}</span>
       </div>
 
       <div className="card space-y-3 border-blue-500/20 bg-blue-500/5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-semibold text-blue-100">AI 事故总结</h2>
-            <p className="text-xs text-blue-100/60">基于时间线生成复盘、影响、疑似原因和客户通告。</p>
+            <h2 className="font-semibold text-blue-100">{t('aiSummaryTitle')}</h2>
+            <p className="text-xs text-blue-100/60">{t('aiSummaryDesc')}</p>
           </div>
           <button type="button" className="btn-secondary text-sm" onClick={generateAISummary} disabled={aiLoading}>
-            {aiLoading ? '...' : '生成 AI 总结'}
+            {aiLoading ? '...' : t('generateAiSummary')}
           </button>
         </div>
         {(aiSummary || incident.postMortem) && (
@@ -126,24 +132,24 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
       {incident.status === 'open' && (
         <div className="flex flex-wrap gap-2">
-          {['investigating', 'identified', 'monitoring'].map((wf) => (
+          {(Object.keys(WORKFLOW_KEYS) as Array<keyof typeof WORKFLOW_KEYS>).map((wf) => (
             <button
               key={wf}
               type="button"
               onClick={() => updateWorkflow(wf)}
-              className={`rounded-lg px-3 py-1.5 text-xs capitalize ${workflow === wf ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}
+              className={`rounded-lg px-3 py-1.5 text-xs ${workflow === wf ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}
             >
-              {wf}
+              {t(WORKFLOW_KEYS[wf])}
             </button>
           ))}
-          <button type="button" onClick={resolve} className="btn-primary text-xs">标记已解决</button>
+          <button type="button" onClick={resolve} className="btn-primary text-xs">{t('markResolved')}</button>
         </div>
       )}
 
       <div className="card space-y-3">
-        <h2 className="font-semibold">时间线</h2>
+        <h2 className="font-semibold">{t('timelineTitle')}</h2>
         {timeline.length === 0 ? (
-          <p className="text-sm text-zinc-500">暂无记录</p>
+          <p className="text-sm text-zinc-500">{t('timelineEmpty')}</p>
         ) : (
           <ul className="space-y-3 border-l border-zinc-800 pl-4">
             {timeline.map((e) => (
@@ -160,8 +166,8 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
       {incident.status === 'open' && (
         <div className="card flex gap-2">
-          <input className="input flex-1" placeholder="添加备注..." value={note} onChange={(e) => setNote(e.target.value)} />
-          <button type="button" onClick={addNote} className="btn-primary">发送</button>
+          <input className="input flex-1" placeholder={t('addNotePlaceholder')} value={note} onChange={(e) => setNote(e.target.value)} />
+          <button type="button" onClick={addNote} className="btn-primary">{t('sendNote')}</button>
         </div>
       )}
     </div>

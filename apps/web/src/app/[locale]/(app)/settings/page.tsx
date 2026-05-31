@@ -10,6 +10,7 @@ import { MaintenanceWindows } from '@/components/maintenance-windows';
 import { APIKeysSettings } from '@/components/api-keys-settings';
 import { TotpSettings } from '@/components/totp-settings';
 import { SessionSettings } from '@/components/session-settings';
+import { SsoSettings } from '@/components/sso-settings';
 import { OnCallSettings } from '@/components/oncall-settings';
 import { AuditLogs } from '@/components/audit-logs';
 import { EmailVerificationBanner } from '@/components/email-verification-banner';
@@ -84,18 +85,19 @@ export default function SettingsPage() {
       }>(`/api/v1/orgs/${auth.organization.id}/reports/system?period=${reportPeriod}&ai=${withAI ? 'true' : 'false'}`);
       const r = res.report;
       const ai = r.aiSummary;
+      const listSep = locale === 'zh' ? '；' : '; ';
       setSystemReport([
-        `${r.period} 报告（${r.days} 天）`,
-        `监控：${r.monitorCount} 个（正常 ${r.upMonitors} / 故障 ${r.downMonitors} / 暂停 ${r.pausedMonitors}）`,
-        `可用率：${r.uptimePct}% · 检查 ${r.totalChecks} 次 · 失败 ${r.failedChecks} 次 · 平均响应 ${r.avgResponseMs}ms`,
-        `事件：${r.incidentCount} 个（进行中 ${r.openIncidents}） · 安全发现 ${r.securityFindings} 条`,
-        ai?.headline ? `AI：${ai.headline}` : '',
+        t('reportHeader', { period: r.period, days: r.days }),
+        t('reportMonitors', { count: r.monitorCount, up: r.upMonitors, down: r.downMonitors, paused: r.pausedMonitors }),
+        t('reportUptime', { pct: r.uptimePct, totalChecks: r.totalChecks, failedChecks: r.failedChecks, avgMs: r.avgResponseMs }),
+        t('reportIncidents', { count: r.incidentCount, open: r.openIncidents, security: r.securityFindings }),
+        ai?.headline ? t('reportAiHeadline', { headline: ai.headline }) : '',
         ai?.summary || '',
-        ai?.risks?.length ? `风险：${ai.risks.join('；')}` : '',
-        ai?.nextActions?.length ? `建议：${ai.nextActions.join('；')}` : '',
+        ai?.risks?.length ? t('reportRisks', { risks: ai.risks.join(listSep) }) : '',
+        ai?.nextActions?.length ? t('reportNextActions', { actions: ai.nextActions.join(listSep) }) : '',
       ].filter(Boolean).join('\n'));
     } catch (err) {
-      setSystemReport(err instanceof Error ? err.message : 'Report error');
+      setSystemReport(err instanceof Error ? err.message : t('reportError'));
     } finally {
       setReportLoading(false);
     }
@@ -152,6 +154,7 @@ export default function SettingsPage() {
           </div>
           <TotpSettings />
           <SessionSettings />
+          <SsoSettings />
         </div>
       )}
 

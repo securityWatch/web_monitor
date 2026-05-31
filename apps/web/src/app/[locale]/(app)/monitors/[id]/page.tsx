@@ -235,9 +235,9 @@ export default function MonitorDetailPage() {
       const e = res.explanation;
       setAiVisual([
         e.summary,
-        e.visualRisk ? `Risk: ${e.visualRisk}` : '',
-        e.evidence?.length ? `Evidence: ${e.evidence.join('; ')}` : '',
-        e.nextActions?.length ? `Next: ${e.nextActions.join('; ')}` : '',
+        e.visualRisk ? `${t('aiVisualRisk')}: ${e.visualRisk}` : '',
+        e.evidence?.length ? `${t('aiVisualEvidence')}: ${e.evidence.join('; ')}` : '',
+        e.nextActions?.length ? `${t('aiVisualNext')}: ${e.nextActions.join('; ')}` : '',
       ].filter(Boolean).join('\n'));
     } catch (err) {
       setAiVisual(err instanceof Error ? err.message : 'AI error');
@@ -392,11 +392,11 @@ export default function MonitorDetailPage() {
         <div className="card space-y-3 border-blue-500/20 bg-blue-500/5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-blue-100">AI 视觉/篡改解释</h2>
-              <p className="text-xs text-blue-100/60">结合最近截图取证、错误和篡改 metadata 解释页面风险。</p>
+              <h2 className="font-semibold text-blue-100">{t('aiVisualTitle')}</h2>
+              <p className="text-xs text-blue-100/60">{t('aiVisualDesc')}</p>
             </div>
             <button type="button" className="btn-secondary text-sm" disabled={aiVisualLoading} onClick={explainVisual}>
-              {aiVisualLoading ? '...' : '生成解释'}
+              {aiVisualLoading ? '...' : t('aiVisualGenerate')}
             </button>
           </div>
           {aiVisual && <pre className="whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs text-blue-100/80">{aiVisual}</pre>}
