@@ -22,6 +22,7 @@ import {
   Globe,
   Network,
   Plug,
+  FileCode,
   Activity as ActivityIcon,
 } from 'lucide-react';
 import {
@@ -60,6 +61,7 @@ const EXTRA_TOOLS = [
   { href: '/tools/dns-lookup', key: 'dnsLookup', icon: Network },
   { href: '/tools/ping-test', key: 'pingTest', icon: ActivityIcon },
   { href: '/tools/port-checker', key: 'portChecker', icon: Plug },
+  { href: '/tools/http-headers', key: 'httpHeaders', icon: FileCode },
   { href: '/tools/image-compress', key: 'imageCompress', icon: ImageIcon },
   { href: '/tools/pdf-tools', key: 'pdfTools', icon: Files },
   { href: '/tools/pdf-to-word', key: 'pdfToWord', icon: FileText },

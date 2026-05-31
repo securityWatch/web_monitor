@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -203,6 +204,86 @@ func (h *ToolsHandler) HTTPCheck(c *gin.Context) {
 		resp["error"] = outcome.ErrorMessage
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+func (h *ToolsHandler) HTTPHeaders(c *gin.Context) {
+	rawURL := strings.TrimSpace(c.Query("url"))
+	if rawURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "url is required"})
+		return
+	}
+	target := rawURL
+	if !strings.HasPrefix(target, "http://") && !strings.HasPrefix(target, "https://") {
+		target = "https://" + target
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
+	defer cancel()
+
+	start := time.Now()
+	client := &http.Client{
+		Timeout: 15 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+
+	doRequest := func(method string) (*http.Response, error) {
+		req, err := http.NewRequestWithContext(ctx, method, target, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("User-Agent", "PulseWatch-HTTPHeaders/1.0")
+		return client.Do(req)
+	}
+
+	resp, err := doRequest(http.MethodHead)
+	if err != nil || (resp != nil && resp.StatusCode == http.StatusMethodNotAllowed) {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		resp, err = doRequest(http.MethodGet)
+	}
+	elapsed := int(time.Since(start).Milliseconds())
+
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"url":        target,
+			"isUp":       false,
+			"responseMs": elapsed,
+			"headers":    gin.H{},
+			"error":      err.Error(),
+		})
+		return
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+
+	headers := make(map[string][]string)
+	for k, vals := range resp.Header {
+		if len(k) > 128 {
+			continue
+		}
+		trimmed := make([]string, 0, len(vals))
+		for _, v := range vals {
+			if len(v) > 512 {
+				v = v[:512] + "…"
+			}
+			trimmed = append(trimmed, v)
+		}
+		headers[k] = trimmed
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"url":        target,
+		"isUp":       resp.StatusCode > 0 && resp.StatusCode < 500,
+		"statusCode": resp.StatusCode,
+		"responseMs": elapsed,
+		"headers":    headers,
+	})
 }
 
 func tlsVersionName(v uint16) string {

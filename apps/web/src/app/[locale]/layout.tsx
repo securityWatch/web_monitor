@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Geist, Geist_Mono } from 'next/font/google';
+import type { Metadata } from 'next';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
@@ -16,13 +17,19 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     .map((k) => k.trim())
     .filter(Boolean);
   const baiduToken = process.env.BAIDU_SITE_VERIFICATION?.trim();
+  const googleToken = process.env.GOOGLE_SITE_VERIFICATION?.trim();
+  const verification: Metadata['verification'] = {};
+  if (baiduToken) {
+    verification.other = { 'baidu-site-verification': baiduToken };
+  }
+  if (googleToken) {
+    verification.google = googleToken;
+  }
   return {
     title: { default: t('title'), template: `%s | ${t('title')}` },
     description: t('description'),
     keywords,
-    ...(baiduToken
-      ? { verification: { other: { 'baidu-site-verification': baiduToken } } }
-      : {}),
+    ...(Object.keys(verification).length > 0 ? { verification } : {}),
   };
 }
 

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { MarketingNav } from '@/components/marketing-nav';
+import { BlogArticleJsonLd } from '@/components/blog-article-json-ld';
 import { Link } from '@/i18n/navigation';
 import { BookOpen } from 'lucide-react';
 import { buildPageMetadata } from '@/lib/seo';
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function BlogArticlePage({ params }: PageProps) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const post = getBlogPost(slug);
   if (!post || !isBlogPostSlug(slug)) notFound();
 
@@ -50,6 +51,13 @@ export default async function BlogArticlePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white">
+      <BlogArticleJsonLd
+        locale={locale}
+        slug={slug}
+        title={article.title}
+        description={article.excerpt}
+        datePublished={article.date}
+      />
       <MarketingNav />
       <main className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <Link href="/blog" className="text-sm text-blue-400 hover:underline">

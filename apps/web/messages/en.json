@@ -151,6 +151,7 @@
     "resourcesDnsLookup": "Free DNS lookup tool",
     "resourcesPingTest": "Ping test tool",
     "resourcesPortChecker": "Port checker tool",
+    "resourcesHttpHeaders": "HTTP headers checker",
     "resourcesUptimeFeature": "Uptime monitoring features",
     "resourcesSslMonitoring": "SSL monitoring features",
     "resourcesStatusPages": "Status pages",
@@ -243,7 +244,8 @@
       "sslChecker": "SSL Checker",
       "dnsLookup": "DNS Lookup",
       "pingTest": "Ping Test",
-      "portChecker": "Port Checker"
+      "portChecker": "Port Checker",
+      "httpHeaders": "HTTP Headers"
     },
     "json": {
       "format": "Pretty print",
@@ -455,6 +457,22 @@
       "errorDetail": "Details",
       "cta": "Monitor TCP ports 24/7 with downtime alerts —",
       "ctaLink": "start free"
+    },
+    "httpHeaders": {
+      "badge": "Response headers",
+      "title": "Free HTTP Headers Checker",
+      "subtitle": "Inspect response headers, status code, and latency from external servers — useful for cache, security, and CDN debugging.",
+      "placeholder": "https://example.com",
+      "check": "Fetch headers",
+      "checking": "Fetching…",
+      "failed": "Request failed. Try again.",
+      "statusCode": "HTTP status",
+      "responseTime": "Response time",
+      "headerName": "Header",
+      "headerValue": "Value",
+      "hint": "Checks run from PulseWatch servers — not from your browser.",
+      "cta": "Monitor URLs 24/7 with header and uptime alerts —",
+      "ctaLink": "sign up free"
     }
   },
   "pricingPage": {
@@ -1266,6 +1284,11 @@
       "title": "Free Port Checker — TCP Open Port Test | PulseWatch",
       "description": "Check if TCP ports like 443, 80, or 22 are open on any host. Free external port scanner tool.",
       "keywords": "port checker, open port test, TCP port scan, check port 443, port availability"
+    },
+    "httpHeaders": {
+      "title": "Free HTTP Headers Checker | PulseWatch",
+      "description": "Inspect HTTP response headers, status code, and latency from external servers. Debug cache, CDN, and security headers.",
+      "keywords": "HTTP headers checker, response headers, header lookup, CDN cache headers, security headers"
     },
     "sslMonitoring": {
       "title": "SSL Certificate Monitoring & Expiry Alerts | PulseWatch",

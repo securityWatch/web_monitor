@@ -151,6 +151,7 @@
     "resourcesDnsLookup": "免费 DNS 查询",
     "resourcesPingTest": "Ping 测试工具",
     "resourcesPortChecker": "端口检测工具",
+    "resourcesHttpHeaders": "HTTP 响应头检测",
     "resourcesUptimeFeature": "可用性监控功能",
     "resourcesSslMonitoring": "SSL 监控功能",
     "resourcesStatusPages": "状态页",
@@ -243,7 +244,8 @@
       "sslChecker": "SSL 检测",
       "dnsLookup": "DNS 查询",
       "pingTest": "Ping 测试",
-      "portChecker": "端口检测"
+      "portChecker": "端口检测",
+      "httpHeaders": "HTTP 响应头"
     },
     "json": {
       "format": "格式化",
@@ -455,6 +457,22 @@
       "errorDetail": "详情",
       "cta": "24/7 监控 TCP 端口与宕机告警 —",
       "ctaLink": "免费开始"
+    },
+    "httpHeaders": {
+      "badge": "响应头",
+      "title": "免费 HTTP 响应头检测",
+      "subtitle": "从外部服务器查看响应头、状态码与延迟 — 便于排查缓存、安全与 CDN 配置。",
+      "placeholder": "https://example.com",
+      "check": "获取响应头",
+      "checking": "请求中…",
+      "failed": "请求失败，请重试。",
+      "statusCode": "HTTP 状态",
+      "responseTime": "响应时间",
+      "headerName": "Header",
+      "headerValue": "Value",
+      "hint": "检测从 PulseWatch 服务器发起 — 非浏览器本地请求。",
+      "cta": "24/7 监控 URL 与响应头/可用性告警 —",
+      "ctaLink": "免费注册"
     }
   },
   "pricingPage": {
@@ -1266,6 +1284,11 @@
       "title": "免费端口检测 — TCP 开放端口测试 | PulseWatch",
       "description": "检测任意主机上 443、80、22 等 TCP 端口是否开放。免费外部端口检测工具。",
       "keywords": "端口检测, 开放端口测试, TCP 端口, 443 端口检测, 端口可用性"
+    },
+    "httpHeaders": {
+      "title": "免费 HTTP 响应头检测 | PulseWatch",
+      "description": "从外部服务器查看 HTTP 响应头、状态码与延迟。排查缓存、CDN 与安全头配置。",
+      "keywords": "HTTP 响应头检测, 响应头查询, CDN 缓存头, 安全响应头"
     },
     "sslMonitoring": {
       "title": "SSL 证书监控与到期告警 | PulseWatch",

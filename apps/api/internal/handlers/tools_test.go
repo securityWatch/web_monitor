@@ -152,3 +152,46 @@ func TestPortCheckLocalListener(t *testing.T) {
 		t.Fatalf("isUp = %v", body["isUp"])
 	}
 }
+
+func TestHTTPHeadersMissingURL(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/http-headers", nil)
+
+	h.HTTPHeaders(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestHTTPHeadersLocalServer(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Test-Header", "pulsewatch")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	h := NewToolsHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/http-headers?url="+srv.URL, nil)
+
+	h.HTTPHeaders(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	headers, ok := body["headers"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("headers = %v", body["headers"])
+	}
+	if _, ok := headers["X-Test-Header"]; !ok {
+		t.Fatalf("missing X-Test-Header in %v", headers)
+	}
+}

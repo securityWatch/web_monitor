@@ -1,14 +1,22 @@
 # PulseWatch SEO Guide
 
-This document describes on-page and technical SEO implemented for the marketing homepage (`/en`, `/zh`), what operators must do manually, and ongoing maintenance.
+This document describes on-page and technical SEO implemented for the marketing site, what operators must do manually, and ongoing maintenance.
 
 ## Production note
 
-The live site is currently served over **HTTP** at `http://49.234.112.108` (no HTTPS yet). Search engines still index HTTP URLs, but:
+The live site is currently served over **HTTP** at `http://49.234.112.108` (no HTTPS yet). When you bind a custom domain:
 
-- Google and Baidu both prefer HTTPS for ranking signals and user trust.
-- In China, **ICP 备案** is often required for stable Baidu indexing on a custom domain; the IP-only URL is fine for early testing but submit your final domain after备案.
-- Set `NEXT_PUBLIC_SITE_URL` in production `.env` to the canonical origin (no trailing slash) so sitemap, canonical, and Open Graph URLs stay correct when you add a domain or HTTPS.
+- Set `NEXT_PUBLIC_SITE_URL` to the canonical HTTPS origin (no trailing slash).
+- Apply HTTPS using `deploy/nginx/pulsewatch-https.conf.example` + Certbot.
+- Re-submit `sitemap.xml` in Google Search Console and 百度站长.
+- In China, **ICP 备案** is often required for stable Baidu indexing on a custom domain.
+
+Optional verification env vars (server `.env`, never commit values):
+
+| Variable | Purpose |
+|----------|---------|
+| `BAIDU_SITE_VERIFICATION` | 百度站长 meta tag |
+| `GOOGLE_SITE_VERIFICATION` | Google Search Console HTML tag |
 
 ## What we implemented
 
@@ -16,77 +24,57 @@ The live site is currently served over **HTTP** at `http://49.234.112.108` (no H
 
 | Item | Location | Purpose |
 |------|----------|---------|
-| Per-locale title, description, keywords | `apps/web/src/app/[locale]/page.tsx` (`meta.home`) | Homepage-specific metadata |
-| Open Graph + Twitter cards | `apps/web/src/lib/seo.ts` → `buildPageMetadata` | Social previews |
-| Canonical + hreflang (`en`, `zh`, `x-default`) | `buildPageMetadata` | Avoid duplicate-language issues; help Google/Baidu pair locales |
-| `robots.txt` | `apps/web/src/app/robots.ts` | Allow crawlers; point to sitemap |
-| `sitemap.xml` | `apps/web/src/app/sitemap.ts` | Home, login, register, pricing, compare pages, dev tools, SSL tool (× en/zh) |
-| JSON-LD | `apps/web/src/components/landing-json-ld.tsx` | `Organization`, `WebSite`, `WebPage`, `FAQPage` (8 Q&A) |
-| `lang` on `<html>` | `apps/web/src/app/[locale]/layout.tsx` | `en` or `zh-CN` for Baidu/Google language hints |
-| Server-rendered landing copy | `apps/web/src/components/landing-page.tsx` | Indexable H1/H2, FAQ `<details>`, internal links |
+| Per-route metadata | `buildPageMetadata` in `apps/web/src/lib/seo.ts` | Title, description, canonical, hreflang |
+| `metadataBase` | `apps/web/src/app/layout.tsx` | Correct absolute OG/Twitter image URLs |
+| Open Graph + Twitter | `buildPageMetadata` + `opengraph-image.tsx` | Social previews |
+| `robots.txt` | `apps/web/src/app/robots.ts` | Allow marketing; disallow authenticated app routes |
+| `sitemap.xml` | `apps/web/src/app/sitemap.ts` | All `publicMarketingPaths` × en/zh |
+| JSON-LD | `landing-json-ld.tsx`, `blog-article-json-ld.tsx`, pricing FAQ | Organization, FAQ, Article |
+| App routes noindex | `(app)/layout.tsx` | Dashboard/monitors not indexed |
 
-### On-page content
+### Public marketing surface (sitemap)
 
-After the hero (CTA preserved), the homepage includes:
+- Home, login, register, pricing, compare pages
+- Feature pages: uptime, SSL, status pages, alerting
+- Use cases: API monitoring, e-commerce uptime
+- Blog index + articles (`/blog/how-to-monitor-api-uptime`, `/blog/website-down-checker-guide`)
+- Free tools: website down checker, SSL, DNS, ping, port, **HTTP headers**, plus dev tools (JSON, PDF, etc.)
 
-- **What is PulseWatch** — multi-paragraph explainer (uptime monitoring, checks, alerts)
-- **Use cases** — API, e-commerce, SaaS, 国内/出海团队
-- **Feature grid** — keyword-rich subtitles (existing + SEO subtitle)
-- **Trust / downtime cost** — factual framing, link to comparison page (not fake reviews)
-- **FAQ** — 8 questions (visible + JSON-LD aligned; no infra/storage stack details)
-- **Resources** — links to `/login`, `/register`, free developer tools (`/tools`), SSL tool, compare pages
+### Free SEO tools (public API)
 
-Free developer tools live on a dedicated page at `/en/tools` and `/zh/tools` (linked from homepage CTA and nav). The homepage shows a compact card only—full tool UI is not embedded on the landing page.
+| Tool | API |
+|------|-----|
+| Website down checker | `GET /api/v1/public/http-check?url=` |
+| SSL checker | `GET /api/v1/public/ssl-check?host=` |
+| DNS lookup | `GET /api/v1/public/dns-lookup?host=&type=` |
+| Ping test | `GET /api/v1/public/ping?host=` |
+| Port checker | `GET /api/v1/public/port-check?host=&port=` |
+| HTTP headers | `GET /api/v1/public/http-headers?url=` |
 
-### Baidu-specific (internal — not shown on public pages)
-
-- Substantial **unique zh-CN** strings in `messages/zh.json` (not English placeholders).
-- `zh-CN` `lang` attribute on Chinese pages.
-- **Site verification meta** via env `BAIDU_SITE_VERIFICATION` — injected in `[locale]/layout.tsx` `generateMetadata` as `verification.other['baidu-site-verification']`. Obtain the token from [百度站长平台](https://ziyuan.baidu.com/) and set in server `.env` (never commit the value).
-- Public FAQ and marketing copy do **not** mention Baidu, Search Console, or indexing — operator steps live in this doc only.
-
-### Google-specific
-
-- FAQ structured data for eligible rich results (not guaranteed).
-- hreflang alternates for `/en` ↔ `/zh`.
-- Submit `https://YOUR_ORIGIN/sitemap.xml` in [Google Search Console](https://search.google.com/search-console).
-
-## Google vs Baidu — operator checklist
+## Operator checklist
 
 ### Google Search Console
 
-1. Add property for your canonical origin (domain or `http://49.234.112.108` temporarily).
-2. Verify via DNS TXT or HTML file/meta.
-3. Submit sitemap: `{SITE_URL}/sitemap.xml`.
-4. Inspect URL: `/en` and `/zh` — confirm “Page is indexable”, canonical matches.
-5. Monitor Coverage / Core Web Vitals after HTTPS migration (update `NEXT_PUBLIC_SITE_URL`).
+1. Add property for canonical origin.
+2. Set `GOOGLE_SITE_VERIFICATION` in production `.env`, redeploy web.
+3. Submit `{SITE_URL}/sitemap.xml`.
+4. Inspect `/en` and `/zh` — indexable, canonical correct.
 
 ### 百度站长平台
 
-1. Register site at https://ziyuan.baidu.com/
-2. Verify ownership (meta tag recommended — set `BAIDU_SITE_VERIFICATION` in `.env`, redeploy web).
-3. Submit sitemap same path: `/sitemap.xml` (includes Chinese URLs).
-4. Use “抓取诊断” on `/zh` to confirm `lang=zh-CN` and Chinese body text.
-5. Plan for **HTTPS + 备案** on production domain for long-term Baidu trust.
-
-### Both
-
-- Keep `NEXT_PUBLIC_SITE_URL` accurate after domain/HTTPS changes.
-- Avoid blocking `/zh` in `robots.txt`.
-- Do not hide critical marketing copy behind login-only client routes; app pages (`/monitors`) correctly require auth and are omitted from sitemap.
+1. Register at https://ziyuan.baidu.com/
+2. Set `BAIDU_SITE_VERIFICATION`, redeploy web.
+3. Submit sitemap; use 抓取诊断 on `/zh`.
 
 ## Ongoing maintenance
 
-- [ ] Update `meta.home` / FAQ when major features ship (keep JSON-LD in sync with visible FAQ).
-- [ ] Add new **public** marketing routes to `publicMarketingPaths` in `apps/web/src/lib/seo.ts`.
-- [ ] Refresh sitemap `lastModified` strategy if you add a CMS or blog.
-- [ ] After HTTPS: redirect HTTP→HTTPS, update Search Console + 百度 properties, re-submit sitemap.
-- [ ] Add real `og:image` asset when brand creative is ready (optional enhancement).
-- [ ] Monitor Search Console / 百度 for crawl errors after each deploy (`cd deploy && node redeploy-web.js`).
+- [ ] Add new public routes to `publicMarketingPaths` in `seo.ts`.
+- [ ] Keep visible homepage FAQ count in sync with `landing-json-ld.tsx` (`FAQ_COUNT`).
+- [ ] Update landing copy when shipping user-facing features.
+- [ ] After HTTPS migration: update Search Console + 百度, re-submit sitemap.
 
 ## Files reference
 
 - SEO helpers: `apps/web/src/lib/seo.ts`
-- Homepage metadata: `apps/web/src/app/[locale]/page.tsx`
-- Copy: `apps/web/messages/en.json`, `apps/web/messages/zh.json` (`landing`, `meta.home`)
-- Docs: this file
+- Copy: `apps/web/messages/en.json`, `zh.json`
+- HTTPS template: `deploy/nginx/pulsewatch-https.conf.example`

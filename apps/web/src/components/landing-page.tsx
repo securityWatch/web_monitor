@@ -332,6 +332,11 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
               </Link>
             </li>
             <li>
+              <Link href="/tools/http-headers" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesHttpHeaders')}
+              </Link>
+            </li>
+            <li>
               <Link href="/features/uptime-monitoring" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
                 {t('resourcesUptimeFeature')}
               </Link>

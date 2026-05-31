@@ -53,6 +53,7 @@ export const publicMarketingPaths = [
   '/tools/dns-lookup',
   '/tools/ping-test',
   '/tools/port-checker',
+  '/tools/http-headers',
 ] as const;
 
 export function buildPageMetadata(opts: {
