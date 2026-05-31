@@ -50,7 +50,6 @@ const emptyForm = () => ({
   secret: '',
   signEnabled: false,
   delayMinutes: 0,
-  eventType: 'all',
 });
 
 const EVENT_TYPES = [

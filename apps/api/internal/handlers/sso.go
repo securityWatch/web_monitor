@@ -68,16 +68,6 @@ func (h *SSOHandler) Upsert(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "saved"})
 }
 
-func (h *SSOHandler) Status(c *gin.Context) {
-	orgSlug := c.Query("org")
-	if orgSlug == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"enabled": false})
-		return
-	}
-	_, err := h.sso.LoadOrgBySlug(c.Request.Context(), orgSlug)
-	c.JSON(http.StatusOK, gin.H{"enabled": err == nil})
-}
-
 func (h *SSOHandler) LoginStart(c *gin.Context) {
 	orgSlug := c.Query("org")
 	if orgSlug == "" {

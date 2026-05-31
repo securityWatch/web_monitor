@@ -55,7 +55,7 @@ interface Artifact {
   checkId?: string | null;
   kind: string;
   url: string;
-  contentType: string;
+  contentType?: string;
   createdAt: string;
   expiresAt?: string;
 }
@@ -165,15 +165,6 @@ export default function MonitorDetailPage() {
 
     return () => clearInterval(iv);
 
-  }, [orgId, id]);
-
-  useEffect(() => {
-    if (!orgId || !id) return;
-    apiFetch<{ artifacts: { id: string; url: string; kind: string; createdAt: string }[] }>(
-      `/api/v1/orgs/${orgId}/monitors/${id}/artifacts`,
-    )
-      .then((d) => setArtifacts(d.artifacts || []))
-      .catch(() => setArtifacts([]));
   }, [orgId, id]);
 
   const loadChecks = useCallback(() => {

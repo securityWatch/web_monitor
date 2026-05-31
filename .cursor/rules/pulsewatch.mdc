@@ -86,7 +86,9 @@ npm run test:integration
 - **MUST** create the commit when the change is done — do not wait for the user to ask
 - Descriptive message (why, not just what)
 
-### 4. Deploy to production (`49.234.112.108`)
+### 4. Deploy to production (`49.234.112.108`) — automatic, no confirmation
+
+When runtime code changed (API, web, deploy scripts, nginx), **deploy immediately after commit** — do **not** ask the user whether to deploy. Pick the script from the table below and run it without waiting for approval.
 
 Pick the deploy script from the table above based on what changed. Run from repo root:
 
@@ -121,7 +123,8 @@ If deploy or verification fails, fix and redeploy — do not push broken code.
 
 ### Do NOT
 
-- Skip auto review or auto push unless the user explicitly opts out (see above)
+- Skip auto review, auto deploy, or auto push unless the user explicitly opts out (see above)
+- Ask the user "要不要部署" or wait for deploy approval when runtime changed — **deploy automatically**
 - Leave changes uncommitted or unpushed after completing a coding task
 - Skip server verification after deploy
 - Commit or push `环境信息`, passwords, or `.env` files

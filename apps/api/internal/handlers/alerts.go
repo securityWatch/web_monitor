@@ -105,9 +105,10 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 	if req.DelayMinutes != nil && *req.DelayMinutes >= 0 {
 		delayMinutes = *req.DelayMinutes
 	}
-	eventType := req.EventType
+	eventType := strings.ToLower(strings.TrimSpace(req.EventType))
 	validEvents := map[string]bool{
-		"all": true, "down": true, "up": true, "ssl_warning": true, "dns_change": true,
+		"all": true, "down": true, "up": true, "security": true,
+		"ssl_warning": true, "dns_change": true,
 		"tamper_major_change": true, "tamper_policy_violation": true, "tamper_ai_content_violation": true,
 	}
 	if !validEvents[eventType] {
@@ -124,14 +125,6 @@ func (h *AlertHandler) CreateChannel(c *gin.Context) {
 		return
 	}
 
-	eventType := strings.ToLower(strings.TrimSpace(req.EventType))
-	validEvents := map[string]bool{
-		"all": true, "down": true, "up": true, "security": true,
-		"ssl_warning": true, "dns_change": true, "tamper_major_change": true, "tamper_policy_violation": true,
-	}
-	if !validEvents[eventType] {
-		eventType = "all"
-	}
 	_, _ = h.db.Exec(c.Request.Context(), `
 		INSERT INTO alert_rules (id, org_id, monitor_id, channel_id, event_type, enabled, delay_minutes)
 		VALUES ($1, $2, NULL, $3, $4, true, $5)

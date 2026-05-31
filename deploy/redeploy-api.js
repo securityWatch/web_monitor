@@ -3,6 +3,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const { HOST, APP_DIR, ROOT, APP_DOMAINS, PASSWORD } = require('./lib/config');
 const { buildCorsOrigins } = require('./lib/cors-origins');
 const { sha256File } = require('./lib/hash');
@@ -22,14 +23,15 @@ async function main() {
   });
 
   const localHash = sha256File(binary);
-  const remoteHash = sshExec(`sha256sum ${APP_DIR}/api/pulsewatch-api 2>/dev/null | awk '{print $1}'`).stdout.trim();
+  const remoteHash = (await sshExec(`sha256sum ${APP_DIR}/api/pulsewatch-api 2>/dev/null | awk '{print $1}'`)).stdout.trim();
 
   if (remoteHash === localHash && !process.env.FORCE_DEPLOY) {
     console.log('[api] Binary unchanged — skip upload');
   } else {
     fs.mkdirSync(path.dirname(gzPath), { recursive: true });
-    execSync(`gzip -c -9 "${binary}" > "${gzPath}"`);
-    const raw = fs.statSync(binary).size;
+    const rawBuf = fs.readFileSync(binary);
+    fs.writeFileSync(gzPath, zlib.gzipSync(rawBuf, { level: 9 }));
+    const raw = rawBuf.length;
     const gz = fs.statSync(gzPath).size;
     console.log(`[api] Upload ${(gz / 1024 / 1024).toFixed(1)}MB gz (was ${(raw / 1024 / 1024).toFixed(1)}MB raw)...`);
     await scpToRemote(gzPath, '/tmp/pulsewatch-api.gz');
@@ -54,7 +56,7 @@ echo ${pw} | sudo -S systemctl start pulsewatch-api
 sleep 2
 curl -s http://127.0.0.1:4000/health`;
 
-  const { code, stdout } = sshExec(cmd);
+  const { code, stdout } = await sshExec(cmd);
   process.stdout.write(stdout);
   if (code !== 0) process.exit(code);
   console.log(`[api] Done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

@@ -32,7 +32,7 @@ rm -f /tmp/web-static.tar.gz
 echo ${pw} | sudo -S systemctl start pulsewatch-web
 sleep 3
 curl -s -o /dev/null -w "80en:%{http_code}\\n" http://127.0.0.1/en`;
-  const { code, stdout } = sshExec(cmd);
+  const { code, stdout } = await sshExec(cmd);
   process.stdout.write(stdout);
   if (code !== 0) process.exit(code);
   console.log(`[web-static] Done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

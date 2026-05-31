@@ -93,7 +93,7 @@ echo "[web] next build on server..."
 npm run build -w @pulsewatch/web
 ${activateWebArtifacts(BUILD_DIR)}
 `;
-  const { code, stdout, stderr } = sshExec(cmd, { timeoutMs: 900000 });
+  const { code, stdout, stderr } = await sshExec(cmd, { timeoutMs: 900000 });
   process.stdout.write(stdout);
   if (stderr) process.stderr.write(stderr);
   if (code !== 0) process.exit(code);
@@ -140,7 +140,7 @@ echo ${pw} | sudo -S systemctl start pulsewatch-web
 sleep 5
 curl -s -o /dev/null -w "3000en:%{http_code}\\n" http://127.0.0.1:3000/en
 curl -s -o /dev/null -w "80en:%{http_code}\\n" http://127.0.0.1/en`;
-  const { code, stdout } = sshExec(cmd, { timeoutMs: 900000 });
+  const { code, stdout } = await sshExec(cmd, { timeoutMs: 900000 });
   process.stdout.write(stdout);
   if (code !== 0) process.exit(code);
   console.log(`[web] Upload deploy done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

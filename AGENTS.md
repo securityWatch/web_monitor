@@ -52,7 +52,7 @@ Smoke：`curl -s http://127.0.0.1:4000/health` → `"status":"ok"`；`curl -s -o
 
 ### Deploy / secrets
 
-见 `DEPLOYMENT.md` 与本地 `环境信息`（不入库）。Cloud Agent 除非明确要求，否则不要部署到生产。
+见 `DEPLOYMENT.md` 与本地 `环境信息`（不入库）。**运行时变更完成后必须自动部署到生产**（`cd deploy && node redeploy-api.js` / `redeploy-web.js`），不要向用户确认是否部署。
 
 ### Product conventions
 
