@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,13 +16,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pulsewatch/api/internal/services"
 )
 
-type ToolsHandler struct{}
+type ToolsHandler struct {
+	db *pgxpool.Pool
+}
 
-func NewToolsHandler() *ToolsHandler {
-	return &ToolsHandler{}
+func NewToolsHandler(db *pgxpool.Pool) *ToolsHandler {
+	return &ToolsHandler{db: db}
 }
 
 func (h *ToolsHandler) SSLCheck(c *gin.Context) {
@@ -416,3 +422,106 @@ func tlsVersionName(v uint16) string {
 		return fmt.Sprintf("0x%x", v)
 	}
 }
+
+func generateBadgeToken() string {
+	b := make([]byte, 12)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+func renderBadgeSVG(label, message, color string) []byte {
+	label = strings.ReplaceAll(label, "&", "&amp;")
+	label = strings.ReplaceAll(label, "<", "&lt;")
+	label = strings.ReplaceAll(label, ">", "&gt;")
+	message = strings.ReplaceAll(message, "&", "&amp;")
+	message = strings.ReplaceAll(message, "<", "&lt;")
+	message = strings.ReplaceAll(message, ">", "&gt;")
+
+	labelWidth := len(label)*7 + 12
+	if labelWidth < 40 {
+		labelWidth = 40
+	}
+	msgWidth := len(message)*7 + 12
+	if msgWidth < 30 {
+		msgWidth = 30
+	}
+	totalWidth := labelWidth + msgWidth
+	msgStart := labelWidth
+
+	return []byte(fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="20">
+  <linearGradient id="s" x2="0" y2="100%%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r">
+    <rect width="%d" height="20" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="%d" height="20" fill="#555"/>
+    <rect x="%d" width="%d" height="20" fill="%s"/>
+    <rect width="%d" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11">
+    <text x="%d" y="14">%s</text>
+    <text x="%d" y="14">%s</text>
+  </g>
+</svg>`,
+		totalWidth, totalWidth, labelWidth, msgStart, msgWidth, color, totalWidth,
+		labelWidth/2+1, label,
+		msgStart+msgWidth/2+1, message))
+}
+
+func (h *ToolsHandler) BadgeSVG(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		c.Data(http.StatusBadRequest, "image/svg+xml", renderBadgeSVG("pulsewatch", "invalid", "#e05d44"))
+		return
+	}
+
+	var id, status, name string
+	var uptime sql.NullFloat64
+	err := h.db.QueryRow(c.Request.Context(), `
+		SELECT m.id, m.status, m.name,
+			ROUND(
+				COALESCE(
+					(SELECT 100.0 * COUNT(*) FILTER (WHERE is_up) / NULLIF(COUNT(*), 0)
+					 FROM check_results cr
+					 WHERE cr.monitor_id = m.id
+					   AND cr.checked_at > now() - interval '24 hours'),
+				100.0
+				), 2
+			) AS uptime_24h
+		FROM monitors m
+		WHERE m.public_badge_token = $1 AND m.status != 'paused'
+	`, token).Scan(&id, &status, &name, &uptime)
+	if err != nil {
+		c.Data(http.StatusOK, "image/svg+xml", renderBadgeSVG("pulsewatch", "not found", "#e05d44"))
+		return
+	}
+
+	var label, message, color string
+	if status == "up" {
+		label = name
+		if uptime.Valid {
+			message = fmt.Sprintf("%.2f%% uptime", uptime.Float64)
+		} else {
+			message = "up"
+		}
+		color = "#4c1"
+	} else if status == "down" {
+		label = name
+		message = "down"
+		color = "#e05d44"
+	} else {
+		label = name
+		message = "pending"
+		color = "#dfb317"
+	}
+
+	svg := renderBadgeSVG(label, message, color)
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+	c.Data(http.StatusOK, "image/svg+xml", svg)
+}
+

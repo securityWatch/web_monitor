@@ -4,6 +4,7 @@ export const BLOG_POSTS = [
   { slug: 'ssl-certificate-monitoring-guide', messageKey: 'sslMonitoring' as const },
   { slug: 'downtime-cost-calculator-guide', messageKey: 'downtimeCost' as const },
   { slug: 'monitor-stripe-webhooks-guide', messageKey: 'stripeWebhooks' as const },
+  { slug: 'uptime-badge-github-readme', messageKey: 'uptimeBadge' as const },
 ] as const;
 
 export type BlogPostSlug = (typeof BLOG_POSTS)[number]['slug'];

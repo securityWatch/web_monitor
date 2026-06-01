@@ -26,6 +26,7 @@ import {
   Activity as ActivityIcon,
   Calculator,
   ArrowRightLeft,
+  BadgeCheck,
 } from 'lucide-react';
 import {
   base64Decode,
@@ -60,6 +61,7 @@ const TOOLS: { id: ToolId; icon: typeof Braces }[] = [
 const EXTRA_TOOLS = [
   { href: '/tools/website-down-checker', key: 'websiteDownChecker', icon: Globe },
   { href: '/tools/uptime-calculator', key: 'uptimeCalculator', icon: Calculator },
+  { href: '/tools/badge-generator', key: 'badgeGenerator', icon: ShieldCheck },
   { href: '/tools/redirect-checker', key: 'redirectChecker', icon: ArrowRightLeft },
   { href: '/tools/ssl-checker', key: 'sslChecker', icon: ShieldCheck },
   { href: '/tools/dns-lookup', key: 'dnsLookup', icon: Network },
@@ -72,6 +74,7 @@ const EXTRA_TOOLS = [
   { href: '/tools/qr-code', key: 'qrCode', icon: QrCode },
   { href: '/tools/jwt-decoder', key: 'jwtDecoder', icon: ShieldCheck },
   { href: '/tools/cron-parser', key: 'cronParser', icon: CalendarClock },
+  { href: '/tools/badge-generator', key: 'badgeGenerator', icon: BadgeCheck },
 ];
 
 export function DevToolsPanel() {

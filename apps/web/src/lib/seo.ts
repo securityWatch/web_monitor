@@ -44,7 +44,10 @@ export const publicMarketingPaths = [
   '/blog/website-down-checker-guide',
   '/blog/ssl-certificate-monitoring-guide',
   '/blog/downtime-cost-calculator-guide',
+  '/blog/uptime-badge-github-readme',
   '/blog/monitor-stripe-webhooks-guide',
+  '/blog/uptime-badge-github-readme',
+
   '/tools',
   '/tools/uptime-calculator',
   '/tools/redirect-checker',
@@ -60,6 +63,7 @@ export const publicMarketingPaths = [
   '/tools/ping-test',
   '/tools/port-checker',
   '/tools/http-headers',
+  '/tools/badge-generator',
 ] as const;
 
 export function buildPageMetadata(opts: {

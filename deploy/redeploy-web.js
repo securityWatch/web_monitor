@@ -113,6 +113,13 @@ ${activateWebArtifacts(BUILD_DIR)}
   if (stderr) process.stderr.write(stderr);
   if (code !== 0) process.exit(code);
   console.log(`[web] Remote build done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+
+  // Ping search engines after successful build
+  try {
+    execSync('node ping-search-engines.js', { cwd: __dirname, stdio: 'inherit' });
+  } catch {
+    console.log('[web] Search engine ping skipped (non-fatal)');
+  }
 }
 
 async function deployUploadBundle() {

@@ -154,6 +154,7 @@
     "resourcesHttpHeaders": "HTTP 响应头检测",
     "resourcesUptimeCalculator": "停机成本计算器",
     "resourcesRedirectChecker": "重定向链检测",
+    "resourcesBadgeGenerator": "可用性徽章生成器",
     "resourcesUptimeRobotAlt": "UptimeRobot 替代方案",
     "resourcesUptimeFeature": "可用性监控功能",
     "resourcesSslMonitoring": "SSL 监控功能",
@@ -199,6 +200,10 @@
     "faq17A": "使用免费停机成本计算器 /tools/uptime-calculator — 输入月收入与目标可用性（如 99.9%）即可估算年度损失。配合 PulseWatch 24/7 监控，在分钟级而非小时级发现故障。",
     "faq18Q": "如何追踪 HTTP 重定向链？",
     "faq18A": "使用免费重定向检测工具 /tools/redirect-checker — 输入任意 URL 即可查看每一跳 301/302、状态码与最终目标地址。适用于 SEO 迁移、CDN 规则与 HTTPS 切换，再为关键 URL 添加 24/7 监控。",
+    "faq19Q": "能否在 GitHub README 中嵌入实时在线徽章？",
+    "faq19A": "可以。创建监控并完成首次检测后，PulseWatch 会生成唯一的公开徽章令牌。在监控详情页复制 Markdown 或 HTML 嵌入代码，即可在 GitHub、网站或仪表盘中显示实时 UP/DOWN SVG 徽章。如需轮换令牌，随时点击「重新生成」按钮。",
+    "faq19Q": "能在 GitHub README 上展示监控状态吗？",
+    "faq19A": "可以。每个监控会自动生成公开徽章令牌。到 /tools/badge-generator 生成实时可用性徽章 SVG，嵌入 Markdown 或 HTML 页面（包括 GitHub README）。徽章随监控状态实时更新。",
     "capabilitiesTitle": "可用性、安全与值班一体化能力",
     "capabilitiesSubtitle": "外部多区域探针、SSL 分级预警、DNS 与篡改检测、多渠道通知、状态页与维护窗口、开发者友好工作流 — 面向生产团队，便于搜索引擎与用户发现。",
     "cap1Title": "可用性监控与多区域探针",
@@ -254,7 +259,8 @@
       "portChecker": "端口检测",
       "httpHeaders": "HTTP 响应头",
       "uptimeCalculator": "停机成本计算器",
-      "redirectChecker": "重定向检测"
+      "redirectChecker": "重定向检测",
+      "badgeGenerator": "可用性徽章"
     },
     "json": {
       "format": "格式化",
@@ -460,6 +466,25 @@
       "cta": "迁移完成后为 URL 添加告警监控 —",
       "ctaLink": "免费注册 PulseWatch"
     },
+    "badgeGenerator": {
+      "badge": "状态徽章",
+      "title": "GitHub README 可用性徽章生成器",
+      "subtitle": "生成实时可用性徽章，展示监控状态与 24 小时可用率。嵌入 GitHub、文档或仪表盘。",
+      "tokenLabel": "徽章令牌（可选）",
+      "tokenPlaceholder": "粘贴监控的徽章令牌",
+      "tokenHint": "在监控详情页的「公开徽章」区域找到令牌。",
+      "preview": "预览",
+      "markdownTitle": "Markdown",
+      "htmlTitle": "HTML",
+      "copy": "复制",
+      "howTo": "如何将可用性徽章添加到 GitHub README：",
+      "step1": "登录后创建或编辑一个监控。",
+      "step2": "找到「公开徽章」区域，复制令牌。",
+      "step3": "在上方粘贴令牌预览徽章效果。",
+      "step4": "复制 Markdown 或 HTML 代码，粘贴到 README.md 中。",
+      "cta": "开始监控以获取徽章 —",
+      "ctaLink": "免费注册"
+    },
     "dnsLookup": {
       "badge": "DNS 解析",
       "title": "免费 DNS 查询工具",
@@ -523,6 +548,14 @@
       "hint": "检测从 PulseWatch 服务器发起 — 非浏览器本地请求。",
       "cta": "24/7 监控 URL 与响应头/可用性告警 —",
       "ctaLink": "免费注册"
+    },
+    "badgeGenerator": {
+      "badge": "在线徽章",
+      "title": "在线徽章生成器",
+      "subtitle": "生成显示监控状态的实时 SVG 徽章，可嵌入 GitHub README、网站和仪表盘。",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "cta": "创建监控获取徽章 —"
     }
   },
   "pricingPage": {
@@ -725,6 +758,15 @@
         "p2": "PulseWatch HTTP 监控可探测同主机上的轻量健康 URL，或专用的 /webhooks/stripe/health 路由，在不处理真实事件的情况下验证签名密钥配置。",
         "p3": "健康端点返回结构化 JSON 时，可添加关键词检测。设置连续失败阈值，避免短暂部署抖动误呼值班，但持续故障仍会告警。",
         "p4": "将 Webhook 监控与 checkout URL 检测、SSL 到期告警配合使用。参见 /use-cases/ecommerce-uptime，免费版 10 个监控即可起步。"
+      },
+      "uptimeBadge": {
+        "title": "如何为 GitHub README 添加实时可用性徽章",
+        "excerpt": "嵌入实时 PulseWatch 徽章展示监控状态和可用率 — 开源项目的免费反向链接与即时而透明的健康展示。",
+        "date": "2026-06-02",
+        "p1": "可用性徽章是一个能展示服务在线/下线状态及 24 小时可用率的微型 SVG 图片。开发者将其嵌入 GitHub README，让用户无需登录 PulseWatch 即可一目了然地了解服务健康状况。",
+        "p2": "每个 PulseWatch 监控创建时会自动生成唯一的徽章令牌。找到令牌后，可在 /tools/badge-generator 预览并复制嵌入代码。",
+        "p3": "支持两种格式：Markdown（![PulseWatch](https://gkao.com.cn/api/v1/public/badge/令牌.svg)）和 HTML（<img src=\"...\"/>）。徽章会随监控检测结果自动更新。",
+        "p4": "徽章同时也是免费反向链接：每个展示徽章的公开仓库都在向开发者推荐 gkao.com.cn。为开源项目 API 添加监控，在 README 中分享徽章吧。"
       }
     }
   },
@@ -1273,6 +1315,18 @@
       }
     }
   },
+  "monitorDetail": {
+    "badgeSection": "公开徽章",
+    "badgeDesc": "在 GitHub README 或网站中嵌入在线可用性徽章。",
+    "badgePreview": "预览",
+    "badgeMarkdown": "复制 Markdown",
+    "badgeHTML": "复制 HTML",
+    "badgeCopied": "已复制！",
+    "badgeRegenerate": "重新生成",
+    "badgeRegenerating": "生成中...",
+    "badgeAuto": "首次检测完成后将自动生成徽章。",
+    "badgeComingSoon": "首次检测完成后可用。"
+  },
   "meta": {
     "title": "PulseWatch",
     "description": "商用友好的可用性监控，智能洞察与快速告警。",
@@ -1376,6 +1430,11 @@
       "title": "HTTP 重定向链检测 — 追踪 301/302 | PulseWatch",
       "description": "免费重定向链分析工具。从外部服务器查看每一跳 HTTP 重定向、状态码、Location 头与最终 URL。",
       "keywords": "重定向检测, 重定向链分析, HTTP 301 追踪, URL 跳转测试, SEO 重定向审计"
+    },
+    "badgeGenerator": {
+      "title": "可用性徽章生成器 — GitHub README 实时状态 | PulseWatch",
+      "description": "为 GitHub README 生成实时可用性徽章。展示监控状态与可用率，Shields.io 风格 SVG。",
+      "keywords": "可用性徽章, GitHub 状态徽章, 网站监控徽章, README 徽章, 在线状态徽章"
     },
     "sslMonitoring": {
       "title": "SSL 证书监控与到期告警 | PulseWatch",

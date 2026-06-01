@@ -31,6 +31,7 @@ var migrationFiles = []string{
 	"migrations/014_daily_reports.sql",
 	"migrations/015_email_otp.sql",
 	"migrations/016_free_tier_limits.sql",
+	"migrations/017_public_badge.sql",
 }
 
 func Connect(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {

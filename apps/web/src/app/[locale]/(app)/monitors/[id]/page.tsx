@@ -39,6 +39,7 @@ interface Monitor {
   intervalSeconds: number; lastCheckedAt?: string; lastResponseMs?: number;
 
   config?: unknown;
+  publicBadgeToken?: string | null;
 
 }
 
@@ -86,6 +87,8 @@ export default function MonitorDetailPage() {
 
   const tc = useTranslations('common');
 
+  const td = useTranslations('monitorDetail');
+
   const { id } = useParams<{ id: string }>();
 
   const auth = getStoredAuth();
@@ -118,6 +121,8 @@ export default function MonitorDetailPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [aiVisualLoading, setAiVisualLoading] = useState(false);
   const [aiVisual, setAiVisual] = useState('');
+  const [badgeCopied, setBadgeCopied] = useState<'markdown' | 'html' | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
 
 
 
@@ -380,6 +385,77 @@ export default function MonitorDetailPage() {
 
         <div className="card"><p className="text-sm text-zinc-500">{t('rangeErrorRate')}</p><p className={`mt-1 font-mono ${(summary?.errorRate ?? 0) > 0 ? 'text-red-400' : ''}`}>{formatUptime(summary?.errorRate ?? 0)}</p></div>
 
+      </div>
+
+
+
+      {/* Public Badge Section */}
+      <div className="card">
+        <h2 className="font-semibold">{td('badgeSection')}</h2>
+        <p className="mt-1 text-xs text-zinc-500">{td('badgeDesc')}</p>
+        {monitor.publicBadgeToken ? (
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="mb-2 text-sm text-zinc-400">{td('badgePreview')}</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://gkao.com.cn/api/v1/public/badge/${monitor.publicBadgeToken}.svg`}
+                alt="Uptime badge"
+                className="h-5"
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="btn-secondary text-sm"
+                onClick={() => {
+                  const code = `![PulseWatch](https://gkao.com.cn/api/v1/public/badge/${monitor.publicBadgeToken}.svg)`;
+                  navigator.clipboard.writeText(code);
+                  setBadgeCopied('markdown');
+                  setTimeout(() => setBadgeCopied(null), 2000);
+                }}
+              >
+                {badgeCopied === 'markdown' ? td('badgeCopied') : td('badgeMarkdown')}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary text-sm"
+                onClick={() => {
+                  const code = `<img src="https://gkao.com.cn/api/v1/public/badge/${monitor.publicBadgeToken}.svg" alt="PulseWatch uptime badge" />`;
+                  navigator.clipboard.writeText(code);
+                  setBadgeCopied('html');
+                  setTimeout(() => setBadgeCopied(null), 2000);
+                }}
+              >
+                {badgeCopied === 'html' ? td('badgeCopied') : td('badgeHTML')}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary text-sm"
+                disabled={regenerating}
+                onClick={async () => {
+                  if (!orgId || !id) return;
+                  setRegenerating(true);
+                  try {
+                    const res = await apiFetch<{ token: string }>(
+                      `/api/v1/orgs/${orgId}/monitors/${id}/regenerate-badge-token`,
+                      { method: 'POST' },
+                    );
+                    setMonitor((prev) => prev ? { ...prev, publicBadgeToken: res.token } : prev);
+                  } catch (err) {
+                    console.error(err);
+                  } finally {
+                    setRegenerating(false);
+                  }
+                }}
+              >
+                {regenerating ? td('badgeRegenerating') : td('badgeRegenerate')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-zinc-500">{td('badgeAuto')}</p>
+        )}
       </div>
 
 

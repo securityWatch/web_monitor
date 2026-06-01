@@ -66,7 +66,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	inviteH := handlers.NewInviteHandler(db)
 	reportH := handlers.NewReportHandler(db)
 	apiKeyH := handlers.NewAPIKeyHandler(db)
-	toolsH := handlers.NewToolsHandler()
+	toolsH := handlers.NewToolsHandler(db)
 	auditH := handlers.NewAuditHandler(db)
 	openAPIH := handlers.NewOpenAPIHandler()
 	probeDispatch := services.NewProbeDispatch(db)
@@ -94,6 +94,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r.GET("/api/v1/public/port-check", toolsH.PortCheck)
 	r.GET("/api/v1/public/http-headers", toolsH.HTTPHeaders)
 	r.GET("/api/v1/public/redirect-check", toolsH.RedirectCheck)
+	r.GET("/api/v1/public/badge/:token.svg", toolsH.BadgeSVG)
 
 	internal := r.Group("/api/internal/probe")
 	{
@@ -169,6 +170,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.GET("/monitors/:id", monitorH.Get)
 				org.PATCH("/monitors/:id", monitorH.Update)
 				org.DELETE("/monitors/:id", monitorH.Delete)
+				org.POST("/monitors/:id/regenerate-badge-token", monitorH.RegenerateBadgeToken)
 				org.GET("/monitors/:id/checks", monitorH.GetChecks)
 				org.GET("/monitors/:id/artifacts", monitorH.GetArtifacts)
 				org.POST("/monitors/:id/ai-visual", monitorH.AIVisualExplain)

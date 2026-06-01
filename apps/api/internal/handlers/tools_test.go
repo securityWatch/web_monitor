@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,7 @@ import (
 
 func TestHTTPCheckMissingURL(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/http-check", nil)
@@ -30,7 +31,7 @@ func TestHTTPCheckLocalServer(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/http-check?url="+srv.URL, nil)
@@ -50,7 +51,7 @@ func TestHTTPCheckLocalServer(t *testing.T) {
 
 func TestDNSLookupMissingHost(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/dns-lookup", nil)
@@ -63,7 +64,7 @@ func TestDNSLookupMissingHost(t *testing.T) {
 
 func TestDNSLookupExampleCom(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/dns-lookup?host=example.com&type=A", nil)
@@ -86,7 +87,7 @@ func TestDNSLookupExampleCom(t *testing.T) {
 
 func TestPingTestMissingHost(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/ping", nil)
@@ -99,7 +100,7 @@ func TestPingTestMissingHost(t *testing.T) {
 
 func TestPingTestLocalhost(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/ping?host=127.0.0.1", nil)
@@ -112,7 +113,7 @@ func TestPingTestLocalhost(t *testing.T) {
 
 func TestPortCheckMissingHost(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/port-check", nil)
@@ -135,7 +136,7 @@ func TestPortCheckLocalListener(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/port-check?host=127.0.0.1&port="+portStr, nil)
@@ -155,7 +156,7 @@ func TestPortCheckLocalListener(t *testing.T) {
 
 func TestHTTPHeadersMissingURL(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/http-headers", nil)
@@ -174,7 +175,7 @@ func TestHTTPHeadersLocalServer(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/http-headers?url="+srv.URL, nil)
@@ -198,7 +199,7 @@ func TestHTTPHeadersLocalServer(t *testing.T) {
 
 func TestRedirectCheckMissingURL(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/redirect-check", nil)
@@ -221,7 +222,7 @@ func TestRedirectCheckChain(t *testing.T) {
 	}))
 	defer redirect.Close()
 
-	h := NewToolsHandler()
+	h := NewToolsHandler(nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/redirect-check?url="+redirect.URL, nil)
@@ -239,5 +240,62 @@ func TestRedirectCheckChain(t *testing.T) {
 	}
 	if body["finalUrl"] != final.URL {
 		t.Fatalf("finalUrl = %v, want %s", body["finalUrl"], final.URL)
+	}
+}
+
+func TestGenerateBadgeToken(t *testing.T) {
+	token1 := generateBadgeToken()
+	token2 := generateBadgeToken()
+	if len(token1) != 24 {
+		t.Fatalf("token1 length = %d, want 24", len(token1))
+	}
+	if token1 == token2 {
+		t.Fatal("tokens should be unique")
+	}
+}
+
+func TestRenderBadgeSVG(t *testing.T) {
+	svg := renderBadgeSVG("uptime", "99.97%", "#4c1")
+	if !strings.Contains(string(svg), "99.97%") {
+		t.Fatalf("missing message in svg: %s", string(svg))
+	}
+	if !strings.Contains(string(svg), "uptime") {
+		t.Fatalf("missing label in svg")
+	}
+}
+
+func TestBadgeSVGMissingToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler(nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/badge/.svg", nil)
+	c.Params = []gin.Param{{Key: "token", Value: ""}}
+
+	h.BadgeSVG(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+	ct := w.Header().Get("Content-Type")
+	if ct != "image/svg+xml" {
+		t.Fatalf("content-type = %s, want image/svg+xml", ct)
+	}
+}
+
+func TestBadgeSVGUnknownToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewToolsHandler(nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/public/badge/unknown.svg", nil)
+	c.Params = []gin.Param{{Key: "token", Value: "unknown"}}
+
+	h.BadgeSVG(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "not found") {
+		t.Fatalf("expected 'not found' in response, got: %s", body)
 	}
 }

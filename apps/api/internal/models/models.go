@@ -51,6 +51,7 @@ type Monitor struct {
 	LastCheckedAt    *time.Time      `json:"lastCheckedAt"`
 	LastResponseMs   *int            `json:"lastResponseMs"`
 	HeartbeatToken   *string         `json:"heartbeatToken,omitempty"`
+	PublicBadgeToken *string         `json:"publicBadgeToken,omitempty"`
 	Uptime24h        *float64        `json:"uptime24h,omitempty"`
 	Uptime7d         *float64        `json:"uptime7d,omitempty"`
 	CreatedAt        time.Time       `json:"createdAt"`

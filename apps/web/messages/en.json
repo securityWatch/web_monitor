@@ -154,11 +154,13 @@
     "resourcesHttpHeaders": "HTTP headers checker",
     "resourcesUptimeCalculator": "Downtime cost calculator",
     "resourcesRedirectChecker": "Redirect chain checker",
+    "resourcesBadgeGenerator": "Uptime badge generator",
     "resourcesUptimeRobotAlt": "UptimeRobot alternative",
     "resourcesUptimeFeature": "Uptime monitoring features",
     "resourcesSslMonitoring": "SSL monitoring features",
     "resourcesStatusPages": "Status pages",
     "resourcesAlerting": "Alerting & notifications",
+    "resourcesBadgeGenerator": "Uptime badge generator",
     "resourcesBlog": "Monitoring guides & blog",
     "resourcesApiUseCase": "API monitoring use case",
     "resourcesEcommerceUseCase": "E-commerce uptime use case",
@@ -199,6 +201,10 @@
     "faq17A": "Use the free downtime cost calculator at /tools/uptime-calculator — enter monthly revenue and target uptime (e.g. 99.9%) to see estimated annual loss. Pair it with 24/7 PulseWatch monitors so outages are caught in minutes, not hours.",
     "faq18Q": "How do I trace HTTP redirect chains?",
     "faq18A": "Use the free redirect checker at /tools/redirect-checker — enter any URL to see each 301/302 hop, status code, and final destination. Useful for SEO migrations, CDN rules, and HTTPS cutovers before you add 24/7 monitors.",
+    "faq19Q": "Can I embed a live uptime badge in my GitHub README?",
+    "faq19A": "Yes. After creating a monitor and the first check completes, PulseWatch generates a unique public badge token. Use the Markdown or HTML embed code from the monitor detail page to display a live UP/DOWN SVG badge on GitHub, websites, or dashboards. You can regenerate the token anytime if you need to rotate it.",
+    "faq19Q": "Can I show my monitor status on my GitHub README?",
+    "faq19A": "Yes. Each monitor comes with a public badge token. Generate a live uptime badge SVG at /tools/badge-generator and embed it in any Markdown or HTML page — including GitHub README files. The badge updates in real time as your monitor state changes.",
     "capabilitiesTitle": "Platform capabilities for uptime, security, and on-call",
     "capabilitiesSubtitle": "External probes, tiered SSL alerts, DNS and tamper detection, multi-channel notifications, status pages, and developer-friendly workflows — all indexable, all built for production teams.",
     "cap1Title": "Uptime monitoring & multi-region probes",
@@ -459,6 +465,25 @@
       "finalUrl": "Final URL",
       "cta": "Monitor URLs after migrations with alerts —",
       "ctaLink": "start free on PulseWatch"
+    },
+    "badgeGenerator": {
+      "badge": "Status badge",
+      "title": "Uptime Badge Generator for GitHub README",
+      "subtitle": "Generate a live uptime badge that shows your monitor status and 24h uptime percentage. Embed in GitHub, docs, or dashboards.",
+      "tokenLabel": "Your badge token (optional)",
+      "tokenPlaceholder": "Paste your monitor badge token",
+      "tokenHint": "Find your token in the monitor detail page under 'Public Badge'.",
+      "preview": "Preview",
+      "markdownTitle": "Markdown",
+      "htmlTitle": "HTML",
+      "copy": "Copy",
+      "howTo": "How to add an uptime badge to your GitHub README:",
+      "step1": "Log in and create or edit a monitor.",
+      "step2": "Find the Public Badge section and copy your token.",
+      "step3": "Paste the token above to preview your badge.",
+      "step4": "Copy the Markdown or HTML code and paste it into your README.md.",
+      "cta": "Start monitoring to get your badge —",
+      "ctaLink": "sign up free"
     },
     "dnsLookup": {
       "badge": "DNS resolver",
@@ -725,6 +750,15 @@
         "p2": "PulseWatch HTTP monitors can probe a lightweight health URL on the same host or a dedicated /webhooks/stripe/health route that verifies signing secret configuration without processing live events.",
         "p3": "Add keyword checks for expected JSON fields when health endpoints return structured status. Set consecutive failure thresholds so brief deploy blips do not page on-call, but sustained outages do.",
         "p4": "Pair webhook monitoring with checkout URL checks and SSL expiry alerts. See /use-cases/ecommerce-uptime and start free with 10 monitors on the free tier."
+      },
+      "uptimeBadge": {
+        "title": "How to add a live uptime badge to your GitHub README",
+        "excerpt": "Embed real-time monitor status in your GitHub README, website, or dashboard with a live SVG badge. Supports Markdown and HTML formats.",
+        "date": "2026-06-01",
+        "p1": "An uptime badge is a tiny SVG image that shows your monitor's current status — UP (green) or DOWN (red) — updated in real time. Embedding one in your GitHub README, documentation site, or internal dashboard gives visitors instant visibility into whether your service is healthy, without requiring them to log into PulseWatch.",
+        "p2": "PulseWatch generates a unique public badge token for each monitor. Once a monitor has run its first check, the badge is available at a public SVG endpoint. Use the Markdown embed code in your README: `![PulseWatch](https://gkao.com.cn/api/v1/public/badge/YOUR_TOKEN.svg)`. For HTML pages, use a standard `<img src=\"...\">` tag.",
+        "p3": "Uptime badges are useful for open-source projects that want to signal reliability to contributors, SaaS landing pages that showcase uptime transparency, and internal status boards where quick visual status helps teams triage faster. Unlike a full status page, a badge fits anywhere an image can go.",
+        "p4": "To get started, sign up for PulseWatch, create a monitor, wait for the first check to complete, then copy the embed code from your monitor detail page. If you ever need to rotate your badge token, use the \"Regenerate token\" button — your old badge URL will stop working immediately."
       }
     }
   },
@@ -1273,6 +1307,18 @@
       }
     }
   },
+  "monitorDetail": {
+    "badgeSection": "Public Badge",
+    "badgeDesc": "Embed a live uptime badge in your GitHub README or website.",
+    "badgePreview": "Preview",
+    "badgeMarkdown": "Copy Markdown",
+    "badgeHTML": "Copy HTML",
+    "badgeCopied": "Copied!",
+    "badgeRegenerate": "Regenerate token",
+    "badgeRegenerating": "Regenerating...",
+    "badgeAuto": "Badge will be automatically generated after first check.",
+    "badgeComingSoon": "Available after the first check completes."
+  },
   "meta": {
     "title": "PulseWatch",
     "description": "Commercial-friendly uptime monitoring with smart insights and fast alerts.",
@@ -1356,6 +1402,11 @@
       "title": "HTTP Redirect Chain Checker — Trace 301/302 Hops | PulseWatch",
       "description": "Free redirect chain analyzer. See each HTTP redirect hop, status code, Location header, and final URL from external servers.",
       "keywords": "redirect checker, redirect chain analyzer, HTTP 301 trace, URL redirect test, SEO redirect audit"
+    },
+    "badgeGenerator": {
+      "title": "Uptime Badge Generator — Live Status for GitHub README | PulseWatch",
+      "description": "Generate live uptime badges for your GitHub README. Show monitor status and uptime percentage with Shields.io-style SVG.",
+      "keywords": "uptime badge, GitHub status badge, uptime monitor badge, website status badge, README badge"
     },
     "dnsLookup": {
       "title": "Free DNS Lookup Tool — A, MX, TXT & More | PulseWatch",

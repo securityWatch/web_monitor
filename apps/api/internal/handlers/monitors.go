@@ -326,11 +326,12 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 	if strings.ToLower(req.Type) == "heartbeat" {
 		hbToken = services.GenerateHeartbeatToken()
 	}
+	badgeToken := generateBadgeToken()
 
 	_, err := h.db.Exec(c.Request.Context(), `
-		INSERT INTO monitors (id, org_id, name, type, target_url, interval_seconds, status, config, regions, heartbeat_token, next_run_at)
-		VALUES ($1, $2, $3, $4::monitor_type, $5, $6, 'pending', $7, $8, NULLIF($9, ''), now())
-	`, id, orgID, req.Name, req.Type, target, req.IntervalSeconds, req.Config, req.Regions, hbToken)
+		INSERT INTO monitors (id, org_id, name, type, target_url, interval_seconds, status, config, regions, heartbeat_token, public_badge_token, next_run_at)
+		VALUES ($1, $2, $3, $4::monitor_type, $5, $6, 'pending', $7, $8, NULLIF($9, ''), $10, now())
+	`, id, orgID, req.Name, req.Type, target, req.IntervalSeconds, req.Config, req.Regions, hbToken, badgeToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -472,6 +473,29 @@ func (h *MonitorHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 
+func (h *MonitorHandler) RegenerateBadgeToken(c *gin.Context) {
+	orgID := c.Param("orgId")
+	id := c.Param("id")
+	if !h.verifyOrgAccess(c, orgID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	if GetRole(c) == "viewer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	newToken := generateBadgeToken()
+	_, err := h.db.Exec(c.Request.Context(),
+		`UPDATE monitors SET public_badge_token = $1, updated_at = now() WHERE id = $2 AND org_id = $3`,
+		newToken, id, orgID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"token": newToken})
+}
+
 func (h *MonitorHandler) GetChecks(c *gin.Context) {
 	orgID := c.Param("orgId")
 	id := c.Param("id")
@@ -607,10 +631,10 @@ func (h *MonitorHandler) fetchMonitor(c *gin.Context, orgID, id string) (*models
 	var m models.Monitor
 	err := h.db.QueryRow(c.Request.Context(), `
 		SELECT id, org_id, name, type, target_url, interval_seconds, status,
-		       config, regions, last_checked_at, last_response_ms, heartbeat_token, created_at, updated_at
+		       config, regions, last_checked_at, last_response_ms, heartbeat_token, public_badge_token, created_at, updated_at
 		FROM monitors WHERE id = $1 AND org_id = $2
 	`, id, orgID).Scan(&m.ID, &m.OrgID, &m.Name, &m.Type, &m.TargetURL, &m.IntervalSeconds, &m.Status,
-		&m.Config, &m.Regions, &m.LastCheckedAt, &m.LastResponseMs, &m.HeartbeatToken, &m.CreatedAt, &m.UpdatedAt)
+		&m.Config, &m.Regions, &m.LastCheckedAt, &m.LastResponseMs, &m.HeartbeatToken, &m.PublicBadgeToken, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

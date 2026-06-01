@@ -25,7 +25,7 @@ import {
   Radio,
 } from 'lucide-react';
 
-const FAQ_COUNT = 18;
+const FAQ_COUNT = 19;
 
 export async function LandingPage({ foundingCount }: { foundingCount: number }) {
   const t = await getTranslations('landing');
@@ -344,6 +344,16 @@ export async function LandingPage({ foundingCount }: { foundingCount: number }) 
             <li>
               <Link href="/tools/redirect-checker" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
                 {t('resourcesRedirectChecker')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/tools/badge-generator" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesBadgeGenerator')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/tools/badge-generator" className="text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline">
+                {t('resourcesBadgeGenerator')}
               </Link>
             </li>
             <li>
