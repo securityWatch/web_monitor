@@ -75,6 +75,8 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	ssoH := handlers.NewSSOHandler(db, ssoSvc, cfg.WebURL)
 	wechatSvc := services.NewWeChatMiniProgramService(cfg)
 	wechatH := handlers.NewWeChatAuthHandler(authSvc, wechatSvc)
+	wechatPushSvc := services.NewWeChatMessagePushService(cfg)
+	wechatPushH := handlers.NewWeChatMessagePushHandler(wechatPushSvc)
 
 	rateLimit := middleware.NewRateLimiter(120, time.Minute)
 
@@ -95,6 +97,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	r.GET("/api/v1/public/http-headers", toolsH.HTTPHeaders)
 	r.GET("/api/v1/public/redirect-check", toolsH.RedirectCheck)
 	r.GET("/api/v1/public/badge/:token.svg", toolsH.BadgeSVG)
+	r.Any("/api/v1/public/wechat/message-push", wechatPushH.Handle)
 
 	internal := r.Group("/api/internal/probe")
 	{
