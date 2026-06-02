@@ -44,6 +44,35 @@
     </view>
 
     <view class="card">
+      <view class="row-top">
+        <text class="section-title">公开徽章</text>
+        <text wx:if="{{monitor.publicBadgeToken}}" class="pill pill-up">已就绪</text>
+      </view>
+      <text class="badge-desc">在 GitHub README 中嵌入实时可用性徽章</text>
+      <block wx:if="{{monitor.publicBadgeToken}}">
+        <image
+          src="{{env.baseUrl}}/api/v1/public/badge/{{monitor.publicBadgeToken}}.svg"
+          mode="widthFix"
+          style="height:40rpx;margin-top:16rpx"
+        />
+        <view class="badge-actions">
+          <button type="default" size="mini" class="badge-btn" bindtap="copyBadgeMarkdown">
+            {{badgeCopied === 'markdown' ? '已复制' : '复制 Markdown'}}
+          </button>
+          <button type="default" size="mini" class="badge-btn" bindtap="copyBadgeHTML">
+            {{badgeCopied === 'html' ? '已复制' : '复制 HTML'}}
+          </button>
+          <button type="warn" size="mini" class="badge-btn badge-btn-warn" loading="{{regeneratingBadge}}" disabled="{{regeneratingBadge}}" bindtap="regenerateBadgeToken">
+            重新生成
+          </button>
+        </view>
+      </block>
+      <block wx:else>
+        <text class="badge-pending">首次检测完成后将自动生成徽章令牌</text>
+      </block>
+    </view>
+
+    <view class="card">
       <text class="section-title">最近检测</text>
       <view wx:if="{{checks.length === 0}}" class="empty-inline">暂无检测记录</view>
       <view wx:for="{{checks}}" wx:key="id" class="check-row">

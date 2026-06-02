@@ -157,6 +157,12 @@ function getMonitorStats(id) {
   return request(orgPath('/monitors/' + id + '/stats?range=24h'));
 }
 
+function regenerateBadgeToken(id) {
+  return request(orgPath('/monitors/' + id + '/regenerate-badge-token'), {
+    method: 'POST',
+  });
+}
+
 function getIncidents(status) {
   let path = orgPath('/incidents');
   if (status && status !== 'all') {
@@ -181,6 +187,7 @@ module.exports = {
   getMonitor,
   getMonitorChecks,
   getMonitorStats,
+  regenerateBadgeToken,
   getIncidents,
   getMe,
 };
