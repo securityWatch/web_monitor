@@ -6,6 +6,36 @@
   margin-top: 8rpx;
 }
 
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.profile-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #1e293b;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wechat-label {
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.wechat-icon {
+  font-size: 22rpx;
+  color: #34d399;
+  font-weight: 500;
+}
+
 .display-name {
   display: block;
   margin-top: 4rpx;

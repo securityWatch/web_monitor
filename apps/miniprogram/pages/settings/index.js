@@ -30,10 +30,13 @@ Page({
     }
     const stored = auth.getAuth();
     const self = this;
+    const user = stored.user;
+    const isWeChat = user && user.email && user.email.indexOf('@users.wechat.pulsewatch') > 0;
     this.setData({
-      user: stored.user,
+      user: user,
       organization: stored.organization,
-      accountLabel: formatAccountLabel(stored.user && stored.user.email),
+      accountLabel: formatAccountLabel(user && user.email),
+      isWeChatAccount: isWeChat,
       apiBase: env.baseUrl,
     });
     api

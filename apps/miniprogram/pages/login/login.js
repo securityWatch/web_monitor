@@ -3,13 +3,12 @@ const auth = require('../../utils/auth.js');
 
 Page({
   data: {
-    email: '',
-    password: '',
     loading: false,
     wechatLoading: false,
     wechatEnabled: false,
     showEmailForm: false,
     error: '',
+    userInfo: null,
   },
 
   onLoad() {
@@ -17,19 +16,11 @@ Page({
       wx.switchTab({ url: '/pages/monitors/index' });
       return;
     }
-    this.initWechat();
-  },
-
-  initWechat() {
     const self = this;
     api
       .getWechatStatus()
       .then(function (res) {
-        const enabled = !!(res && res.enabled);
-        self.setData({ wechatEnabled: enabled });
-        if (enabled) {
-          self.onWechatLogin(true);
-        }
+        self.setData({ wechatEnabled: !!(res && res.enabled) });
       })
       .catch(function () {
         self.setData({ wechatEnabled: false });
@@ -48,46 +39,53 @@ Page({
     this.setData({ showEmailForm: !this.data.showEmailForm, error: '' });
   },
 
-  onWechatLogin(silentArg) {
-    const silent = silentArg === true;
+  getUserProfile() {
     const self = this;
-    if (self.data.wechatLoading || self.data.loading) {
-      return;
-    }
-    if (!silent) {
-      self.setData({ wechatLoading: true, error: '' });
-    } else {
-      self.setData({ wechatLoading: true });
-    }
+    wx.getUserProfile({
+      desc: '用于完善账号资料',
+      success: function (res) {
+        self.setData({
+          userInfo: res.userInfo,
+        });
+        self.doWechatLogin(res.userInfo.nickName, res.userInfo.avatarUrl);
+      },
+      fail: function () {
+        // getUserProfile 不可用时，依然用 wx.login 静默登录
+        self.doWechatLogin('', '');
+      },
+    });
+  },
+
+  doWechatLogin(displayName, avatarUrl) {
+    const self = this;
+    if (self.data.wechatLoading || self.data.loading) return;
+
+    self.setData({ wechatLoading: true, error: '' });
 
     wx.login({
       success: function (loginRes) {
         if (!loginRes.code) {
-          self.finishWechat(silent, '微信登录失败，请重试');
+          self.setData({ wechatLoading: false, error: '微信登录失败，请重试' });
           return;
         }
         api
-          .wechatLogin(loginRes.code)
+          .wechatLogin(loginRes.code, { displayName: displayName, avatarUrl: avatarUrl })
           .then(function (data) {
             const app = getApp();
             app.setSession(data);
             wx.switchTab({ url: '/pages/monitors/index' });
           })
           .catch(function (err) {
-            self.finishWechat(silent, err.message || '微信登录失败');
+            self.setData({
+              wechatLoading: false,
+              error: err.message || '微信登录失败',
+            });
           });
       },
       fail: function () {
-        self.finishWechat(silent, '无法连接微信，请稍后重试');
+        self.setData({ wechatLoading: false, error: '无法连接微信，请稍后重试' });
       },
     });
-  },
-
-  finishWechat(silent, message) {
-    this.setData({ wechatLoading: false });
-    if (!silent && message) {
-      this.setData({ error: message });
-    }
   },
 
   onSubmit() {

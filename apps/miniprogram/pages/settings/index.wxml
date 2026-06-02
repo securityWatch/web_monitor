@@ -1,8 +1,16 @@
 <view class="container">
   <view class="card profile">
-    <text class="section-title">账号</text>
-    <text class="email">{{accountLabel}}</text>
-    <text wx:if="{{user.displayName}}" class="display-name">{{user.displayName}}</text>
+    <view class="profile-row">
+      <image wx:if="{{user.avatarUrl}}" class="profile-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+      <view class="profile-info">
+        <text class="section-title">账号</text>
+        <text wx:if="{{isWeChatAccount}}" class="wechat-label">
+          <text class="wechat-icon">✓ 微信账号</text>
+        </text>
+        <text class="email">{{accountLabel}}</text>
+        <text wx:if="{{user.displayName}}" class="display-name">{{user.displayName}}</text>
+      </view>
+    </view>
   </view>
 
   <view class="card">
@@ -31,7 +39,7 @@
   <view class="card stub">
     <text class="section-title">更多设置</text>
     <text class="stub-text">通知偏好、告警渠道、团队管理等完整功能请使用 Web 端。</text>
-    <text class="stub-link">http://49.234.112.108/zh/settings</text>
+    <text class="stub-link">https://gkao.com.cn/zh/settings</text>
   </view>
 
   <button class="logout-btn" bindtap="logout">退出登录</button>
