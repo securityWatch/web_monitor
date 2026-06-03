@@ -38,7 +38,7 @@ apps/miniprogram/
 
 - **不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书**
 
-这样可使用 HTTP 直连 `http://49.234.112.108` 进行调试。
+这样可不校验 HTTPS 和域名白名单进行本地调试。
 
 ## 服务器域名配置（正式发布必做）
 
@@ -51,7 +51,7 @@ apps/miniprogram/
 **注意：**
 
 - 微信小程序正式版 **不允许** 使用裸 IP 或 HTTP，需为 API 配置 HTTPS 域名并在后台白名单
-- 当前默认 `config/env.js` 指向 `http://49.234.112.108`，仅适合开发者工具调试；上线前请改为 HTTPS 域名
+- 当前 `config/env.js` 指向 `https://gkao.com.cn`（生产 HTTPS 域名）
 
 ## 切换 API Base URL
 
@@ -60,7 +60,7 @@ apps/miniprogram/
 ```javascript
 module.exports = {
   baseUrl: 'https://your-api-domain.com',  // 生产 HTTPS
-  // baseUrl: 'http://49.234.112.108',     // 内网/调试
+  // baseUrl: 'http://127.0.0.1:4000',        // 本地开发
 };
 ```
 
