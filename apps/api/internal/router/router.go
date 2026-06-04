@@ -136,6 +136,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 			protected.GET("/me", meH.GetMe)
 			protected.PATCH("/me/profile", meH.UpdateProfile)
 			protected.POST("/me/password/change", meH.ChangePassword)
+			protected.POST("/me/password/set", meH.SetPassword)
 			protected.POST("/me/email/change-request", meH.ChangeEmailRequest)
 			protected.POST("/me/email/confirm", meH.ConfirmEmailChange)
 			protected.PATCH("/me/notifications", meH.UpdateNotifications)

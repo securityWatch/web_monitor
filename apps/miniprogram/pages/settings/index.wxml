@@ -61,17 +61,18 @@
   <!-- Security Tab -->
   <block wx:if="{{activeTab === 'security'}}">
     <view class="card">
-      <text class="section-title">修改密码</text>
-      <view class="field">
+      <text class="section-title">{{isWeChatAccount ? '设置密码' : '修改密码'}}</text>
+      <view wx:if="{{!isWeChatAccount}}" class="field">
         <text class="field-label">当前密码</text>
         <input class="input" password value="{{currentPassword}}" bindinput="onCurrentPasswordInput" placeholder="输入当前密码" />
       </view>
       <view class="field">
-        <text class="field-label">新密码（至少 8 位）</text>
+        <text class="field-label">{{isWeChatAccount ? '新密码（至少 8 位）' : '新密码（至少 8 位）'}}</text>
         <input class="input" password value="{{newPassword}}" bindinput="onNewPasswordInput" placeholder="输入新密码" />
       </view>
-      <view wx:if="{{passwordMsg}}" class="msg {{passwordMsg === '密码已更新' ? 'msg-ok' : 'msg-err'}}">{{passwordMsg}}</view>
-      <button class="btn-primary" bindtap="changePassword">修改密码</button>
+      <text wx:if="{{isWeChatAccount}}" class="field-sub">设置密码后，即可使用邮箱+密码登录 Web 端</text>
+      <view wx:if="{{passwordMsg}}" class="msg {{passwordMsg === '密码已更新' || passwordMsg === '密码已设置' ? 'msg-ok' : 'msg-err'}}">{{passwordMsg}}</view>
+      <button class="btn-primary" bindtap="{{isWeChatAccount ? 'setPassword' : 'changePassword'}}">{{isWeChatAccount ? '设置密码' : '修改密码'}}</button>
     </view>
     <view class="card stub">
       <text class="section-title">双因素认证（2FA）</text>

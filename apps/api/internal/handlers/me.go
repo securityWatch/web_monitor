@@ -126,6 +126,25 @@ func (h *MeHandler) ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "password changed"})
 }
 
+func (h *MeHandler) SetPassword(c *gin.Context) {
+	userID := GetUserID(c)
+	var req struct {
+		NewPassword string `json:"newPassword" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := services.ValidatePassword(req.NewPassword); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	newHash, _ := services.HashPassword(req.NewPassword)
+	_, _ = h.db.Exec(c.Request.Context(), `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, newHash, userID)
+	c.JSON(http.StatusOK, gin.H{"message": "password set"})
+}
+
 func (h *MeHandler) ChangeEmailRequest(c *gin.Context) {
 	userID := GetUserID(c)
 	var req struct {

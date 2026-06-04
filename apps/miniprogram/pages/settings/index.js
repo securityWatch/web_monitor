@@ -174,6 +174,22 @@ Page({
     });
   },
 
+  setPassword: function () {
+    var self = this;
+    var np = self.data.newPassword;
+    if (!np || np.length < 8) {
+      self.setData({ passwordMsg: '密码至少 8 位' });
+      return;
+    }
+    self.setData({ passwordMsg: '' });
+    api.setPassword(np).then(function () {
+      self.setData({ newPassword: '', passwordMsg: '密码已设置' });
+      setTimeout(function () { self.setData({ passwordMsg: '' }); }, 2000);
+    }).catch(function (err) {
+      self.setData({ passwordMsg: err.message || '设置失败' });
+    });
+  },
+
   // ===== Notifications =====
   toggleNotify: function (e) {
     var key = e.currentTarget.dataset.key;

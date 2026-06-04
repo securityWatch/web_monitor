@@ -241,6 +241,13 @@ function changePassword(currentPassword, newPassword) {
   });
 }
 
+function setPassword(newPassword) {
+  return request('/api/v1/me/password/set', {
+    method: 'POST',
+    data: { newPassword: newPassword },
+  });
+}
+
 function updateNotifications(data) {
   return request('/api/v1/me/notifications', { method: 'PATCH', data: data });
 }
@@ -333,6 +340,7 @@ module.exports = {
   getMe,
   updateProfile,
   changePassword,
+  setPassword,
   updateNotifications,
   getMembers,
   getInvitations,
