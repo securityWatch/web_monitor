@@ -183,6 +183,18 @@ export const defaultAppDomains =
   }
 }
 
+function patchAgentsMd(root) {
+  const p = path.join(root, 'AGENTS.md');
+  if (!fs.existsSync(p)) return;
+  let t = fs.readFileSync(p, 'utf8');
+  t = t.replace(
+    /见 `DEPLOYMENT\.md` 与本地 `环境信息`（不入库）。[\s\S]*?不要向用户确认是否部署。/,
+    '见 `DEPLOYMENT.md` 与本地 `.env`（勿提交 Git）。**自托管**：配置 `DEPLOY_HOST`、`DEPLOY_PASSWORD` 后使用 `deploy/redeploy-api.js` / `redeploy-web.js`。'
+  );
+  t = t.replace(/pulsewatch\.mdc/g, 'pulsewatch-oss.mdc');
+  fs.writeFileSync(p, t, 'utf8');
+}
+
 function removeSensitiveArtifacts(root) {
   for (const rel of ['deploy/_check-ssl.js', '环境信息']) {
     const p = path.join(root, rel);
@@ -218,6 +230,7 @@ function main(root = process.cwd()) {
     if (next !== text) fs.writeFileSync(full, next, 'utf8');
   }
   patchSpecificFiles(root);
+  patchAgentsMd(root);
   removeSensitiveArtifacts(root);
   const templatesDir = path.join(root, 'templates', 'oss');
   if (fs.existsSync(templatesDir)) copyOssTemplates(root, templatesDir);
