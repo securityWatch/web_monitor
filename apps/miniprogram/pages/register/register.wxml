@@ -4,24 +4,41 @@
     <text class="tagline">免费创建账号 · 开始监控</text>
   </view>
 
-  <view wx:if="{{error}}" class="error-box">{{error}}</view>
-
   <view class="form card">
-    <view class="field">
-      <text class="label">邮箱</text>
-      <input class="input" type="text" placeholder="your@email.com" value="{{email}}" bindinput="onEmailInput" />
+    <view class="wechat-section">
+      <navigator url="/pages/login/login" class="btn-wechat" open-type="switchTab">
+        返回登录页 → 使用微信或手机号一键注册
+      </navigator>
+      <text class="wechat-hint">微信身份或手机号登录会自动创建账号，无需邮箱密码</text>
     </view>
-    <view class="field">
-      <text class="label">密码</text>
-      <input class="input" password placeholder="至少 8 位" value="{{password}}" bindinput="onPasswordInput" />
+
+    <view class="divider">
+      <text class="divider-line"></text>
+      <text class="divider-text">或</text>
+      <text class="divider-line"></text>
     </view>
-    <view class="field">
-      <text class="label">显示名称（可选）</text>
-      <input class="input" type="text" placeholder="您的名称" value="{{displayName}}" bindinput="onDisplayNameInput" />
+
+    <view wx:if="{{showForm}}" class="email-form">
+      <view class="field">
+        <text class="label">邮箱</text>
+        <input class="input" type="text" placeholder="your@email.com" value="{{email}}" bindinput="onEmailInput" />
+      </view>
+      <view class="field">
+        <text class="label">密码（至少8位）</text>
+        <input class="input" password placeholder="密码" value="{{password}}" bindinput="onPasswordInput" />
+      </view>
+      <view class="field">
+        <text class="label">显示名称</text>
+        <input class="input" type="text" placeholder="您的名称" value="{{displayName}}" bindinput="onDisplayNameInput" />
+      </view>
+      <button class="btn-primary submit" loading="{{loading}}" disabled="{{loading}}" bindtap="onSubmit">
+        注册
+      </button>
     </view>
-    <button class="btn-primary submit" loading="{{loading}}" disabled="{{loading}}" bindtap="onSubmit">
-      注册并开始监控
-    </button>
+
+    <view wx:else>
+      <button class="btn-secondary-outline" bindtap="toggleForm">使用邮箱注册（需 Web 端验证）</button>
+    </view>
   </view>
 
   <view class="hint">

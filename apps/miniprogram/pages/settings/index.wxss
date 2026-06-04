@@ -141,6 +141,10 @@
   color: #475569;
 }
 
+.global-logout {
+  margin: 32rpx 0 48rpx;
+}
+
 /* Tab bar */
 .tab-bar {
   margin-bottom: 20rpx;

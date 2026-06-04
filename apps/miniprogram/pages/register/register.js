@@ -8,12 +8,17 @@ Page({
     displayName: '',
     loading: false,
     error: '',
+    showForm: false,
   },
 
   onLoad() {
     if (auth.isLoggedIn()) {
       wx.switchTab({ url: '/pages/monitors/index' });
     }
+  },
+
+  toggleForm() {
+    this.setData({ showForm: !this.data.showForm, error: '' });
   },
 
   onEmailInput(e) {
@@ -50,7 +55,7 @@ Page({
       })
       .catch(function (err) {
         this.setData({
-          error: err.message || '注册失败',
+          error: err.message || '注册失败，推荐使用微信或手机号一键登录',
           loading: false,
         });
       }.bind(this));

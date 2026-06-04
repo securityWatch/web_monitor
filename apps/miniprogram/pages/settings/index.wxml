@@ -254,4 +254,7 @@
     </view>
     <button class="logout-btn" bindtap="logout">退出登录</button>
   </block>
+
+  <!-- Always-visible logout button at bottom -->
+  <button class="logout-btn global-logout" bindtap="logout">退出登录</button>
 </view>
