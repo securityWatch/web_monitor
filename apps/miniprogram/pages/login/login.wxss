@@ -46,6 +46,9 @@
   padding: 24rpx;
   color: #f8fafc;
   font-size: 28rpx;
+  height: 80rpx;
+  line-height: 1;
+  box-sizing: border-box;
 }
 
 .submit {

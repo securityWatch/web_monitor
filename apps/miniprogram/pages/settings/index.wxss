@@ -210,6 +210,8 @@
   padding: 20rpx;
   color: #f8fafc;
   font-size: 26rpx;
+  height: 80rpx;
+  line-height: 1;
   width: 100%;
   box-sizing: border-box;
 }
