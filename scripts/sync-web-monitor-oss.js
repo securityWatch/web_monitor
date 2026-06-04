@@ -79,7 +79,8 @@ function main() {
   }
 
   if (!ok) {
-    console.warn('[sync-oss] Standard push failed; trying --force-with-lease (e.g. unrelated remote Initial commit)');
+    console.warn('[sync-oss] Standard push failed; fetch + --force-with-lease');
+    run('git fetch origin', { cwd: STAGING });
     const r = spawnSync('git', ['push', '--force-with-lease', '-u', 'origin', 'main'], {
       cwd: STAGING,
       stdio: 'inherit',
