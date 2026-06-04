@@ -12,9 +12,8 @@ Page({
     loading: true,
     error: '',
     badgeCopied: '',
-  },
-
     expandedCheck: null,
+  },
 
   onLoad(options) {
     if (!auth.isLoggedIn()) {
@@ -23,7 +22,6 @@ Page({
     }
     this.setData({ id: options.id, env: { baseUrl: env.baseUrl } });
     this.loadAll(options.id);
-    // auto refresh every 15s
     this._timer = setInterval(function () {
       this.loadAll(this.data.id, true);
     }.bind(this), 15000);

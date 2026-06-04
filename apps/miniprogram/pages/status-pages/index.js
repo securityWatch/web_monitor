@@ -108,9 +108,12 @@ Page({
     if (!f.name) return;
     self.setData({ saving: true, error: '' });
 
+    // Generate slug from name
+    var slug = f.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'page';
+
     var promise;
     if (self.data.formMode === 'create') {
-      promise = api.createStatusPage({ name: f.name, isPublic: f.isPublic, customDomain: f.customDomain || '' });
+      promise = api.createStatusPage({ name: f.name, slug: slug, isPublic: f.isPublic, monitorIds: [] });
     } else {
       promise = api.updateStatusPage(self.data.editingId, { name: f.name, isPublic: f.isPublic, customDomain: f.customDomain || '' });
     }
@@ -175,7 +178,7 @@ Page({
     var content = self.data.announceContent.trim();
     if (!content) return;
     self.setData({ announceSaving: true });
-    api.createAnnouncement(self.data.announcePageId, { content: content }).then(function () {
+    api.createAnnouncement(self.data.announcePageId, { title: content }).then(function () {
       self.setData({ announceContent: '', announceSaving: false });
       wx.showToast({ title: '公告已发布', icon: 'success' });
       api.getStatusPageAnnouncements(self.data.announcePageId).then(function (data) {

@@ -66,7 +66,7 @@
           <button class="btn-primary btn-sm" loading="{{announceSaving}}" disabled="{{announceSaving || !announceContent.trim()}}" bindtap="createAnnouncement">发布公告</button>
         </view>
         <view wx:for="{{announcements}}" wx:key="id" class="announce-row">
-          <text class="announce-text">{{item.content || item.message || ''}}</text>
+          <text class="announce-text">{{item.title || ''}}</text>
           <text class="announce-time">{{item.createdAt ? formatTime(item.createdAt) : ''}}</text>
           <button class="btn-delete-sm" data-id="{{item.id}}" bindtap="deleteAnnouncement">删除</button>
         </view>

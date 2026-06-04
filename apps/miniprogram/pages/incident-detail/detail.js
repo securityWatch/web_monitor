@@ -32,7 +32,8 @@ Page({
     var self = this;
     self.setData({ loading: true, error: '' });
     api.getIncident(id).then(function (data) {
-      var inc = data;
+      var inc = data.incident || data;
+      var timeline = data.timeline || inc.notes || [];
       self.setData({
         incident: Object.assign({}, inc, {
           statusLabel: format.incidentStatusLabel(inc.status),
@@ -40,9 +41,10 @@ Page({
           startedText: format.formatDateTime(inc.startedAt),
           resolvedText: inc.resolvedAt ? format.formatDateTime(inc.resolvedAt) : '—',
         }),
-        notes: (inc.notes || []).map(function (n) {
+        notes: timeline.map(function (n) {
           return Object.assign({}, n, {
             timeText: format.formatDateTime(n.createdAt),
+            action: n.message || n.content || '',
           });
         }),
         loading: false,

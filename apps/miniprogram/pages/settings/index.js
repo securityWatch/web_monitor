@@ -293,7 +293,7 @@ Page({
     var self = this;
     self.setData({ apiKeysLoading: true });
     api.getApiKeys().then(function (data) {
-      var keys = data.apiKeys || data || [];
+      var keys = data.keys || data || [];
       self.setData({ apiKeys: keys, apiKeysLoading: false });
     }).catch(function () {
       self.setData({ apiKeysLoading: false });
@@ -399,7 +399,8 @@ Page({
 
   // ===== Billing =====
   onReportPeriodChange: function (e) {
-    this.setData({ reportPeriod: e.detail.value });
+    var periods = ['weekly', 'daily', 'monthly'];
+    this.setData({ reportPeriod: periods[e.detail.value] });
   },
 
   generateReport: function () {
