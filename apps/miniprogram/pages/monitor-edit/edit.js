@@ -140,8 +140,16 @@ Page({
   },
 
   onAlertFailuresInput: function (e) {
-    var val = parseInt(e.detail.value) || 1;
-    this.setData({ alertFailures: Math.min(10, Math.max(1, val)) });
+    var val = e.detail.value;
+    // Allow empty during editing — validate only on save/blur
+    if (val === '') {
+      this.setData({ alertFailures: '' });
+      return;
+    }
+    var n = parseInt(val);
+    if (!isNaN(n) && n >= 0) {
+      this.setData({ alertFailures: Math.min(10, Math.max(1, n)) });
+    }
   },
 
   toggleWebhook: function (e) {
@@ -166,7 +174,7 @@ Page({
       }
     }
 
-    cfg.consecutiveFailuresBeforeAlert = self.data.alertFailures;
+    cfg.consecutiveFailuresBeforeAlert = parseInt(self.data.alertFailures) || 1;
     cfg.webhookEnabled = self.data.webhookEnabled;
 
     return cfg;

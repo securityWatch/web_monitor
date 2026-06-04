@@ -72,7 +72,7 @@
           <text class="field-label">告警设置</text>
           <view class="alert-row">
             <text class="alert-label">连续失败次数触发告警</text>
-            <input class="input alert-input" type="number" min="1" max="10" value="{{alertFailures}}" bindinput="onAlertFailuresInput" />
+            <input class="input alert-input" type="text" inputmode="numeric" value="{{alertFailures}}" bindinput="onAlertFailuresInput" />
           </view>
           <view class="toggle-row">
             <text>Webhook 告警</text>
