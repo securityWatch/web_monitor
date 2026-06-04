@@ -1,4 +1,6 @@
 const { Client } = require('ssh2');
+const PASSWORD = process.env.DEPLOY_PASSWORD;
+const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
 const c = new Client();
 c.on('ready', () => {
   const cmd = [
@@ -17,4 +19,4 @@ c.on('ready', () => {
 });
 c.on('error', e => { console.error(e); process.exit(1); });
 setTimeout(() => { console.error('timeout'); process.exit(1); }, 25000);
-c.connect({ host: '49.234.112.108', username: 'ubuntu', password: 'prs@2018', readyTimeout: 20000 });
+c.connect({ host: HOST, username: 'ubuntu', password: PASSWORD, readyTimeout: 20000 });

@@ -9,7 +9,7 @@ const { buildCorsOrigins } = require('./lib/cors-origins');
 
 const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
 const USER = process.env.DEPLOY_USER || 'ubuntu';
-const PASSWORD = process.env.DEPLOY_PASSWORD || 'prs@2018';
+const PASSWORD = process.env.DEPLOY_PASSWORD;
 const APP_DIR = '/opt/pulsewatch';
 const ROOT = path.join(__dirname, '..');
 

@@ -1,7 +1,7 @@
 ﻿const fs = require('fs');
 const path = require('path');
 const { Client } = require('ssh2');
-const PASS = 'prs@2018';
+const PASS = process.env.DEPLOY_PASSWORD;
 const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
 const confPath = path.join(__dirname, 'nginx', 'pulsewatch.conf');
 function exec(conn, cmd) {

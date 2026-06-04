@@ -1,102 +1,152 @@
 # PulseWatch
 
-**PulseWatch** 是一款面向全球市场的英文网站监控 SaaS 产品，采用 Freemium 商业模式，为个人开发者、初创团队与 Agency 提供外部可用性监控、智能趋势洞察与异常检测能力。
+[![PulseWatch](https://gkao.com.cn/api/v1/public/badge/your_token.svg)](https://gkao.com.cn)
 
-> *Monitor smarter. Alert faster. Stay discoverable.*
+**PulseWatch** is an open-core website monitoring SaaS platform with a commercial-friendly free tier. Monitor websites, APIs, SSL certificates, DNS records, and more — with alerts via email, webhook, Slack, DingTalk, Feishu, and WeCom.
 
----
-
-## 项目简介
-
-PulseWatch 定位在 UptimeRobot 商用限制与 Better Stack 全栈复杂度之间的**甜蜜点**——对开发者友好的免费层、可预测定价、内置趋势与异常洞察，并以 SEO 工具矩阵驱动可持续获客。早期 **Founding Member $1/mo Pro** 计划用于快速获客。
-
-**核心差异化**：
-
-- **Commercial-friendly Free**：个人项目与早期 SaaS 可合法使用免费层
-- **Insights, not just pings**：默认展示 p95 延迟趋势、异常尖峰、SSL/域名到期时间线
-- **Discoverable by design**：免费 SSL 检测器、Uptime 计算器、对比页 → 自然注册转化
-- **Status pages that sell**：公开状态页 PLG 传播
+> **Live demo**: [https://gkao.com.cn](https://gkao.com.cn)
 
 ---
 
-## 文档索引
+## Features
 
-| 文档 | 说明 |
-|------|------|
-| [产品需求文档（PRD）](docs/PRD.md) | 竞品研究、产品愿景、功能需求、UI/UX 与用户管理需求、非功能需求 |
-| [UI/UX 设计规范](docs/UI-UX-DESIGN.md) | 设计系统、页面线框、响应式、暗色模式、无障碍、转化优化 |
-| [用户与权限管理](docs/USER-MANAGEMENT.md) | RBAC 角色、权限矩阵、账户设置、团队管理、认证流程、API 概要 |
-| [技术设计规格书](docs/TECHNICAL-DESIGN.md) | 系统架构、前端栈、认证架构、RBAC 数据模型、多租户 |
-| [定价与增长策略](docs/PRICING-AND-GROWTH.md) | Freemium 定价、转化漏斗、SEO 与 PLG 获客 |
-| [路线图与指标](docs/ROADMAP.md) | MVP 范围、Phase 2–3 路线图、北极星指标、实施计划 |
+| Category | Capabilities |
+|----------|-------------|
+| **Monitor types** | HTTP/HTTPS, TCP, Ping, Keyword, SSL expiry, DNS, Heartbeat, Domain (RDAP), PageSpeed, Tamper (content integrity), API/JSON |
+| **Alert channels** | Email, Webhook, Slack, Discord, Microsoft Teams, DingTalk, Feishu, WeCom, PagerDuty, Opsgenie, SMS, Voice |
+| **Incident management** | Timeline, notes, workflow states, on-call rotation, voice escalation, AI post-mortem summaries |
+| **Status pages** | Public branded status pages, custom domains, email subscribers, announcements |
+| **Security monitors** | SSL expiry tiers (30/14/7/1 day), DNS hijack/drift detection, page tamper detection with AI content recognition |
+| **Dashboard** | Real-time KPI cards, response time trends (24h), recent failures ticker, per-monitor stats |
+| **Dev tools** | Free online tools: SSL checker, DNS lookup, ping test, port checker, HTTP headers inspector, redirect chain checker, downtime cost calculator, uptime badge generator |
+| **i18n** | English and 中文 |
+| **Team** | Role-based access (owner/admin/member/viewer), team invitations |
+| **Billing** | Free tier (10 monitors), Founding Member pricing ($1/mo Pro, $4/mo Team, $10/mo Business) |
+| **WeChat Mini Program** | Native mobile app with dashboard, monitors, incidents, status pages, alert channels, and one-click WeChat login |
 
----
+## Tech Stack
 
-## 快速参考
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 15 (App Router), Tailwind 4, next-intl, Recharts |
+| **Backend** | Go 1.25, Gin router, pgx, JWT auth |
+| **Database** | PostgreSQL 16 (partitioned `check_results`, no ClickHouse) |
+| **Deployment** | Systemd on Ubuntu, Nginx reverse proxy, Let's Encrypt / Cloudflare SSL |
+| **Mini Program** | WeChat native mini program (11 pages, 5-tab navigation) |
 
-### 定价层级（USD）
+## Architecture
 
-> **🎉 早期获客**：Founding Member 计划 — 所有付费档 **1 折终身锁价**（Pro **$1**/Team **$4**/Business **$10** 月）。详见 [定价与增长策略](docs/PRICING-AND-GROWTH.md#b4-早期获客定价计划early-access--launch-pricing)。
+```
+┌──────────┐    ┌──────────┐    ┌──────────────┐
+│  Browser │───▶│  Nginx   │───▶│  Next.js 15  │
+│  Mobile  │    │  :80/443 │    │  :3000       │
+└──────────┘    │  /api/*  │    └──────────────┘
+                │  proxy   │    ┌──────────────┐
+                │──────────│───▶│  Go API      │
+                │  /health │    │  :4000       │
+                └──────────┘    └──────┬───────┘
+                                       │
+                                ┌──────▼───────┐
+                                │  PostgreSQL  │
+                                │  :6541       │
+                                └──────────────┘
+```
 
-#### 标准价（Sunset 后新用户）
+## Getting Started
 
-| 维度 | Free | Pro $12/月 | Team $39/月 | Business $99/月 |
-|------|------|------------|-------------|-----------------|
-| 监控数量 | 15 | 50 | 150 | 500 |
-| 检测间隔 | 5 分钟 | 1 分钟 | 60 秒 | 30 秒 |
-| 探针区域 | 2 | 5 | 12 | 全部 20+ |
-| 历史保留 | 90 天 | 13 个月 | 24 个月 | 36 个月 |
-| 告警渠道 | Email, Webhook | + Slack, Discord | + PagerDuty, MS Teams | + SMS 500 条/月 |
-| 状态页 | 1（品牌水印） | 3 + 自定义子域 | 10 + 白标选项 | 无限 + SSO（路线图） |
-| 团队成员 | 1 | 1 | 5 seats | 20 seats |
-| 商用 | ✅（≤$10k ARR 或 hobby） | ✅ | ✅ | ✅ |
+### Prerequisites
 
-#### Founding Member 早期价（前 5,000 名 / 上线 12 个月内）
+- Go 1.25+ (set `GOTOOLCHAIN=auto`)
+- Node.js 22+
+- PostgreSQL 16
+- Redis (not required — all state managed in PostgreSQL)
 
-| 维度 | Free | Pro **$1/月** | Team **$4/月** | Business **$10/月** |
-|------|------|---------------|----------------|---------------------|
-| 功能配额 | 同标准（+3 监控） | 同 Pro 标准价 | 同 Team 标准价 | 同 Business 标准价 |
-| 价格锁定 | — | ✅ 终身 | ✅ 终身 | ✅ 终身 |
-| 身份标识 | — | Founding Member 徽章 | Founding Member 徽章 | Founding Member 徽章 |
+### Quick Start
 
-### 客户端
+```bash
+# Clone
+git clone https://github.com/mafei2021/monitor.git
+cd monitor
 
-| 客户端 | 路径 | 说明 |
-|--------|------|------|
-| Web | `apps/web/` | Next.js 15 主站（en/zh） |
-| 微信小程序 | `apps/miniprogram/` | 国内部署 MVP，见 [小程序 README](apps/miniprogram/README.md) |
+# Setup environment
+cp .env.example .env
+# Edit .env with your PostgreSQL connection string
 
-### 技术栈
+# Start API
+export GOTOOLCHAIN=auto
+cd apps/api && go run ./cmd/server
 
-| 层级 | 技术选型 |
-|------|----------|
-| 前端 | Next.js 15 + React + Tailwind + shadcn/ui |
-| 小程序 | 原生微信小程序（WXML/WXSS/JS） |
-| API | Go (Fiber/Chi) 或 Node (Fastify) |
-| 认证 | Auth.js / Clerk / 自研 JWT + OAuth |
-| 关系库 | PostgreSQL 16 |
-| 缓存/队列 | Redis 7 + Redis Streams |
-| 时序库 | ~~ClickHouse~~ **PostgreSQL 分区表**（MVP 不使用 ClickHouse） |
-| 探针 Agent | Go 单二进制 |
-| 邮件 | Resend / Postmark |
-| 计费 | Stripe Billing |
-| 基础设施 | AWS/GCP + Fly.io 边缘探针 |
+# In another terminal, start web
+cd apps/web && npm install && npm run dev
+```
 
-### MVP 时间线
+The API runs on `:4000`, web on `:3000`. See `.env.example` for all config options.
 
-| 阶段 | 周期 | 核心交付 |
-|------|------|----------|
-| Phase 1 MVP | 8–12 周 | Premium UI、Landing、用户设置、Monitors 管理、HTTP/TCP/Ping/Keyword/SSL、邮件/Webhook 告警、Dashboard、状态页、Stripe Pro、SSL Checker |
-| Phase 2 | +8 周 | Team RBAC 与邀请、2FA、⌘K、Slack/Discord、SLA 报告、异常检测 |
-| Phase 3 | +12 周 | Business、SMS、PagerDuty、Terraform、SOC2 准备 |
+### Test
 
----
+```bash
+# Unit tests
+npm run test:unit
 
-## 环境信息
+# Integration tests (requires PostgreSQL)
+npm run test:integration
+```
 
-本地开发环境配置见 [`环境信息`](环境信息) 文件（不纳入版本控制敏感信息）。
+## Deployment
 
----
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment instructions.
 
-**文档版本**：v1.1  
-**竞品基准**：UptimeRobot、Better Stack、Pingdom、StatusCake、Datadog Synthetics、Site24x7、New Relic
+Key requirements for deployment:
+- Server: Ubuntu 22.04+, systemd, Nginx
+- SSL: Let's Encrypt or Cloudflare origin certificate
+- The `DEPLOY_PASSWORD` environment variable must be set for automated deployment scripts
+
+```bash
+# Deploy API
+cd deploy && DEPLOY_PASSWORD=<password> node redeploy-api.js
+
+# Deploy web
+cd deploy && DEPLOY_PASSWORD=<password> NEXT_PUBLIC_SITE_URL=https://your.domain node redeploy-web.js
+```
+
+## Project Structure
+
+```
+apps/
+├── api/                # Go backend (Gin + pgx)
+│   ├── cmd/server/     # API server entry
+│   ├── internal/
+│   │   ├── config/     # Configuration
+│   │   ├── database/   # Migrations + DB connection
+│   │   ├── handlers/   # HTTP handlers
+│   │   ├── middleware/  # Auth, rate limiting
+│   │   ├── models/     # Data models
+│   │   └── services/   # Business logic
+│   └── go.mod
+├── web/                # Next.js 15 frontend
+│   ├── messages/       # i18n (en, zh)
+│   └── src/
+│       ├── app/        # App Router pages
+│       ├── components/ # React components
+│       └── lib/        # Utilities, SEO, API
+└── miniprogram/        # WeChat Mini Program
+    ├── pages/          # 11 pages
+    └── utils/          # API client, auth, format
+
+deploy/                 # Deployment scripts (Node.js)
+docs/                   # Documentation
+scripts/                # Utility scripts
+tests/                  # E2E tests
+```
+
+## Contributing
+
+Contributions are welcome. Please ensure:
+- No secrets, `.env`, or credentials are committed (`.gitignore` handles this)
+- UI changes include i18n keys in both `en.json` and `zh.json`
+- API changes include tests
+- All deploy scripts read passwords from `process.env.DEPLOY_PASSWORD`
+
+## License
+
+See [LICENSE](./LICENSE) file.

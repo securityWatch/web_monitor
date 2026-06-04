@@ -1,5 +1,4 @@
-const { Client } = require('ssh2');
-const fs = require('fs');
+const { HOST, PASSWORD } = require('./lib/config');
 const c = new Client();
 c.on('ready', () => {
   const script = fs.readFileSync(require('path').join(__dirname, '..', 'tests', 'e2e-test.sh'), 'utf8').replace(/\r\n/g, '\n');
@@ -9,4 +8,4 @@ c.on('ready', () => {
     s.on('close', code => { console.log('exit:', code); c.end(); });
   });
 });
-c.connect({ host: '49.234.112.108', username: 'ubuntu', password: 'prs@2018' });
+c.connect({ host: HOST, username: 'ubuntu', password: PASSWORD });

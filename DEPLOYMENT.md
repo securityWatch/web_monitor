@@ -1,4 +1,4 @@
-# PulseWatch 部署文档
+﻿# PulseWatch 部署文档
 
 > 敏感凭据请勿提交 Git。实际密码见服务�?`/opt/pulsewatch/api/.env` 与本�?`环境信息` 文件�?
 
@@ -87,7 +87,7 @@ node run-e2e.js                    # 在服务器�?E2E
 
 | 变量 | 说明 |
 |------|------|
-| `DATABASE_URL` | `postgresql://postgres:prs%402018@127.0.0.1:6541/pulsewatch`（`@` 需 URL 编码�?`%40`�?|
+| `DATABASE_URL` | `postgresql://postgres:<password>@127.0.0.1:6541/pulsewatch`（`@` 需 URL 编码�?`%40`�?|
 | `JWT_SECRET` / `JWT_REFRESH_SECRET` | JWT 密钥 |
 | `PORT` | API 端口�?000�?|
 | `CORS_ORIGIN` | 前端来源 |
@@ -111,7 +111,7 @@ cd apps/api && go test ./internal/services/... -v
 ### Go 集成测试
 
 ```bash
-export TEST_DATABASE_URL=postgresql://postgres:prs%402018@49.234.112.108:6541/pulsewatch
+export TEST_DATABASE_URL=postgresql://postgres:<password>@49.234.112.108:6541/pulsewatch
 cd apps/api && go test ./internal/handlers/... -v
 ```
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { Client } = require('ssh2');
 const path = require('path');
-const PASSWORD = process.env.DEPLOY_PASSWORD || 'prs@2018';
+const PASSWORD = process.env.DEPLOY_PASSWORD;
 const gz = path.join(__dirname, 'pulsewatch-api.gz');
 
 const c = new Client();

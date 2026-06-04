@@ -12,9 +12,9 @@ except ImportError:
     os.system(f"{sys.executable} -m pip install paramiko -q")
     import paramiko
 
-HOST = os.environ.get("DEPLOY_HOST", "49.234.112.108")
+HOST = os.environ.get("DEPLOY_HOST")
 USER = os.environ.get("DEPLOY_USER", "ubuntu")
-PASSWORD = os.environ.get("DEPLOY_PASSWORD", "prs@2018")
+PASSWORD = os.environ.get("DEPLOY_PASSWORD")
 APP_DIR = "/opt/pulsewatch"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

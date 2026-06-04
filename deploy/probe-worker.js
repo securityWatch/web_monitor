@@ -60,4 +60,4 @@ curl -s http://127.0.0.1:4000/health
     });
   });
 });
-c.connect({ host: HOST, username: 'ubuntu', password: 'prs@2018' });
+c.connect({ host: HOST, username: 'ubuntu', password: PASSWORD });

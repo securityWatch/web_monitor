@@ -44,3 +44,6 @@ apps/api/pulsewatch-probe
 # Mini program
 *.private.config.json
 
+# Temp deploy scripts
+deploy/_*.js
+

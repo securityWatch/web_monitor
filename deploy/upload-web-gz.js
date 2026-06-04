@@ -2,7 +2,7 @@
 const { Client } = require('ssh2');
 const fs = require('fs');
 const path = require('path');
-const PASSWORD = process.env.DEPLOY_PASSWORD || 'prs@2018';
+const { HOST, PASSWORD } = require('./lib/config');
 const gz = path.join(__dirname, 'web-bundle.tar.gz');
 const localSize = fs.statSync(gz).size;
 

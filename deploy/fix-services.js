@@ -1,4 +1,6 @@
 const { Client } = require('ssh2');
+const PASSWORD = process.env.DEPLOY_PASSWORD;
+const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
 const APP = '/opt/pulsewatch';
 const c = new Client();
 c.on('ready', () => {
@@ -15,7 +17,7 @@ User=ubuntu
 WorkingDirectory=${APP}/web/.next/standalone/apps/web
 Environment=PORT=3000
 Environment=HOSTNAME=0.0.0.0
-Environment=NEXT_PUBLIC_API_URL=http://49.234.112.108:4000
+Environment=NEXT_PUBLIC_API_URL=http://${HOST}:4000
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5
@@ -23,9 +25,9 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF`,
-    `echo 'prs@2018' | sudo -S mv /tmp/pulsewatch-web.service /etc/systemd/system/pulsewatch-web.service`,
-    `echo 'prs@2018' | sudo -S systemctl daemon-reload`,
-    `echo 'prs@2018' | sudo -S systemctl restart pulsewatch-api pulsewatch-web`,
+    `echo '${PASSWORD}' | sudo -S mv /tmp/pulsewatch-web.service /etc/systemd/system/pulsewatch-web.service`,
+    `echo '${PASSWORD}' | sudo -S systemctl daemon-reload`,
+    `echo '${PASSWORD}' | sudo -S systemctl restart pulsewatch-api pulsewatch-web`,
     'sleep 6',
     'curl -s http://127.0.0.1:4000/health',
     'curl -s -o /dev/null -w "WEB:%{http_code}" http://127.0.0.1:3000/en',
@@ -36,4 +38,4 @@ EOF`,
     s.on('close', () => c.end());
   });
 });
-c.connect({ host: '49.234.112.108', username: 'ubuntu', password: 'prs@2018' });
+c.connect({ host: HOST, username: 'ubuntu', password: PASSWORD });

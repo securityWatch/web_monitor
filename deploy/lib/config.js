@@ -5,7 +5,7 @@ const ROOT = path.join(__dirname, '../..');
 module.exports = {
   HOST: process.env.DEPLOY_HOST || '49.234.112.108',
   USER: process.env.DEPLOY_USER || 'ubuntu',
-  PASSWORD: process.env.DEPLOY_PASSWORD || 'prs@2018',
+  PASSWORD: process.env.DEPLOY_PASSWORD,
   APP_DIR: '/opt/pulsewatch',
   BUILD_DIR: '/opt/pulsewatch/build',
   ROOT,
