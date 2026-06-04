@@ -28,6 +28,21 @@
   line-height: 1;
 }
 
+.search-bar {
+  margin-top: 16rpx;
+}
+
+.search-input {
+  background: #1a1a1a;
+  border: 1rpx solid #333;
+  border-radius: 12rpx;
+  padding: 18rpx 24rpx;
+  color: #e2e8f0;
+  font-size: 26rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .summary-pills {
   display: flex;
   flex-wrap: wrap;

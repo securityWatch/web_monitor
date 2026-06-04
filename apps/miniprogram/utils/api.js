@@ -240,6 +240,24 @@ function getIncidents(status) {
   });
 }
 
+function getIncident(id) {
+  return request(orgPath('/incidents/' + id));
+}
+
+function addIncidentNote(incidentId, content) {
+  return request(orgPath('/incidents/' + incidentId + '/notes'), {
+    method: 'POST',
+    data: { content: content },
+  });
+}
+
+function resolveIncident(incidentId) {
+  return request(orgPath('/incidents/' + incidentId), {
+    method: 'PATCH',
+    data: { status: 'resolved' },
+  });
+}
+
 function getMe() {
   return request('/api/v1/me');
 }
@@ -353,6 +371,9 @@ module.exports = {
   updateMonitor,
   createMonitor,
   getIncidents,
+  getIncident,
+  addIncidentNote,
+  resolveIncident,
   getMe,
   updateProfile,
   changePassword,

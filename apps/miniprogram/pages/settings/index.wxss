@@ -507,3 +507,58 @@
 .capitalize {
   text-transform: capitalize;
 }
+
+.channel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.channel-info {
+  flex: 1;
+}
+
+.channel-name {
+  display: block;
+  font-size: 26rpx;
+  color: #e2e8f0;
+}
+
+.channel-type {
+  display: block;
+  font-size: 22rpx;
+  color: #64748b;
+  margin-top: 2rpx;
+}
+
+.maint-row {
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.maint-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #e2e8f0;
+}
+
+.maint-time {
+  display: block;
+  font-size: 22rpx;
+  color: #64748b;
+  margin-top: 4rpx;
+}
+
+.stub-link {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #64748b;
+  word-break: break-all;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}

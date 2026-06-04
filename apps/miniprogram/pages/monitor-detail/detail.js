@@ -14,6 +14,8 @@ Page({
     badgeCopied: '',
   },
 
+    expandedCheck: null,
+
   onLoad(options) {
     if (!auth.isLoggedIn()) {
       wx.reLaunch({ url: '/pages/login/login' });
@@ -21,6 +23,14 @@ Page({
     }
     this.setData({ id: options.id, env: { baseUrl: env.baseUrl } });
     this.loadAll(options.id);
+    // auto refresh every 15s
+    this._timer = setInterval(function () {
+      this.loadAll(this.data.id, true);
+    }.bind(this), 15000);
+  },
+
+  onUnload: function () {
+    if (this._timer) clearInterval(this._timer);
   },
 
   onPullDownRefresh() {
@@ -29,8 +39,8 @@ Page({
     });
   },
 
-  loadAll(id) {
-    this.setData({ loading: true, error: '' });
+  loadAll(id, silent) {
+    if (!silent) this.setData({ loading: true, error: '' });
     const self = this;
     return Promise.all([api.getMonitor(id), api.getMonitorStats(id), api.getMonitorChecks(id)])
       .then(function (results) {
@@ -43,6 +53,8 @@ Page({
             statusText: c.isUp ? '正常' : '异常',
             responseText: c.responseMs != null ? c.responseMs + ' ms' : '—',
             codeText: c.statusCode != null ? String(c.statusCode) : '—',
+            hasError: !!c.errorMessage,
+            errorMessage: c.errorMessage || '',
           });
         });
         self.setData({
@@ -63,6 +75,13 @@ Page({
           loading: false,
         });
       });
+  },
+
+  toggleCheckDetail: function (e) {
+    var idx = e.currentTarget.dataset.index;
+    this.setData({
+      expandedCheck: this.data.expandedCheck === idx ? null : idx,
+    });
   },
 
   editMonitor: function () {

@@ -1,0 +1,77 @@
+<view class="container">
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+
+  <block wx:elif="{{incident}}">
+    <view class="card">
+      <view class="row-top">
+        <text class="card-title">{{incident.title || incident.monitorName}}</text>
+        <text class="badge badge-{{incident.status === 'open' ? 'open' : 'resolved'}}">{{incident.statusLabel}}</text>
+      </view>
+      <text class="card-sub">{{incident.monitorName}}</text>
+      <view class="meta-grid">
+        <view class="meta-item">
+          <text class="meta-label">严重程度</text>
+          <text class="meta-value">{{incident.severityLabel}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">开始时间</text>
+          <text class="meta-value">{{incident.startedText}}</text>
+        </view>
+        <view wx:if="{{incident.resolvedText !== '—'}}" class="meta-item">
+          <text class="meta-label">恢复时间</text>
+          <text class="meta-value">{{incident.resolvedText}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">工作流状态</text>
+          <text class="meta-value capitalize">{{incident.workflowStatus || '—'}}</text>
+        </view>
+      </view>
+      <view wx:if="{{incident.message}}" class="message-box">
+        <text class="field-label">消息</text>
+        <text class="message-text">{{incident.message}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{incident.status === 'open'}}" class="card">
+      <text class="section-title">操作</text>
+      <view class="action-row">
+        <button class="action-btn action-edit" bindtap="resolveIncident">标记已恢复</button>
+      </view>
+    </view>
+
+    <view class="card">
+      <text class="section-title">时间线</text>
+      <view wx:if="{{notes.length === 0 && !incident.resolvedAt}}" class="empty-inline">暂无记录</view>
+      <view class="timeline">
+        <view class="timeline-item">
+          <view class="timeline-dot timeline-dot-start"></view>
+          <view class="timeline-content">
+            <text class="timeline-action">事件开始</text>
+            <text class="timeline-time">{{incident.startedText}}</text>
+          </view>
+        </view>
+        <view wx:for="{{notes}}" wx:key="id" class="timeline-item">
+          <view class="timeline-dot"></view>
+          <view class="timeline-content">
+            <text class="timeline-action">{{item.action || item.content || '笔记'}}</text>
+            <text class="timeline-time">{{item.timeText || ''}}</text>
+          </view>
+        </view>
+        <view wx:if="{{incident.status === 'resolved'}}" class="timeline-item">
+          <view class="timeline-dot timeline-dot-end"></view>
+          <view class="timeline-content">
+            <text class="timeline-action">已恢复</text>
+            <text class="timeline-time">{{incident.resolvedText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <text class="section-title">添加笔记</text>
+      <textarea class="textarea" value="{{noteContent}}" bindinput="onNoteInput" placeholder="输入笔记内容…" maxlength="500" />
+      <button class="btn-primary" loading="{{noteSaving}}" disabled="{{noteSaving || !noteContent.trim()}}" bindtap="addNote">添加笔记</button>
+    </view>
+  </block>
+</view>

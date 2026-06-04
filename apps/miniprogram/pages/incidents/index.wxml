@@ -23,7 +23,7 @@
   <view wx:elif="{{incidents.length === 0}}" class="empty">暂无事件记录</view>
 
   <block wx:else>
-    <view wx:for="{{incidents}}" wx:key="id" class="card">
+    <view wx:for="{{incidents}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="openDetail">
       <view class="row-top">
         <text class="card-title">{{item.title || item.monitorName}}</text>
         <text class="badge badge-{{item.status === 'open' ? 'open' : 'resolved'}}">{{item.statusLabel}}</text>

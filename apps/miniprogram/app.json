@@ -6,6 +6,7 @@
     "pages/monitor-detail/detail",
     "pages/monitor-edit/edit",
     "pages/incidents/index",
+    "pages/incident-detail/detail",
     "pages/settings/index"
   ],
   "window": {

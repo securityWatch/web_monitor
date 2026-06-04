@@ -59,4 +59,9 @@ Page({
         }.bind(this)
       );
   },
+
+  openDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: '/pages/incident-detail/detail?id=' + id });
+  },
 });

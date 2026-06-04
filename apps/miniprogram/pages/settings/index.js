@@ -114,6 +114,8 @@ Page({
     self.loadApiKeys();
     self.loadAuditLogs();
     self.loadDashboard();
+    self.loadAlertChannels();
+    self.loadMaintenanceWindows();
 
     api.getWechatStatus().then(function (res) {
       self.setData({ wechatEnabled: !!(res && res.enabled) });
@@ -372,6 +374,26 @@ Page({
         upCount: data.upCount || 0,
         downCount: data.downCount || 0,
       });
+    }).catch(function () {});
+  },
+
+  loadAlertChannels: function () {
+    var self = this;
+    api.getAlertChannels().then(function (data) {
+      var channels = data.channels || data || [];
+      if (Array.isArray(channels)) {
+        self.setData({ alertChannels: channels });
+      }
+    }).catch(function () {});
+  },
+
+  loadMaintenanceWindows: function () {
+    var self = this;
+    api.getMaintenanceWindows().then(function (data) {
+      var windows = data.windows || data || [];
+      if (Array.isArray(windows)) {
+        self.setData({ maintenanceWindows: windows });
+      }
     }).catch(function () {});
   },
 

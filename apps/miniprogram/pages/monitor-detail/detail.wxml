@@ -80,7 +80,7 @@
     <view class="card">
       <text class="section-title">最近检测</text>
       <view wx:if="{{checks.length === 0}}" class="empty-inline">暂无检测记录</view>
-      <view wx:for="{{checks}}" wx:key="id" class="check-row">
+      <view wx:for="{{checks}}" wx:key="id" class="check-row" data-index="{{index}}" bindtap="toggleCheckDetail">
         <view class="check-left">
           <text class="check-status {{item.isUp ? 'ok' : 'fail'}}">{{item.statusText}}</text>
           <text class="check-time">{{item.timeText}}</text>
@@ -89,6 +89,10 @@
           <text>{{item.responseText}}</text>
           <text wx:if="{{item.codeText !== '—'}}">HTTP {{item.codeText}}</text>
         </view>
+      </view>
+      <view wx:if="{{expandedCheck !== null && checks[expandedCheck] && checks[expandedCheck].hasError}}" class="error-detail-box">
+        <text class="error-detail-label">错误详情</text>
+        <text class="error-detail-text">{{checks[expandedCheck].errorMessage}}</text>
       </view>
     </view>
   </block>

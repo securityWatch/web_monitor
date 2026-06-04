@@ -5,8 +5,10 @@ const format = require('../../utils/format.js');
 Page({
   data: {
     monitors: [],
+    filtered: [],
     loading: true,
     error: '',
+    search: '',
     summary: { up: 0, down: 0, total: 0 },
   },
 
@@ -49,6 +51,7 @@ Page({
           }).length;
           this.setData({
             monitors: enriched,
+            filtered: enriched,
             loading: false,
             summary: { up: up, down: down, total: enriched.length },
           });
@@ -62,6 +65,20 @@ Page({
           });
         }.bind(this)
       );
+  },
+
+  onSearchInput: function (e) {
+    var q = e.detail.value.trim().toLowerCase();
+    this.setData({ search: q });
+    if (!q) {
+      this.setData({ filtered: this.data.monitors });
+      return;
+    }
+    var filtered = this.data.monitors.filter(function (m) {
+      return (m.name && m.name.toLowerCase().indexOf(q) >= 0) ||
+             (m.targetUrl && m.targetUrl.toLowerCase().indexOf(q) >= 0);
+    });
+    this.setData({ filtered: filtered });
   },
 
   openDetail(e) {
