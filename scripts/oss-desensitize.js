@@ -53,6 +53,7 @@ const GLOBAL_REPLACEMENTS = [
 function shouldProcessFile(rel) {
   if (SKIP_FILES.has(path.basename(rel))) return false;
   if (rel.startsWith('deploy/_')) return false;
+  if (rel.startsWith('templates/oss/')) return false;
   const ext = path.extname(rel);
   if (TEXT_EXT.has(ext)) return true;
   if (rel.endsWith('.env.example') || rel.endsWith('Dockerfile')) return true;
@@ -202,7 +203,10 @@ function removeSensitiveArtifacts(root) {
   }
 }
 
-function copyOssTemplates(root, templatesDir) {
+function copyOssTemplates(root) {
+  // Always copy from private-repo templates (not the staging tree) so global replacements
+  // do not rewrite "mafei2021/monitor" inside OSS-only Cursor rules.
+  const templatesDir = path.join(__dirname, '..', 'templates', 'oss');
   const ossCursor = path.join(templatesDir, '.cursor', 'rules');
   if (!fs.existsSync(ossCursor)) {
     console.warn('[oss-desensitize] Missing templates/oss/.cursor/rules — skip rule overlay');
@@ -232,8 +236,7 @@ function main(root = process.cwd()) {
   patchSpecificFiles(root);
   patchAgentsMd(root);
   removeSensitiveArtifacts(root);
-  const templatesDir = path.join(root, 'templates', 'oss');
-  if (fs.existsSync(templatesDir)) copyOssTemplates(root, templatesDir);
+  copyOssTemplates(root);
   console.log(`[oss-desensitize] Processed ${files.length} files under ${root}`);
 }
 

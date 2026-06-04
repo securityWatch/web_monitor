@@ -139,6 +139,18 @@ scripts/                # Utility scripts
 tests/                  # E2E tests
 ```
 
+## Open source mirror
+
+The public, desensitized tree is published at **[securityWatch/web_monitor](https://github.com/securityWatch/web_monitor)**.
+
+From this (private) repo after releases:
+
+```bash
+node scripts/sync-web-monitor-oss.js
+```
+
+That clones to `../web_monitor-oss-staging`, runs `scripts/oss-desensitize.js` (production IP/domain/AppID → placeholders), overlays OSS Cursor rules, and pushes to GitHub. See `.cursor/rules/web-monitor-oss.mdc`.
+
 ## Contributing
 
 Contributions are welcome. Please ensure:
