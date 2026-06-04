@@ -9,40 +9,249 @@
         </text>
         <text class="email">{{accountLabel}}</text>
         <text wx:if="{{user.displayName}}" class="display-name">{{user.displayName}}</text>
+        <text class="plan-badge">套餐 {{planTier}}</text>
       </view>
     </view>
   </view>
 
-  <view class="card">
-    <text class="section-title">组织</text>
-    <text class="org-name">{{organization.name}}</text>
-    <text class="card-sub">套餐 {{organization.planTier}}</text>
+  <!-- Tab bar -->
+  <view class="tab-bar">
+    <scroll-view scroll-x class="tab-scroll">
+      <view class="tab-list">
+        <view class="tab-item {{activeTab === 'profile' ? 'active' : ''}}" data-tab="profile" bindtap="switchTab">个人资料</view>
+        <view class="tab-item {{activeTab === 'security' ? 'active' : ''}}" data-tab="security" bindtap="switchTab">安全</view>
+        <view class="tab-item {{activeTab === 'notifications' ? 'active' : ''}}" data-tab="notifications" bindtap="switchTab">通知</view>
+        <view class="tab-item {{activeTab === 'team' ? 'active' : ''}}" data-tab="team" bindtap="switchTab">团队</view>
+        <view class="tab-item {{activeTab === 'apikeys' ? 'active' : ''}}" data-tab="apikeys" bindtap="switchTab">API Key</view>
+        <view class="tab-item {{activeTab === 'sessions' ? 'active' : ''}}" data-tab="sessions" bindtap="switchTab">会话</view>
+        <view class="tab-item {{activeTab === 'audit' ? 'active' : ''}}" data-tab="audit" bindtap="switchTab">审计</view>
+        <view class="tab-item {{activeTab === 'billing' ? 'active' : ''}}" data-tab="billing" bindtap="switchTab">套餐</view>
+        <view class="tab-item {{activeTab === 'account' ? 'active' : ''}}" data-tab="account" bindtap="switchTab">账号</view>
+      </view>
+    </scroll-view>
   </view>
 
-  <view class="card">
-    <text class="section-title">API 连接</text>
-    <view class="api-row" bindtap="copyApiBase">
-      <text class="api-url">{{apiBase}}</text>
-      <text class="copy-hint">点击复制</text>
+  <!-- Profile Tab -->
+  <block wx:if="{{activeTab === 'profile'}}">
+    <view class="card">
+      <text class="section-title">个人资料</text>
+      <view class="field">
+        <text class="field-label">显示名称</text>
+        <input class="input" value="{{displayName}}" bindinput="onDisplayNameInput" placeholder="您的名称" />
+      </view>
+      <view class="field">
+        <text class="field-label">邮箱</text>
+        <text class="field-value">{{user.email}}</text>
+      </view>
+      <view wx:if="{{profileMsg}}" class="msg {{profileMsg === '已保存' ? 'msg-ok' : 'msg-err'}}">{{profileMsg}}</view>
+      <button class="btn-primary" bindtap="saveProfile">保存</button>
     </view>
-    <text class="card-sub hint">修改地址请编辑 config/env.js 后重新编译</text>
-  </view>
+    <view class="card">
+      <text class="section-title">组织</text>
+      <text class="field-value">{{organization.name}}</text>
+      <text class="field-sub">套餐 {{planTier}}{{foundingMember ? ' · 创始会员' : ''}}</text>
+      <view class="stat-row">
+        <view class="stat-item"><text class="stat-value">{{upCount}}</text><text class="stat-label">正常</text></view>
+        <view class="stat-item"><text class="stat-value">{{downCount}}</text><text class="stat-label">故障</text></view>
+        <view class="stat-item"><text class="stat-value">{{totalMonitors}}</text><text class="stat-label">监控</text></view>
+      </view>
+    </view>
+  </block>
 
-  <view wx:if="{{wechatEnabled}}" class="card">
-    <text class="section-title">微信账号</text>
-    <text class="card-sub">绑定后可在登录页使用微信一键登录此账号</text>
-    <button class="btn-primary bind-wechat" loading="{{bindingWechat}}" bindtap="bindWechat">
-      绑定当前微信
-    </button>
-  </view>
+  <!-- Security Tab -->
+  <block wx:if="{{activeTab === 'security'}}">
+    <view class="card">
+      <text class="section-title">修改密码</text>
+      <view class="field">
+        <text class="field-label">当前密码</text>
+        <input class="input" password value="{{currentPassword}}" bindinput="onCurrentPasswordInput" placeholder="输入当前密码" />
+      </view>
+      <view class="field">
+        <text class="field-label">新密码（至少 8 位）</text>
+        <input class="input" password value="{{newPassword}}" bindinput="onNewPasswordInput" placeholder="输入新密码" />
+      </view>
+      <view wx:if="{{passwordMsg}}" class="msg {{passwordMsg === '密码已更新' ? 'msg-ok' : 'msg-err'}}">{{passwordMsg}}</view>
+      <button class="btn-primary" bindtap="changePassword">修改密码</button>
+    </view>
+    <view class="card stub">
+      <text class="section-title">双因素认证（2FA）</text>
+      <text class="stub-text">请在 Web 端设置双因素认证。</text>
+    </view>
+  </block>
 
-  <view class="card stub">
-    <text class="section-title">更多设置</text>
-    <text class="stub-text">通知偏好、告警渠道、团队管理等完整功能请使用 Web 端。</text>
-    <text class="stub-link">https://gkao.com.cn/zh/settings</text>
-  </view>
+  <!-- Notifications Tab -->
+  <block wx:if="{{activeTab === 'notifications'}}">
+    <view class="card">
+      <text class="section-title">通知偏好</text>
+      <view class="toggle-row">
+        <text>故障通知</text>
+        <switch checked="{{notifyIncidents}}" data-key="notifyIncidents" bindchange="toggleNotify" />
+      </view>
+      <view class="toggle-row">
+        <text>每日报告</text>
+        <switch checked="{{notifyDaily}}" data-key="notifyDaily" bindchange="toggleNotify" />
+      </view>
+      <view class="toggle-row">
+        <text>每周报告</text>
+        <switch checked="{{notifyWeekly}}" data-key="notifyWeekly" bindchange="toggleNotify" />
+      </view>
+      <view class="toggle-row">
+        <text>产品更新</text>
+        <switch checked="{{notifyProduct}}" data-key="notifyProduct" bindchange="toggleNotify" />
+      </view>
+      <view class="toggle-row">
+        <text>SSL 到期告警</text>
+        <switch checked="{{notifySsl}}" data-key="notifySsl" bindchange="toggleNotify" />
+      </view>
+      <view wx:if="{{notifyMsg}}" class="msg {{notifyMsg === '已保存' ? 'msg-ok' : 'msg-err'}}">{{notifyMsg}}</view>
+      <button class="btn-primary" bindtap="saveNotify">保存</button>
+    </view>
+  </block>
 
-  <button class="logout-btn" bindtap="logout">退出登录</button>
+  <!-- Sessions Tab -->
+  <block wx:if="{{activeTab === 'sessions'}}">
+    <view class="card">
+      <text class="section-title">活跃会话</text>
+      <view wx:if="{{sessionsLoading}}" class="loading-inline">加载中…</view>
+      <view wx:elif="{{sessions.length === 0}}" class="empty-inline">无活跃会话</view>
+      <view wx:for="{{sessions}}" wx:key="id" class="session-row">
+        <view class="session-info">
+          <text class="session-device">{{item.userAgent || '未知设备'}}</text>
+          <text class="session-time">创建于 {{item.createdAt ? formatTime(item.createdAt) : '—'}}</text>
+        </view>
+        <button class="btn-danger-sm" data-id="{{item.id}}" bindtap="revokeSession">撤销</button>
+      </view>
+    </view>
+  </block>
 
-  <text class="version">PulseWatch 小程序 v{{version}}</text>
+  <!-- Team Tab -->
+  <block wx:if="{{activeTab === 'team'}}">
+    <view class="card">
+      <text class="section-title">团队成员</text>
+      <view wx:if="{{teamLoading}}" class="loading-inline">加载中…</view>
+      <view wx:if="{{members.length > 0}}" class="member-list">
+        <view wx:for="{{members}}" wx:key="userId" class="member-row">
+          <view class="member-info">
+            <text class="member-name">{{item.displayName || item.userId}}</text>
+            <text class="member-role">{{item.role}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="card">
+      <text class="section-title">邀请成员</text>
+      <view class="field">
+        <text class="field-label">邮箱</text>
+        <input class="input" value="{{inviteEmail}}" bindinput="onInviteEmailInput" placeholder="member@example.com" />
+      </view>
+      <view class="field">
+        <text class="field-label">角色</text>
+        <picker mode="selector" range="{{['member', 'admin', 'viewer']}}" value="0" bindchange="onInviteRoleChange">
+          <text class="input picker-value">{{inviteRole}}</text>
+        </picker>
+      </view>
+      <button class="btn-primary" bindtap="inviteMember">发送邀请</button>
+      <view wx:if="{{invitations.length > 0}}" class="invite-list">
+        <text class="section-subtitle">待处理的邀请</text>
+        <view wx:for="{{invitations}}" wx:key="id" class="invite-row">
+          <text>{{item.email}}</text>
+          <text class="invite-pending">待接受</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- API Keys Tab -->
+  <block wx:if="{{activeTab === 'apikeys'}}">
+    <view class="card">
+      <text class="section-title">API 密钥</text>
+      <view class="field">
+        <text class="field-label">新密钥名称</text>
+        <input class="input" value="{{newKeyName}}" bindinput="onNewKeyNameInput" placeholder="例如：生产环境" />
+      </view>
+      <button class="btn-primary" bindtap="createApiKey">创建密钥</button>
+      <view wx:if="{{newKeyResult && newKeyResult.key}}" class="new-key-box">
+        <text class="new-key-label">新密钥（仅显示一次）：</text>
+        <text class="new-key-value" data-key="{{newKeyResult.key}}" bindtap="copyApiKey">{{newKeyResult.key}}</text>
+        <text class="copy-hint">点击复制</text>
+      </view>
+    </view>
+    <view class="card">
+      <view wx:if="{{apiKeysLoading}}" class="loading-inline">加载中…</view>
+      <view wx:for="{{apiKeys}}" wx:key="id" class="apikey-row">
+        <view class="apikey-info">
+          <text class="apikey-name">{{item.name}}</text>
+          <text class="apikey-preview">{{item.key ? item.key.slice(0, 12) + '…' : '…'}}</text>
+        </view>
+        <text class="apikey-created">{{item.createdAt ? formatTime(item.createdAt) : ''}}</text>
+        <button class="btn-danger-sm" data-id="{{item.id}}" bindtap="deleteApiKey">删除</button>
+      </view>
+    </view>
+  </block>
+
+  <!-- Audit Tab -->
+  <block wx:if="{{activeTab === 'audit'}}">
+    <view class="card">
+      <text class="section-title">审计日志</text>
+      <view wx:if="{{auditLoading}}" class="loading-inline">加载中…</view>
+      <view wx:elif="{{auditLogs.length === 0}}" class="empty-inline">暂无审计日志</view>
+      <view wx:for="{{auditLogs}}" wx:key="id" class="audit-row">
+        <text class="audit-action">{{item.action || item.event || '—'}}</text>
+        <text class="audit-time">{{item.timeText}}</text>
+        <text wx:if="{{item.detail}}" class="audit-detail">{{item.detail}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- Billing Tab -->
+  <block wx:if="{{activeTab === 'billing'}}">
+    <view class="card">
+      <text class="section-title">当前套餐</text>
+      <view class="plan-box">
+        <text class="plan-name capitalize">{{planTier}}</text>
+        <text wx:if="{{foundingMember}}" class="founding-badge">创始会员</text>
+      </view>
+      <text class="field-sub">套餐变更请使用 Web 端。</text>
+    </view>
+    <view class="card">
+      <text class="section-title">系统报告</text>
+      <view class="field">
+        <text class="field-label">报告周期</text>
+        <picker mode="selector" range="{{['weekly', 'daily', 'monthly']}}" value="0" bindchange="onReportPeriodChange">
+          <text class="input picker-value">{{reportPeriod === 'daily' ? '每日' : reportPeriod === 'weekly' ? '每周' : '每月'}}</text>
+        </picker>
+      </view>
+      <button class="btn-primary" loading="{{reportLoading}}" disabled="{{reportLoading}}" bindtap="generateReport">生成系统报告</button>
+      <view wx:if="{{systemReport}}" class="report-box">
+        <text>{{systemReport}}</text>
+      </view>
+    </view>
+    <view class="card stub">
+      <text class="section-title">更多设置</text>
+      <text class="stub-text">告警渠道、维护窗口、值班表、SSO 等完整功能请使用 Web 端。</text>
+      <text class="stub-link">https://gkao.com.cn/zh/settings</text>
+    </view>
+  </block>
+
+  <!-- Account Tab -->
+  <block wx:if="{{activeTab === 'account'}}">
+    <view wx:if="{{wechatEnabled && !isWeChatAccount}}" class="card">
+      <text class="section-title">微信账号</text>
+      <text class="field-sub">绑定后可在登录页使用微信一键登录此账号</text>
+      <button class="btn-primary bind-wechat" loading="{{bindingWechat}}" bindtap="bindWechat">绑定当前微信</button>
+    </view>
+    <view class="card">
+      <text class="section-title">API 连接</text>
+      <view class="api-row" bindtap="copyApiBase">
+        <text class="api-url">{{apiBase}}</text>
+        <text class="copy-hint">点击复制</text>
+      </view>
+    </view>
+    <view class="card">
+      <text class="section-title">关于</text>
+      <text class="field-sub">PulseWatch 小程序 v{{version}}</text>
+      <text class="field-sub">随时掌握服务状态</text>
+    </view>
+    <button class="logout-btn" bindtap="logout">退出登录</button>
+  </block>
 </view>

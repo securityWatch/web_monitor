@@ -97,6 +97,10 @@
 
   <view class="hint">
     <text wx:if="{{wechatEnabled}}">自动注册：使用微信身份或手机号创建一个 PulseWatch 账号，无需邮箱密码</text>
-    <text wx:else>微信一键登录未配置，请使用邮箱密码（与 Web 端相同账号）</text>
+    <text wx:else>微信一键登录未配置，请使用邮箱密码</text>
+  </view>
+  <view class="register-link">
+    <text>没有账号？</text>
+    <navigator url="/pages/register/register" class="hint-link">免费注册</navigator>
   </view>
 </view>

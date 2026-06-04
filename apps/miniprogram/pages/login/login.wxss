@@ -129,10 +129,18 @@
   line-height: 1.8;
 }
 
-.hint-sub {
-  display: block;
-  font-size: 22rpx;
-  color: #475569;
+.hint-link {
+  display: inline;
+  color: #34d399;
+  text-decoration: underline;
+  margin-left: 8rpx;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 32rpx;
+  color: #64748b;
+  font-size: 26rpx;
 }
 
 .wechat-hint {
@@ -155,4 +163,18 @@
   border-radius: 50%;
   flex-shrink: 0;
   vertical-align: middle;
+}
+
+.hint-link {
+  display: inline;
+  color: #34d399;
+  text-decoration: underline;
+  margin-left: 8rpx;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 32rpx;
+  color: #64748b;
+  font-size: 26rpx;
 }

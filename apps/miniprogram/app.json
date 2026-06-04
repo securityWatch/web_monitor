@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/login/login",
+    "pages/register/register",
     "pages/monitors/index",
     "pages/monitor-detail/detail",
     "pages/incidents/index",

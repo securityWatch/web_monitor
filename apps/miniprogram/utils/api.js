@@ -100,6 +100,25 @@ function login(email, password) {
   });
 }
 
+function register(email, password, displayName) {
+  return request('/api/v1/auth/register', {
+    method: 'POST',
+    auth: false,
+    data: {
+      email: email,
+      password: password,
+      displayName: displayName || '',
+      otpCode: '',
+    },
+  }).then(function (data) {
+    if (!data.accessToken) {
+      throw new Error('注册失败');
+    }
+    auth.setAuth(data);
+    return data;
+  });
+}
+
 function getWechatStatus() {
   return request('/api/v1/auth/wechat/miniprogram/status', { auth: false });
 }
@@ -138,6 +157,12 @@ function wechatPhoneLogin(phoneCode, loginCode, displayName) {
     method: 'POST',
     auth: false,
     data: { code: phoneCode, loginCode: loginCode || '', displayName: displayName || '' },
+  }).then(function (data) {
+    if (!data.accessToken) {
+      throw new Error('手机号登录失败');
+    }
+    auth.setAuth(data);
+    return data;
   });
 }
 
@@ -171,6 +196,26 @@ function regenerateBadgeToken(id) {
   });
 }
 
+function pauseMonitor(id) {
+  return request(orgPath('/monitors/' + id), {
+    method: 'PATCH',
+    data: { status: 'paused' },
+  });
+}
+
+function resumeMonitor(id) {
+  return request(orgPath('/monitors/' + id), {
+    method: 'PATCH',
+    data: { status: 'pending' },
+  });
+}
+
+function deleteMonitor(id) {
+  return request(orgPath('/monitors/' + id), {
+    method: 'DELETE',
+  });
+}
+
 function getIncidents(status) {
   let path = orgPath('/incidents');
   if (status && status !== 'all') {
@@ -185,18 +230,123 @@ function getMe() {
   return request('/api/v1/me');
 }
 
+function updateProfile(data) {
+  return request('/api/v1/me/profile', { method: 'PATCH', data: data });
+}
+
+function changePassword(currentPassword, newPassword) {
+  return request('/api/v1/me/password/change', {
+    method: 'POST',
+    data: { currentPassword: currentPassword, newPassword: newPassword },
+  });
+}
+
+function updateNotifications(data) {
+  return request('/api/v1/me/notifications', { method: 'PATCH', data: data });
+}
+
+function getMembers() {
+  return request(orgPath('/members'));
+}
+
+function getInvitations() {
+  return request(orgPath('/invitations'));
+}
+
+function createInvitation(email, role) {
+  return request(orgPath('/invitations'), {
+    method: 'POST',
+    data: { email: email, role: role || 'member' },
+  });
+}
+
+function getApiKeys() {
+  return request(orgPath('/api-keys'));
+}
+
+function createApiKey(name) {
+  return request(orgPath('/api-keys'), {
+    method: 'POST',
+    data: { name: name },
+  });
+}
+
+function deleteApiKey(id) {
+  return request(orgPath('/api-keys/' + id), { method: 'DELETE' });
+}
+
+function getAuditLogs() {
+  return request(orgPath('/audit-logs?limit=50'));
+}
+
+function getAlertChannels() {
+  return request(orgPath('/alert-channels'));
+}
+
+function getOnCallSchedules() {
+  return request(orgPath('/on-call/schedules'));
+}
+
+function getSessions() {
+  return request('/api/v1/me/sessions');
+}
+
+function revokeSession(sessionId) {
+  return request('/api/v1/me/sessions/' + sessionId, { method: 'DELETE' });
+}
+
+function getTotpStatus() {
+  return request('/api/v1/me/totp');
+}
+
+function getMaintenanceWindows() {
+  return request(orgPath('/maintenance-windows'));
+}
+
+function getSystemReport(period, withAI) {
+  var url = orgPath('/reports/system?period=' + (period || 'weekly'));
+  if (withAI) url += '&ai=true';
+  return request(url);
+}
+
+function getDashboard() {
+  return request(orgPath('/dashboard'));
+}
+
 module.exports = {
   request,
   login,
+  register,
   getWechatStatus,
   wechatLogin,
   bindWechat,
+  wechatPhoneLogin,
   getMonitors,
   getMonitor,
   getMonitorChecks,
   getMonitorStats,
   regenerateBadgeToken,
-  wechatPhoneLogin,
+  pauseMonitor,
+  resumeMonitor,
+  deleteMonitor,
   getIncidents,
   getMe,
+  updateProfile,
+  changePassword,
+  updateNotifications,
+  getMembers,
+  getInvitations,
+  createInvitation,
+  getApiKeys,
+  createApiKey,
+  deleteApiKey,
+  getAuditLogs,
+  getAlertChannels,
+  getOnCallSchedules,
+  getSessions,
+  revokeSession,
+  getTotpStatus,
+  getMaintenanceWindows,
+  getSystemReport,
+  getDashboard,
 };

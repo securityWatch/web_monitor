@@ -1,0 +1,31 @@
+<view class="login-page">
+  <view class="brand">
+    <text class="logo">PulseWatch</text>
+    <text class="tagline">免费创建账号 · 开始监控</text>
+  </view>
+
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+
+  <view class="form card">
+    <view class="field">
+      <text class="label">邮箱</text>
+      <input class="input" type="text" placeholder="your@email.com" value="{{email}}" bindinput="onEmailInput" />
+    </view>
+    <view class="field">
+      <text class="label">密码</text>
+      <input class="input" password placeholder="至少 8 位" value="{{password}}" bindinput="onPasswordInput" />
+    </view>
+    <view class="field">
+      <text class="label">显示名称（可选）</text>
+      <input class="input" type="text" placeholder="您的名称" value="{{displayName}}" bindinput="onDisplayNameInput" />
+    </view>
+    <button class="btn-primary submit" loading="{{loading}}" disabled="{{loading}}" bindtap="onSubmit">
+      注册并开始监控
+    </button>
+  </view>
+
+  <view class="hint">
+    <text>已有账号？</text>
+    <navigator url="/pages/login/login" class="hint-link">去登录</navigator>
+  </view>
+</view>
