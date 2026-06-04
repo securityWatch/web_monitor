@@ -232,10 +232,33 @@ Before publishing a fork, run \`node scripts/oss-verify-secrets.js\` from the re
 `;
 
   if (!r.includes('## Security')) {
-    r = r.replace(/(## Contributing)/, securityBlock + '$1');
+    if (r.includes('## Contributing')) {
+      r = r.replace(/(## Contributing)/, securityBlock + '$1');
+    } else {
+      r += '\n' + securityBlock;
+    }
   }
 
-  r = r.replace(/\n## Open source mirror[\s\S]*$/m, '');
+  r = r.replace(/\n## Open source mirror[\s\S]*?(?=\n## Contributing|\n## License|$)/, '\n');
+
+  if (!r.includes('## Contributing')) {
+    r += `
+
+## Contributing
+
+Contributions are welcome on [securityWatch/web_monitor](https://github.com/securityWatch/web_monitor). Please:
+
+- Never commit \`.env\`, passwords, or webhook URLs
+- Add i18n keys in \`messages/en.json\` and \`messages/zh.json\` for UI changes
+- Run \`npm run test:unit\` for substantial API changes
+- Run \`node scripts/oss-verify-secrets.js\` before opening PRs that may reintroduce production hosts
+
+## License
+
+See [LICENSE](./LICENSE).
+`;
+  }
+
   fs.writeFileSync(readme, r, 'utf8');
 }
 
