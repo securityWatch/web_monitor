@@ -9,6 +9,7 @@
     "pages/incidents/index",
     "pages/incident-detail/detail",
     "pages/status-pages/index",
+    "pages/alert-channels/index",
     "pages/settings/index"
   ],
   "window": {
@@ -49,5 +50,6 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "usingComponents": {}
 }

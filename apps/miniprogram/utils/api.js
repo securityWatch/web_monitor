@@ -317,6 +317,22 @@ function getAlertChannels() {
   return request(orgPath('/alert-channels'));
 }
 
+function createAlertChannel(data) {
+  return request(orgPath('/alert-channels'), { method: 'POST', data: data });
+}
+
+function updateAlertChannel(id, data) {
+  return request(orgPath('/alert-channels/' + id), { method: 'PATCH', data: data });
+}
+
+function deleteAlertChannel(id) {
+  return request(orgPath('/alert-channels/' + id), { method: 'DELETE' });
+}
+
+function testAlertChannel(id) {
+  return request(orgPath('/alert-channels/' + id + '/test'), { method: 'POST' });
+}
+
 function getOnCallSchedules() {
   return request(orgPath('/on-call/schedules'));
 }
@@ -427,6 +443,10 @@ module.exports = {
   deleteApiKey,
   getAuditLogs,
   getAlertChannels,
+  createAlertChannel,
+  updateAlertChannel,
+  deleteAlertChannel,
+  testAlertChannel,
   getOnCallSchedules,
   getSessions,
   revokeSession,

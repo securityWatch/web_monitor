@@ -229,15 +229,8 @@
     </view>
     <view class="card">
       <text class="section-title">告警渠道</text>
-      <view wx:if="{{alertChannels.length === 0}}" class="empty-inline">暂无告警渠道，请使用 Web 端配置</view>
-      <view wx:for="{{alertChannels}}" wx:key="id" class="channel-row">
-        <view class="channel-info">
-          <text class="channel-name">{{item.name}}</text>
-          <text class="channel-type">{{item.type}}</text>
-        </view>
-        <text wx:if="{{item.enabled}}" class="pill pill-up">已启用</text>
-        <text wx:else class="pill">已禁用</text>
-      </view>
+      <text class="field-sub">配置 Webhook、Slack、钉钉、飞书等告警通知渠道</text>
+      <navigator url="/pages/alert-channels/index" class="btn-primary nav-btn">管理告警渠道</navigator>
     </view>
     <view class="card">
       <text class="section-title">维护窗口</text>

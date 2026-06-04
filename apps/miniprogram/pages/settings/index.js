@@ -114,7 +114,6 @@ Page({
     self.loadApiKeys();
     self.loadAuditLogs();
     self.loadDashboard();
-    self.loadAlertChannels();
     self.loadMaintenanceWindows();
 
     api.getWechatStatus().then(function (res) {
@@ -374,16 +373,6 @@ Page({
         upCount: data.upCount || 0,
         downCount: data.downCount || 0,
       });
-    }).catch(function () {});
-  },
-
-  loadAlertChannels: function () {
-    var self = this;
-    api.getAlertChannels().then(function (data) {
-      var channels = data.channels || data || [];
-      if (Array.isArray(channels)) {
-        self.setData({ alertChannels: channels });
-      }
     }).catch(function () {});
   },
 

@@ -1,0 +1,101 @@
+<view class="container">
+  <view class="header-row">
+    <text class="title">告警渠道</text>
+    <button class="btn-add" bindtap="openCreate">+ 新增</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{channels.length === 0 && !showForm}}" class="empty">
+    <text>暂无告警渠道</text>
+    <text class="empty-sub">添加 Webhook、Slack、钉钉等渠道接收告警通知</text>
+  </view>
+
+  <block wx:else>
+    <view wx:for="{{channels}}" wx:key="id" class="card channel-card">
+      <view class="channel-header">
+        <view class="channel-info">
+          <text class="channel-name">{{item.name}}</text>
+          <text class="channel-type">{{item.type}}</text>
+        </view>
+        <view class="channel-actions">
+          <button class="action-sm" bindtap="toggleChannel" data-id="{{item.id}}" data-enabled="{{item.enabled}}">{{item.enabled ? '禁用' : '启用'}}</button>
+          <button class="action-sm action-test" bindtap="testChannel" data-id="{{item.id}}">测试</button>
+          <button class="action-sm action-del" bindtap="deleteChannel" data-id="{{item.id}}">删除</button>
+        </view>
+      </view>
+      <text wx:if="{{item.config.url}}" class="channel-url">{{item.config.url}}</text>
+      <text class="channel-event">{{eventTypeLabel(item.eventTypes)}}</text>
+    </view>
+  </block>
+
+  <!-- Create/Edit form modal -->
+  <view wx:if="{{showForm}}" class="modal-overlay" bindtap="closeForm">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="card">
+        <text class="form-title">{{formMode === 'create' ? '新增告警渠道' : '编辑告警渠道'}}</text>
+
+        <view class="field">
+          <text class="field-label">类型</text>
+          <picker mode="selector" range="{{typeLabels}}" value="{{formTypeIndex}}" bindchange="onTypeChange" disabled="{{formMode === 'edit'}}">
+            <text class="input picker-value">{{typeLabels[formTypeIndex]}}</text>
+          </picker>
+        </view>
+
+        <view class="field">
+          <text class="field-label">名称</text>
+          <input class="input" value="{{form.name}}" bindinput="onNameInput" placeholder="例如：生产告警" />
+        </view>
+
+        <block wx:if="{{formType === 'webhook' || formType === 'slack' || formType === 'discord' || formType === 'teams' || formType === 'dingtalk' || formType === 'feishu' || formType === 'wecom'}}">
+          <view class="field">
+            <text class="field-label">Webhook URL</text>
+            <input class="input" value="{{form.url}}" bindinput="onUrlInput" placeholder="https://hooks.example.com/..." />
+          </view>
+        </block>
+
+        <block wx:if="{{formType === 'dingtalk' || formType === 'feishu'}}">
+          <view class="field">
+            <text class="field-label">加签密钥（可选）</text>
+            <input class="input" value="{{form.secret}}" bindinput="onSecretInput" placeholder="钉钉/飞书加签密钥" />
+          </view>
+        </block>
+
+        <block wx:if="{{formType === 'pagerduty'}}">
+          <view class="field">
+            <text class="field-label">Routing Key</text>
+            <input class="input" value="{{form.routingKey}}" bindinput="onRoutingKeyInput" placeholder="PagerDuty Routing Key" />
+          </view>
+        </block>
+
+        <block wx:if="{{formType === 'opsgenie'}}">
+          <view class="field">
+            <text class="field-label">API Key</text>
+            <input class="input" value="{{form.apiKey}}" bindinput="onApiKeyInput" placeholder="Opsgenie API Key" />
+          </view>
+        </block>
+
+        <block wx:if="{{formType === 'sms' || formType === 'voice'}}">
+          <view class="field">
+            <text class="field-label">手机号</text>
+            <input class="input" value="{{form.phone}}" bindinput="onPhoneInput" placeholder="+8613800138000" />
+          </view>
+        </block>
+
+        <view class="field">
+          <text class="field-label">事件类型</text>
+          <view wx:for="{{eventTypes}}" wx:key="id" class="event-toggle">
+            <switch checked="{{item.selected}}" data-id="{{item.id}}" bindchange="toggleEvent" />
+            <text class="event-label">{{item.label}}</text>
+          </view>
+        </view>
+
+        <view wx:if="{{error}}" class="error-box">{{error}}</view>
+
+        <view class="form-actions">
+          <button class="btn-primary" loading="{{saving}}" disabled="{{saving || !form.name}}" bindtap="saveForm">{{formMode === 'create' ? '创建' : '保存'}}</button>
+          <button class="btn-cancel" bindtap="closeForm">取消</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
