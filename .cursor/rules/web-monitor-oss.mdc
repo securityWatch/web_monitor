@@ -30,6 +30,9 @@ The script:
 | `gkao.com.cn` / `www.gkao.com.cn` | `example.pulsewatch.io` / `www.example.pulsewatch.io` |
 | WeChat mini AppID in repo | `your-wechat-mini-program-appid` |
 | Passwords / `.env` / `环境信息` | **omit** — never in either repo |
+| Legacy DB password `prs%402018` | **omit** — use `PG_PASSWORD` env only |
+
+Before push, `sync-web-monitor-oss.js` runs `scripts/oss-verify-secrets.js` on the staging tree.
 
 ## Agent workflow
 

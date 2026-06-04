@@ -6,6 +6,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const { buildCorsOrigins } = require('./lib/cors-origins');
+const { databaseUrlFromEnv } = require('./lib/database-url');
 
 const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
 const USER = process.env.DEPLOY_USER || 'ubuntu';
@@ -34,6 +35,11 @@ function upload(sftp, local, remote) {
 }
 
 async function main() {
+  if (!PASSWORD) {
+    console.error('Set DEPLOY_PASSWORD (SSH password) before running deploy.js');
+    process.exit(1);
+  }
+
   // Cross-compile API
   console.log('Building Go API for linux/amd64...');
   execSync('go build -o pulsewatch-api ./cmd/server', {
@@ -65,7 +71,7 @@ async function main() {
   const jwt1 = require('crypto').randomBytes(32).toString('hex');
   const jwt2 = require('crypto').randomBytes(32).toString('hex');
   const corsOrigins = buildCorsOrigins(HOST, process.env.APP_DOMAINS || '');
-  const envContent = `DATABASE_URL=postgresql://postgres:prs%402018@127.0.0.1:6541/pulsewatch
+  const envContent = `DATABASE_URL=${databaseUrlFromEnv()}
 JWT_SECRET=${jwt1}
 JWT_REFRESH_SECRET=${jwt2}
 PORT=4000

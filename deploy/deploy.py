@@ -5,6 +5,7 @@ import sys
 import tarfile
 import io
 import time
+from urllib.parse import quote
 
 try:
     import paramiko
@@ -83,9 +84,17 @@ def main():
     run(client, f"rm -rf {APP_DIR}/* && tar -xzf {remote_tar} -C / && mv /pulsewatch/* {APP_DIR}/ && rmdir /pulsewatch 2>/dev/null; rm -f {remote_tar}", sudo=True)
     run(client, f"chown -R ubuntu:ubuntu {APP_DIR}", sudo=True)
 
+    pg_password = os.environ.get("PG_PASSWORD")
+    if not pg_password and not os.environ.get("DATABASE_URL"):
+        print("Set PG_PASSWORD or DATABASE_URL before deploying.", file=sys.stderr)
+        sys.exit(1)
+    db_url = os.environ.get("DATABASE_URL") or (
+        f"postgresql://postgres:{quote(pg_password, safe='')}@127.0.0.1:6541/pulsewatch"
+    )
+
     # Create .env
     env_cmd = f"""cat > {APP_DIR}/.env << 'ENVEOF'
-DATABASE_URL=postgresql://postgres:prs%402018@127.0.0.1:6541/pulsewatch
+DATABASE_URL={db_url}
 JWT_SECRET=$(openssl rand -hex 32)
 JWT_REFRESH_SECRET=$(openssl rand -hex 32)
 PORT=4000

@@ -12,6 +12,7 @@ const { execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { main: desensitize } = require('./oss-desensitize');
+const { main: verifySecrets } = require('./oss-verify-secrets');
 
 const OSS_REMOTE = 'https://github.com/securityWatch/web_monitor.git';
 const ROOT = path.join(__dirname, '..');
@@ -40,6 +41,7 @@ function main() {
   run(`git remote add origin "${OSS_REMOTE}"`, { cwd: STAGING });
 
   desensitize(STAGING);
+  verifySecrets(STAGING);
 
   const status = execSync('git status --porcelain', { cwd: STAGING, encoding: 'utf8' }).trim();
   if (!status) {

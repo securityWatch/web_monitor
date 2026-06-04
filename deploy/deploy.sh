@@ -47,7 +47,10 @@ cd ${APP_DIR}
 
 if [ ! -f .env ]; then
   cp .env.example .env
-  sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://postgres:prs%402018@127.0.0.1:6541/pulsewatch|' .env
+  if [ -n "\${PG_PASSWORD:-}" ]; then
+    ENC=\$(node -e "console.log(encodeURIComponent(process.argv[1]))" "\$PG_PASSWORD")
+    sed -i "s|DATABASE_URL=.*|DATABASE_URL=postgresql://postgres:\${ENC}@127.0.0.1:6541/pulsewatch|" .env
+  fi
   sed -i 's|JWT_SECRET=.*|JWT_SECRET='"\$(openssl rand -hex 32)"'|' .env
   sed -i 's|JWT_REFRESH_SECRET=.*|JWT_REFRESH_SECRET='"\$(openssl rand -hex 32)"'|' .env
   sed -i 's|CORS_ORIGIN=.*|CORS_ORIGIN=http://${REMOTE_HOST}|' .env

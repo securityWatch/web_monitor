@@ -46,7 +46,13 @@ const GLOBAL_REPLACEMENTS = [
   ['www.gkao.com.cn', 'www.example.pulsewatch.io'],
   ['gkao.com.cn', 'example.pulsewatch.io'],
   ['49.234.112.108', 'YOUR_SERVER_IP'],
+  ['prs%402018', 'CHANGE_ME'],
+  ['prs@2018', 'CHANGE_ME'],
   ['wxdaf77fdfdeaab4cf', 'your-wechat-mini-program-appid'],
+  [
+    'access_token=96899fb676569940b30d1ca80bb8a8a9807e0239dff86042ee088a5ac77ebefc',
+    'access_token=YOUR_DINGTALK_TOKEN',
+  ],
   ['mafei2021/monitor', 'securityWatch/web_monitor'],
 ];
 
@@ -165,23 +171,72 @@ export const defaultAppDomains =
     fs.writeFileSync(envExample, e, 'utf8');
   }
 
+  patchOssReadme(root);
+}
+
+function patchOssReadme(root) {
   const readme = path.join(root, 'README.md');
-  if (fs.existsSync(readme)) {
-    let r = fs.readFileSync(readme, 'utf8');
-    r = r.replace(
-      /\[!\[PulseWatch\]\([^)]+\)\]\([^)]+\)/,
-      '[![PulseWatch](https://example.pulsewatch.io/api/v1/public/badge/your_token.svg)](https://github.com/securityWatch/web_monitor)'
-    );
-    r = r.replace(
-      /> \*\*Live demo\*\*: \[https:\/\/[^\]]+\]\([^)]+\)/,
-      '> **Open source**: [securityWatch/web_monitor](https://github.com/securityWatch/web_monitor) — self-host with `.env.example`'
-    );
-    if (!r.includes('## Open source mirror')) {
-      r +=
-        '\n\n## Open source mirror\n\nThis tree is published from the private PulseWatch development repo after desensitization. Do not commit production hosts, domains, or credentials.\n';
-    }
-    fs.writeFileSync(readme, r, 'utf8');
+  if (!fs.existsSync(readme)) return;
+  let r = fs.readFileSync(readme, 'utf8');
+  r = r.replace(
+    /\[!\[PulseWatch\]\([^)]+\)\]\([^)]+\)/,
+    '[![PulseWatch](https://example.pulsewatch.io/api/v1/public/badge/your_token.svg)](https://github.com/securityWatch/web_monitor)'
+  );
+  r = r.replace(
+    /> \*\*(?:Live demo|Open source)\*\*:[^\n]+/,
+    '> **Self-host**: clone this repo, copy `.env.example` → `.env`, follow [DEPLOYMENT.md](./DEPLOYMENT.md).'
+  );
+  r = r.replace(/cd monitor\b/g, 'cd web_monitor');
+
+  const deploySection = `## Deployment
+
+Full guide: **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
+
+### Quick production deploy
+
+\`\`\`bash
+export DEPLOY_HOST=YOUR_SERVER_IP
+export DEPLOY_USER=ubuntu
+export DEPLOY_PASSWORD=your-ssh-password
+export PG_PASSWORD=your-postgres-password
+export APP_DOMAINS=example.pulsewatch.io
+export NEXT_PUBLIC_SITE_URL=https://example.pulsewatch.io
+
+cd deploy && node deploy.js          # first install
+cd deploy && node redeploy-api.js    # API only
+cd deploy && node redeploy-web.js    # Web only
+\`\`\`
+
+### Optional: HTTPS and custom domain
+
+\`\`\`bash
+cd deploy && APP_DOMAINS=your.domain node apply-domain.js
+cd deploy && APP_DOMAINS=your.domain node setup-https.js
+\`\`\`
+
+Before publishing a fork, run \`node scripts/oss-verify-secrets.js\` from the repo root.
+`;
+
+  if (/## Deployment/.test(r)) {
+    r = r.replace(/## Deployment[\s\S]*?(?=\n## )/, deploySection.trim() + '\n\n');
+  } else {
+    r = r.replace(/(## Project Structure)/, deploySection + '\n$1');
   }
+
+  const securityBlock = `## Security
+
+- **No secrets in Git** — use \`.env\` (see \`.env.example\`). Never commit passwords, JWT secrets, webhook URLs, or WeChat AppSecret.
+- **Pre-push check** — \`node scripts/oss-verify-secrets.js\` scans for known production hosts and leaked tokens.
+- **Rotate defaults** — change \`JWT_SECRET\`, \`JWT_REFRESH_SECRET\`, and \`PROBE_SECRET\` before going live.
+
+`;
+
+  if (!r.includes('## Security')) {
+    r = r.replace(/(## Contributing)/, securityBlock + '$1');
+  }
+
+  r = r.replace(/\n## Open source mirror[\s\S]*$/m, '');
+  fs.writeFileSync(readme, r, 'utf8');
 }
 
 function patchAgentsMd(root) {
@@ -197,10 +252,31 @@ function patchAgentsMd(root) {
 }
 
 function removeSensitiveArtifacts(root) {
-  for (const rel of ['deploy/_check-ssl.js', '环境信息']) {
+  const remove = [
+    'deploy/_check-ssl.js',
+    'deploy/sync-dingtalk-from-opc.js',
+    'deploy/smoke-dingtalk-test.js',
+    '环境信息',
+  ];
+  for (const rel of remove) {
     const p = path.join(root, rel);
     if (fs.existsSync(p)) fs.unlinkSync(p);
   }
+}
+
+function copyOssDeploymentDoc(root) {
+  const src = path.join(__dirname, '..', 'templates', 'oss', 'DEPLOYMENT.md');
+  if (!fs.existsSync(src)) {
+    console.warn('[oss-desensitize] Missing templates/oss/DEPLOYMENT.md');
+    return;
+  }
+  fs.copyFileSync(src, path.join(root, 'DEPLOYMENT.md'));
+}
+
+function copyOssSecurityDoc(root) {
+  const src = path.join(__dirname, '..', 'templates', 'oss', 'SECURITY.md');
+  if (!fs.existsSync(src)) return;
+  fs.copyFileSync(src, path.join(root, 'SECURITY.md'));
 }
 
 function copyOssTemplates(root) {
@@ -236,6 +312,8 @@ function main(root = process.cwd()) {
   patchSpecificFiles(root);
   patchAgentsMd(root);
   removeSensitiveArtifacts(root);
+  copyOssDeploymentDoc(root);
+  copyOssSecurityDoc(root);
   copyOssTemplates(root);
   console.log(`[oss-desensitize] Processed ${files.length} files under ${root}`);
 }
