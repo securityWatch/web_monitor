@@ -78,6 +78,8 @@ Page({
     totalMonitors: 0,
     upCount: 0,
     downCount: 0,
+    // Locale
+    locale: 'zh',
   },
 
   onShow() {
@@ -106,6 +108,7 @@ Page({
       displayName: (user && user.displayName) || '',
       planTier: (org && org.planTier) || 'free',
       foundingMember: !!(org && org.foundingMember),
+      locale: (user && user.locale) || 'zh',
     });
 
     // Load additional data
@@ -446,6 +449,18 @@ Page({
         }
       },
     });
+  },
+
+  switchLang: function (e) {
+    var self = this;
+    var locale = e.currentTarget.dataset.locale;
+    if (locale === self.data.locale) return;
+    self.setData({ locale: locale });
+    api.updateProfile({ locale: locale }).then(function () {
+      var stored = auth.getAuth();
+      if (stored && stored.user) { stored.user.locale = locale; auth.setAuth(stored); }
+      wx.showToast({ title: locale === 'zh' ? '已切换为中文' : 'Switched to English', icon: 'success' });
+    }).catch(function () {});
   },
 
   copyApiBase: function () {

@@ -1,0 +1,66 @@
+<view class="container">
+  <view class="header-row">
+    <text class="title">维护窗口</text>
+    <button class="btn-add" bindtap="openCreate">+ 新建</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{windows.length === 0 && !showForm}}" class="empty">
+    <text>暂无维护窗口</text>
+    <text class="empty-sub">创建维护窗口在计划停机期间抑制告警</text>
+  </view>
+
+  <block wx:else>
+    <view wx:for="{{windows}}" wx:key="id" class="card">
+      <view class="maint-header">
+        <text class="maint-name">{{item.name || '维护窗口'}}</text>
+        <button class="action-del" data-id="{{item.id}}" bindtap="confirmDelete">删除</button>
+      </view>
+      <text wx:if="{{item.monitorId}}" class="maint-meta">监控 ID: {{item.monitorId}}</text>
+      <text class="maint-meta">{{formatTime(item.startsAt)}} → {{formatTime(item.endsAt)}}</text>
+      <text wx:if="{{item.message}}" class="maint-msg">{{item.message}}</text>
+    </view>
+  </block>
+
+  <!-- Create form modal -->
+  <view wx:if="{{showForm}}" class="modal-overlay" catchtap="closeForm">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="card">
+        <text class="form-title">新建维护窗口</text>
+
+        <view class="field">
+          <text class="field-label">名称</text>
+          <input class="input" value="{{form.name}}" bindinput="onNameInput" placeholder="例如：服务器升级" />
+        </view>
+
+        <view class="field">
+          <text class="field-label">选择时间</text>
+          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+            <text class="input picker-value">开始日期: {{startDate || '请选择'}}</text>
+          </picker>
+          <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
+            <text class="input picker-value">开始时间: {{startTime || '00:00'}}</text>
+          </picker>
+          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+            <text class="input picker-value">结束日期: {{endDate || '请选择'}}</text>
+          </picker>
+          <picker mode="time" value="{{endTime}}" bindchange="onEndTimeChange">
+            <text class="input picker-value">结束时间: {{endTime || '00:00'}}</text>
+          </picker>
+        </view>
+
+        <view class="field">
+          <text class="field-label">说明（可选）</text>
+          <input class="input" value="{{form.message}}" bindinput="onMessageInput" placeholder="维护说明" />
+        </view>
+
+        <view wx:if="{{error}}" class="error-box">{{error}}</view>
+
+        <view class="form-actions">
+          <button class="btn-primary" loading="{{saving}}" disabled="{{saving || !startDate || !endDate}}" bindtap="saveForm">创建</button>
+          <button class="btn-cancel" bindtap="closeForm">取消</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

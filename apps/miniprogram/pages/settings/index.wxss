@@ -553,6 +553,29 @@
   margin-top: 4rpx;
 }
 
+.lang-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.lang-label {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #64748b;
+  background: #1a1a1a;
+  border: 1rpx solid #333;
+}
+
+.lang-active {
+  color: #34d399;
+  border-color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+}
+
 .nav-btn {
   margin-top: 16rpx;
   text-align: center;

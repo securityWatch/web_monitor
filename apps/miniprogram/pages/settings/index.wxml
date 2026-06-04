@@ -234,15 +234,12 @@
     </view>
     <view class="card">
       <text class="section-title">维护窗口</text>
-      <view wx:if="{{maintenanceWindows.length === 0}}" class="empty-inline">暂无维护窗口</view>
-      <view wx:for="{{maintenanceWindows}}" wx:key="id" class="maint-row">
-        <text class="maint-desc">{{item.description || '维护窗口'}}</text>
-        <text class="maint-time">{{item.startsAt ? formatTime(item.startsAt) : '—'}} → {{item.endsAt ? formatTime(item.endsAt) : '—'}}</text>
-      </view>
+      <text class="field-sub">在计划停机期间自动抑制告警</text>
+      <navigator url="/pages/maintenance-windows/index" class="btn-primary nav-btn">管理维护窗口</navigator>
     </view>
     <view class="card">
       <text class="section-title">更多 Web 端设置</text>
-      <text class="field-sub">值班排班、SSO、语言偏好等完整功能请使用 Web 端</text>
+      <text class="field-sub">值班排班、SSO 等完整功能请使用 Web 端</text>
       <text class="stub-link">https://gkao.com.cn/zh/settings</text>
     </view>
   </block>
@@ -253,6 +250,13 @@
       <text class="section-title">微信账号</text>
       <text class="field-sub">绑定后可在登录页使用微信一键登录此账号</text>
       <button class="btn-primary bind-wechat" loading="{{bindingWechat}}" bindtap="bindWechat">绑定当前微信</button>
+    </view>
+    <view class="card">
+      <text class="section-title">语言</text>
+      <view class="lang-row">
+        <text class="lang-label {{locale === 'zh' ? 'lang-active' : ''}}" data-locale="zh" bindtap="switchLang">中文</text>
+        <text class="lang-label {{locale === 'en' ? 'lang-active' : ''}}" data-locale="en" bindtap="switchLang">English</text>
+      </view>
     </view>
     <view class="card">
       <text class="section-title">API 连接</text>

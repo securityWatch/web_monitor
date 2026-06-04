@@ -10,6 +10,7 @@
     "pages/incident-detail/detail",
     "pages/status-pages/index",
     "pages/alert-channels/index",
+    "pages/maintenance-windows/index",
     "pages/settings/index"
   ],
   "window": {

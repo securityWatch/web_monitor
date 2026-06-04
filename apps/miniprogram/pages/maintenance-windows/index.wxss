@@ -1,0 +1,163 @@
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.btn-add {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #0a0a0a;
+  font-weight: 600;
+  border: none;
+  line-height: 1;
+}
+
+.empty-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #64748b;
+}
+
+.maint-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.maint-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.maint-meta {
+  display: block;
+  font-size: 24rpx;
+  color: #64748b;
+  margin-top: 8rpx;
+}
+
+.maint-msg {
+  display: block;
+  font-size: 24rpx;
+  color: #94a3b8;
+  margin-top: 8rpx;
+  font-style: italic;
+}
+
+.action-del {
+  font-size: 22rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border: 1rpx solid rgba(248, 113, 113, 0.2);
+  line-height: 1;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+.modal-content {
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.form-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 24rpx;
+}
+
+.field {
+  margin-bottom: 24rpx;
+}
+
+.field-label {
+  display: block;
+  font-size: 24rpx;
+  color: #94a3b8;
+  margin-bottom: 10rpx;
+}
+
+.input {
+  background: #1a1a1a;
+  border: 1rpx solid #333;
+  border-radius: 12rpx;
+  padding: 22rpx;
+  color: #f8fafc;
+  font-size: 28rpx;
+  height: 80rpx;
+  line-height: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.picker-value {
+  display: flex;
+  align-items: center;
+  min-height: 80rpx;
+}
+
+.form-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.btn-primary {
+  flex: 1;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #0a0a0a;
+  font-weight: 600;
+  border-radius: 12rpx;
+  border: none;
+  padding: 24rpx;
+  font-size: 28rpx;
+}
+
+.btn-primary[disabled] { opacity: 0.6; }
+
+.btn-cancel {
+  flex: 1;
+  background: transparent;
+  color: #64748b;
+  border: 1rpx solid #333;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 28rpx;
+}
+
+.error-box {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1rpx solid rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+  font-size: 24rpx;
+}
