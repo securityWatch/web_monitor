@@ -220,6 +220,76 @@ func (a *AuthService) LoginOrRegisterWeChatMiniProgram(ctx context.Context, prov
 	return a.LoginOrRegisterOAuth(ctx, WeChatMiniProvider, providerUID, email, displayName, avatarURL, userAgent, ip)
 }
 
+// LoginOrRegisterWeChatWithPhone signs in or auto-registers via WeChat phone number.
+// Flow: check phone → check wechat oauth → create new user.
+func (a *AuthService) LoginOrRegisterWeChatWithPhone(ctx context.Context, phone, providerUID, openID, displayName, userAgent, ip string) (*models.AuthResponse, error) {
+	if displayName == "" {
+		displayName = WeChatMiniDisplayName(openID)
+	}
+	email := WeChatPlaceholderEmail(openID)
+
+	// 1. Try to find user by phone number
+	var userID string
+	err := a.db.QueryRow(ctx, `SELECT id FROM users WHERE phone = $1`, phone).Scan(&userID)
+	if err == nil && userID != "" {
+		// Phone found — ensure oauth identity is linked, then login
+		_, _ = a.db.Exec(ctx, `
+			INSERT INTO oauth_identities (id, user_id, provider, provider_user_id)
+			VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+		`, uuid.New().String(), userID, WeChatMiniProvider, providerUID)
+		_, _ = a.db.Exec(ctx, `UPDATE users SET display_name = COALESCE(NULLIF(display_name,''), $1), avatar_url = COALESCE(avatar_url, ''), updated_at = now() WHERE id = $2`, displayName, userID)
+		return a.loginByUserID(ctx, userID, userAgent, ip)
+	}
+
+	// 2. Try to find user by WeChat oauth identity
+	err = a.db.QueryRow(ctx, `
+		SELECT user_id FROM oauth_identities WHERE provider = $1 AND provider_user_id = $2
+	`, WeChatMiniProvider, providerUID).Scan(&userID)
+	if err == nil && userID != "" {
+		// WeChat account exists — update phone
+		_, _ = a.db.Exec(ctx, `UPDATE users SET phone = $1, updated_at = now() WHERE id = $2`, phone, userID)
+		return a.loginByUserID(ctx, userID, userAgent, ip)
+	}
+
+	// 3. No account — create new user with phone + WeChat identity
+	resp, err := a.registerInternal(ctx, email, GenerateRandomPassword(), displayName, true, WeChatMiniProvider, "zh", "")
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		return nil, err
+	}
+	if resp != nil {
+		userID = resp.User.ID
+	} else {
+		_ = a.db.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	}
+	if userID == "" {
+		return nil, fmt.Errorf("failed to create user")
+	}
+
+	// Set phone number
+	_, _ = a.db.Exec(ctx, `UPDATE users SET phone = $1, avatar_url = COALESCE(avatar_url, ''), updated_at = now() WHERE id = $2`, phone, userID)
+
+	// Link oauth identity
+	_, _ = a.db.Exec(ctx, `
+		INSERT INTO oauth_identities (id, user_id, provider, provider_user_id)
+		VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+	`, uuid.New().String(), userID, WeChatMiniProvider, providerUID)
+
+	return a.loginByUserID(ctx, userID, userAgent, ip)
+}
+
+func (a *AuthService) loginByUserID(ctx context.Context, userID, userAgent, ip string) (*models.AuthResponse, error) {
+	var orgID string
+	err := a.db.QueryRow(ctx, `SELECT org_id FROM organization_members WHERE user_id = $1 ORDER BY joined_at LIMIT 1`, userID).Scan(&orgID)
+	if err != nil {
+		return nil, fmt.Errorf("no organization found")
+	}
+	user, org, err := a.loadUserOrg(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	return a.issueTokens(ctx, user, org, userAgent, ip)
+}
+
 // BindWeChatMiniProgram links wx.login openid to an existing logged-in user.
 func (a *AuthService) BindWeChatMiniProgram(ctx context.Context, userID, providerUID string) error {
 	var existingUser string
@@ -500,10 +570,10 @@ func (a *AuthService) signAccessToken(userID, email, orgID, role string) (string
 func (a *AuthService) loadUserOrg(ctx context.Context, userID, orgID string) (models.User, models.Organization, error) {
 	var user models.User
 	err := a.db.QueryRow(ctx, `
-		SELECT id, email, display_name, avatar_url, timezone, COALESCE(locale, 'en'), email_verified_at,
+		SELECT id, email, phone, display_name, avatar_url, timezone, COALESCE(locale, 'en'), email_verified_at,
 		       notify_incidents, COALESCE(notify_daily, false), notify_weekly, notify_product, notify_ssl, COALESCE(onboarding_done, false), created_at
 		FROM users WHERE id = $1
-	`, userID).Scan(&user.ID, &user.Email, &user.DisplayName, &user.AvatarURL, &user.Timezone, &user.Locale,
+	`, userID).Scan(&user.ID, &user.Email, &user.Phone, &user.DisplayName, &user.AvatarURL, &user.Timezone, &user.Locale,
 		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyDaily, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.OnboardingDone, &user.CreatedAt)
 	if err != nil {
 		return user, models.Organization{}, err

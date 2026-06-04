@@ -21,9 +21,28 @@
             src="{{userInfo.avatarUrl}}"
             mode="aspectFill"
           />
-          微信一键登录
+          微信快捷登录
         </button>
-        <text class="wechat-hint">首次使用将自动创建 PulseWatch 账号</text>
+        <text class="wechat-hint">使用微信身份创建或登录账号</text>
+      </view>
+
+      <view class="divider">
+        <text class="divider-line"></text>
+        <text class="divider-text">或</text>
+        <text class="divider-line"></text>
+      </view>
+
+      <view class="wechat-section">
+        <button
+          class="btn-phone"
+          loading="{{phoneLoading}}"
+          disabled="{{phoneLoading || wechatLoading || loading}}"
+          open-type="getPhoneNumber"
+          bindgetphonenumber="onGetPhoneNumber"
+        >
+          手机号一键登录
+        </button>
+        <text class="wechat-hint">使用微信绑定的手机号快速注册/登录</text>
       </view>
 
       <view class="divider">
@@ -77,7 +96,7 @@
   </view>
 
   <view class="hint">
-    <text wx:if="{{wechatEnabled}}">自动注册：使用微信身份创建一个 PulseWatch 账号，无需邮箱密码</text>
+    <text wx:if="{{wechatEnabled}}">自动注册：使用微信身份或手机号创建一个 PulseWatch 账号，无需邮箱密码</text>
     <text wx:else>微信一键登录未配置，请使用邮箱密码（与 Web 端相同账号）</text>
   </view>
 </view>

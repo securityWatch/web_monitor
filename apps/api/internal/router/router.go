@@ -127,6 +127,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 		auth.GET("/sso/status", ssoH.Status)
 		auth.GET("/wechat/miniprogram/status", wechatH.MiniprogramStatus)
 		auth.POST("/wechat/miniprogram", middleware.LoginRateLimit(), wechatH.MiniprogramLogin)
+		auth.POST("/wechat/miniprogram/phone", middleware.LoginRateLimit(), wechatH.MiniprogramPhoneLogin)
 
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware(cfg.JWTSecret, db))

@@ -8,6 +8,7 @@ import (
 type User struct {
 	ID              string     `json:"id"`
 	Email           string     `json:"email"`
+	Phone           *string    `json:"phone,omitempty"`
 	DisplayName     *string    `json:"displayName"`
 	AvatarURL       *string    `json:"avatarUrl"`
 	Timezone        string     `json:"timezone"`

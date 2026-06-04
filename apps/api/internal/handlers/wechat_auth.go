@@ -98,3 +98,72 @@ func (h *WeChatAuthHandler) MiniprogramBind(c *gin.Context) {
 func (h *WeChatAuthHandler) MiniprogramStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"enabled": h.wechat.Configured()})
 }
+
+type weChatPhoneLoginReq struct {
+	Code        string `json:"code" binding:"required"`
+	LoginCode   string `json:"loginCode"`       // wx.login code, optional for auto-register
+	DisplayName string `json:"displayName"`
+}
+
+func (h *WeChatAuthHandler) MiniprogramPhoneLogin(c *gin.Context) {
+	if !h.wechat.Configured() {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "WeChat mini program login is not configured",
+			"code":  "WECHAT_NOT_CONFIGURED",
+		})
+		return
+	}
+	var req weChatPhoneLoginReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get phone number from WeChat API
+	phoneInfo, err := h.wechat.GetPhoneNumber(c.Request.Context(), req.Code)
+	if err != nil {
+		code := "WECHAT_PHONE_FAILED"
+		status := http.StatusBadGateway
+		if strings.Contains(err.Error(), "not configured") {
+			code = "WECHAT_NOT_CONFIGURED"
+			status = http.StatusServiceUnavailable
+		}
+		c.JSON(status, gin.H{"error": err.Error(), "code": code})
+		return
+	}
+
+	// Get WeChat session (openID)
+	var sess *services.WeChatSession
+	if req.LoginCode != "" {
+		sess, err = h.wechat.Code2Session(c.Request.Context(), req.LoginCode)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "code": "WECHAT_CODE_INVALID"})
+			return
+		}
+	}
+
+	openID := ""
+	providerUID := ""
+	if sess != nil {
+		openID = sess.OpenID
+		providerUID = sess.UnionID
+	}
+	if providerUID == "" {
+		providerUID = openID
+	}
+
+	resp, err := h.auth.LoginOrRegisterWeChatWithPhone(
+		c.Request.Context(),
+		phoneInfo.PurePhoneNumber,
+		providerUID,
+		openID,
+		strings.TrimSpace(req.DisplayName),
+		c.GetHeader("User-Agent"),
+		c.ClientIP(),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}

@@ -133,6 +133,14 @@ function bindWechat(code) {
   });
 }
 
+function wechatPhoneLogin(phoneCode, loginCode, displayName) {
+  return request('/api/v1/auth/wechat/miniprogram/phone', {
+    method: 'POST',
+    auth: false,
+    data: { code: phoneCode, loginCode: loginCode || '', displayName: displayName || '' },
+  });
+}
+
 function orgPath(suffix) {
   const orgId = auth.getOrgId();
   return '/api/v1/orgs/' + orgId + suffix;
@@ -188,6 +196,7 @@ module.exports = {
   getMonitorChecks,
   getMonitorStats,
   regenerateBadgeToken,
+  wechatPhoneLogin,
   getIncidents,
   getMe,
 };

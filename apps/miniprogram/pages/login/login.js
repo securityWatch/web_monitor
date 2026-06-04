@@ -5,6 +5,7 @@ Page({
   data: {
     loading: false,
     wechatLoading: false,
+    phoneLoading: false,
     wechatEnabled: false,
     showEmailForm: false,
     error: '',
@@ -50,7 +51,6 @@ Page({
         self.doWechatLogin(res.userInfo.nickName, res.userInfo.avatarUrl);
       },
       fail: function () {
-        // getUserProfile 不可用时，依然用 wx.login 静默登录
         self.doWechatLogin('', '');
       },
     });
@@ -84,6 +84,51 @@ Page({
       },
       fail: function () {
         self.setData({ wechatLoading: false, error: '无法连接微信，请稍后重试' });
+      },
+    });
+  },
+
+  onGetPhoneNumber(e) {
+    const self = this;
+    if (self.data.phoneLoading || self.data.wechatLoading || self.data.loading) return;
+
+    // e.detail.code is available from WeChat基础库 2.21.2+
+    const phoneCode = e.detail.code;
+    if (!phoneCode) {
+      // Older approach: encryptedData + iv. e.detail.errMsg includes "fail" if denied
+      if (e.detail.errMsg && e.detail.errMsg.indexOf('fail') >= 0) {
+        self.setData({ error: '需要授权手机号才能登录' });
+        return;
+      }
+      self.setData({ error: '获取手机号失败，请更新微信版本' });
+      return;
+    }
+
+    self.setData({ phoneLoading: true, error: '' });
+
+    // Get wx.login code for openID
+    wx.login({
+      success: function (loginRes) {
+        if (!loginRes.code) {
+          self.setData({ phoneLoading: false, error: '微信登录失败，请重试' });
+          return;
+        }
+        api
+          .wechatPhoneLogin(phoneCode, loginRes.code, '')
+          .then(function (data) {
+            const app = getApp();
+            app.setSession(data);
+            wx.switchTab({ url: '/pages/monitors/index' });
+          })
+          .catch(function (err) {
+            self.setData({
+              phoneLoading: false,
+              error: err.message || '手机号登录失败',
+            });
+          });
+      },
+      fail: function () {
+        self.setData({ phoneLoading: false, error: '无法连接微信，请稍后重试' });
       },
     });
   },
