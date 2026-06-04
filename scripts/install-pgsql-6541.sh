@@ -4,7 +4,7 @@
 set -e
 
 PG_PORT=6541
-PG_PASSWORD="${PG_PASSWORD:-prs@2018}"
+PG_PASSWORD="${PG_PASSWORD}"
 
 export DEBIAN_FRONTEND=noninteractive
 
