@@ -92,15 +92,19 @@ Page({
     const self = this;
     if (self.data.phoneLoading || self.data.wechatLoading || self.data.loading) return;
 
-    // e.detail.code is available from WeChat基础库 2.21.2+
     const phoneCode = e.detail.code;
+
+    // User denied the authorization
+    if (e.detail.errMsg && e.detail.errMsg.indexOf('fail') >= 0) {
+      self.setData({ error: '手机号授权被拒绝，可使用微信快捷登录' });
+      return;
+    }
+
+    // No code returned (old WeChat lib or system issue) — fallback to normal WeChat login
     if (!phoneCode) {
-      // Older approach: encryptedData + iv. e.detail.errMsg includes "fail" if denied
-      if (e.detail.errMsg && e.detail.errMsg.indexOf('fail') >= 0) {
-        self.setData({ error: '需要授权手机号才能登录' });
-        return;
-      }
-      self.setData({ error: '获取手机号失败，请更新微信版本' });
+      self.setData({ error: '' });
+      // Auto-fallback: use wx.login directly
+      self.doWechatLogin('', '');
       return;
     }
 
