@@ -86,8 +86,8 @@
           <text class="check-time">{{item.timeText}}</text>
         </view>
         <view class="check-right">
-          <text>{{item.responseText}}</text>
-          <text wx:if="{{item.codeText !== '—'}}">HTTP {{item.codeText}}</text>
+          <text wx:if="{{item.codeText !== '—'}}">{{item.responseText}} · HTTP {{item.codeText}}</text>
+          <text wx:else>{{item.responseText}}</text>
         </view>
       </view>
       <view wx:if="{{expandedCheck !== null && checks[expandedCheck] && checks[expandedCheck].hasError}}" class="error-detail-box">
