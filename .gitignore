@@ -41,3 +41,6 @@ deploy/node_modules/
 apps/api/pulsewatch-api
 apps/api/pulsewatch-probe
 
+# Mini program
+*.private.config.json
+

@@ -1,8 +1,7 @@
 <view class="container">
   <view wx:if="{{error}}" class="error-box">{{error}}</view>
-  <view wx:if="{{loading}}" class="empty">加载中…</view>
-
-  <block wx:elif="{{monitor}}">
+  <view wx:elif="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{isNew || monitor}}" class="form-wrapper">
     <view class="card">
       <text class="form-title">{{isNew ? '创建监控' : '编辑监控'}}</text>
       <text class="form-sub">{{isNew ? '添加一个新的监控项' : '修改监控「' + monitor.name + '」的设置'}}</text>
@@ -37,5 +36,5 @@
         {{isNew ? '创建监控' : '保存修改'}}
       </button>
     </view>
-  </block>
+  </view>
 </view>
