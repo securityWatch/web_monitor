@@ -231,9 +231,9 @@ Before publishing a fork, run \`node scripts/oss-verify-secrets.js\` from the re
 
 `;
 
-  if (!r.includes('## Security')) {
-    if (r.includes('## Contributing')) {
-      r = r.replace(/(## Contributing)/, securityBlock + '$1');
+  if (!/\n## Security\n/.test(r)) {
+    if (/\n## Contributing\n/.test(r)) {
+      r = r.replace(/\n## Contributing\n/, '\n' + securityBlock.trim() + '\n\n## Contributing\n');
     } else {
       r += '\n' + securityBlock;
     }
