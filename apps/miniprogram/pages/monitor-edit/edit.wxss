@@ -27,10 +27,12 @@
   background: #1a1a1a;
   border: 1rpx solid #333;
   border-radius: 12rpx;
-  padding: 22rpx;
+  padding: 24rpx;
   color: #f8fafc;
   font-size: 28rpx;
   width: 100%;
+  height: 72rpx;
+  line-height: 1;
   box-sizing: border-box;
 }
 
