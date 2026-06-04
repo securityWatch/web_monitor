@@ -55,7 +55,7 @@ func formatUserRegisteredMessage(email, displayName, userID, provider string) st
 		provider = "email"
 	}
 	return fmt.Sprintf(
-		"测试\n【新用户注册】\n昵称：%s\n邮箱：%s\n登录方式：%s\n用户 ID：%s\n时间：%s",
+		"monitor\n【新用户注册】\n昵称：%s\n邮箱：%s\n登录方式：%s\n用户 ID：%s\n时间：%s",
 		displayName, emailLine, provider, userID, time.Now().In(chinaLoc()).Format("2006-01-02 15:04:05"),
 	)
 }
@@ -69,7 +69,7 @@ func formatMonitorCreatedMessage(name, monitorType, targetURL, ownerEmail, owner
 		owner = "—"
 	}
 	return fmt.Sprintf(
-		"测试\n【新建监控】\n名称：%s\n类型：%s\n目标：%s\n所有者：%s\n监控 ID：%s\n时间：%s",
+		"monitor\n【新建监控】\n名称：%s\n类型：%s\n目标：%s\n所有者：%s\n监控 ID：%s\n时间：%s",
 		name, monitorType, targetURL, owner, monitorID,
 		time.Now().In(chinaLoc()).Format("2006-01-02 15:04:05"),
 	)
