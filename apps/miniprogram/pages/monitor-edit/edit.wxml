@@ -4,7 +4,7 @@
   <view wx:elif="{{isNew || monitor}}" class="form-wrapper">
     <view class="card">
       <text class="form-title">{{isNew ? '创建监控' : '编辑监控'}}</text>
-      <text class="form-sub">{{isNew ? '添加一个新的监控项' : '修改监控「' + monitor.name + '」的设置'}}</text>
+      <text class="form-sub">{{isNew ? '添加一个新的监控项' : '修改监控「' + monitor.name + '」的配置'}}</text>
     </view>
 
     <view class="card">
@@ -19,6 +19,10 @@
           <text class="input picker-value">{{typeOptions[typeIndex]}}</text>
         </picker>
       </view>
+      <view wx:else class="field">
+        <text class="field-label">类型</text>
+        <text class="input picker-value readonly">{{form.type}}</text>
+      </view>
 
       <view class="field">
         <text class="field-label">{{form.type === 'dns' ? '主机名' : form.type === 'domain' ? '域名' : '目标 URL'}}</text>
@@ -26,11 +30,56 @@
       </view>
 
       <view class="field">
-        <text class="field-label">检测间隔（秒）</text>
+        <text class="field-label">检测间隔</text>
         <picker mode="selector" range="{{intervalOptions}}" value="{{intervalIndex}}" bindchange="onIntervalChange">
           <text class="input picker-value">{{intervalOptions[intervalIndex]}}</text>
         </picker>
       </view>
+
+      <!-- HTTP method for http/keyword/api_json -->
+      <view wx:if="{{form.type === 'http' || form.type === 'keyword' || form.type === 'api_json'}}" class="field">
+        <text class="field-label">HTTP 方法</text>
+        <picker mode="selector" range="{{httpMethods}}" value="{{httpMethodIndex}}" bindchange="onMethodChange">
+          <text class="input picker-value">{{httpMethods[httpMethodIndex]}}</text>
+        </picker>
+      </view>
+
+      <view class="field">
+        <text class="field-label">检测区域</text>
+        <picker mode="selector" range="{{regionOptions}}" value="{{regionIndex}}" bindchange="onRegionChange">
+          <text class="input picker-value">{{regionOptions[regionIndex]}}</text>
+        </picker>
+      </view>
+
+      <!-- Advanced toggle -->
+      <view class="advanced-toggle" bindtap="toggleAdvanced">
+        <text class="advanced-toggle-text">{{showAdvanced ? '收起高级设置' : '展开高级设置'}}</text>
+        <text class="advanced-toggle-icon">{{showAdvanced ? '▲' : '▼'}}</text>
+      </view>
+
+      <block wx:if="{{showAdvanced}}">
+        <view wx:if="{{form.type === 'http' || form.type === 'keyword' || form.type === 'api_json'}}" class="field">
+          <text class="field-label">请求体（Body）</text>
+          <textarea class="textarea" value="{{form.body}}" bindinput="onBodyInput" placeholder="POST/PUT/PATCH 请求体内容" maxlength="2000" />
+        </view>
+
+        <view wx:if="{{form.type === 'http' || form.type === 'keyword' || form.type === 'api_json'}}" class="field">
+          <text class="field-label">请求头（JSON 格式）</text>
+          <textarea class="textarea" value="{{form.headers}}" bindinput="onHeadersInput" placeholder='{"Authorization": "Bearer xxx"}' maxlength="1000" />
+        </view>
+
+        <view class="field">
+          <text class="field-label">告警设置</text>
+          <view class="alert-row">
+            <text class="alert-label">连续失败次数触发告警</text>
+            <input class="input alert-input" type="number" min="1" max="10" value="{{alertFailures}}" bindinput="onAlertFailuresInput" />
+          </view>
+          <view class="toggle-row">
+            <text>Webhook 告警</text>
+            <switch checked="{{webhookEnabled}}" bindchange="toggleWebhook" />
+          </view>
+        </view>
+      </block>
 
       <button class="btn-primary" loading="{{saving}}" disabled="{{saving}}" bindtap="onSave">
         {{isNew ? '创建监控' : '保存修改'}}
