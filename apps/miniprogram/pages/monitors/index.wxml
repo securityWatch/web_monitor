@@ -1,6 +1,9 @@
 <view class="container">
   <view class="header">
-    <text class="title">监控概览</text>
+    <view class="header-row">
+      <text class="title">监控概览</text>
+      <button class="btn-add" bindtap="openNew">+ 新建</button>
+    </view>
     <view class="summary-pills">
       <text class="pill pill-up">正常 {{summary.up}}</text>
       <text class="pill pill-down">故障 {{summary.down}}</text>
@@ -14,7 +17,7 @@
 
   <view wx:elif="{{monitors.length === 0}}" class="empty">
     <text>暂无监控项</text>
-    <text class="empty-sub">请在 Web 端创建监控</text>
+    <text class="empty-sub">点击「+ 新建」创建第一个监控</text>
   </view>
 
   <block wx:else>
@@ -24,6 +27,7 @@
       class="card monitor-card"
       data-id="{{item.id}}"
       bindtap="openDetail"
+      bindlongpress="onLongPress"
     >
       <view class="row-top">
         <text class="card-title">{{item.name}}</text>
@@ -36,5 +40,6 @@
         <text>24h {{item.uptimeText}}</text>
       </view>
     </view>
+    <view class="longpress-hint">长按监控项可暂停、编辑或删除</view>
   </block>
 </view>

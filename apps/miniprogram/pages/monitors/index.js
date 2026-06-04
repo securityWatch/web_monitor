@@ -68,4 +68,62 @@ Page({
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: '/pages/monitor-detail/detail?id=' + id });
   },
+
+  openNew() {
+    wx.navigateTo({ url: '/pages/monitor-edit/edit' });
+  },
+
+  onLongPress(e) {
+    var self = this;
+    var id = e.currentTarget.dataset.id;
+    var monitor = self.data.monitors.find(function (m) { return m.id === id; });
+    if (!monitor) return;
+
+    var items = ['编辑', '暂停/恢复', '删除'];
+    wx.showActionSheet({
+      itemList: items,
+      success: function (res) {
+        switch (res.tapIndex) {
+          case 0:
+            wx.navigateTo({ url: '/pages/monitor-edit/edit?id=' + id });
+            break;
+          case 1:
+            self.togglePause(monitor);
+            break;
+          case 2:
+            self.confirmDelete(monitor);
+            break;
+        }
+      },
+    });
+  },
+
+  togglePause: function (monitor) {
+    var self = this;
+    var action = monitor.status === 'paused' ? api.resumeMonitor : api.pauseMonitor;
+    action(monitor.id).then(function () {
+      self.loadMonitors();
+      wx.showToast({ title: monitor.status === 'paused' ? '监控已恢复' : '监控已暂停', icon: 'success' });
+    }).catch(function (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    });
+  },
+
+  confirmDelete: function (monitor) {
+    var self = this;
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除「' + monitor.name + '」吗？',
+      success: function (res) {
+        if (res.confirm) {
+          api.deleteMonitor(monitor.id).then(function () {
+            self.loadMonitors();
+            wx.showToast({ title: '已删除', icon: 'success' });
+          }).catch(function (err) {
+            wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+          });
+        }
+      },
+    });
+  },
 });

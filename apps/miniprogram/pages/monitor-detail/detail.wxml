@@ -23,6 +23,11 @@
           <text class="meta-value">{{monitor.lastCheckText}}</text>
         </view>
       </view>
+      <view class="action-row">
+        <button class="action-btn action-edit" bindtap="editMonitor">编辑</button>
+        <button class="action-btn {{monitor.status === 'paused' ? 'action-resume' : 'action-pause'}}" bindtap="togglePause">{{monitor.status === 'paused' ? '恢复' : '暂停'}}</button>
+        <button class="action-btn action-delete" bindtap="deleteMonitor">删除</button>
+      </view>
     </view>
 
     <view wx:if="{{stats}}" class="card">

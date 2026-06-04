@@ -138,3 +138,43 @@
   background: rgba(52, 211, 153, 0.15);
   color: #34d399;
 }
+
+.action-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  flex: 1;
+  min-width: 120rpx;
+  font-size: 24rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  border: 1rpx solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  text-align: center;
+  line-height: 1;
+}
+
+.action-edit {
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #34d399;
+}
+
+.action-pause {
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.action-resume {
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #34d399;
+}
+
+.action-delete {
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #f87171;
+}

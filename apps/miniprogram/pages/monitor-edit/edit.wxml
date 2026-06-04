@@ -1,0 +1,41 @@
+<view class="container">
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+
+  <block wx:elif="{{monitor}}">
+    <view class="card">
+      <text class="form-title">{{isNew ? '创建监控' : '编辑监控'}}</text>
+      <text class="form-sub">{{isNew ? '添加一个新的监控项' : '修改监控「' + monitor.name + '」的设置'}}</text>
+    </view>
+
+    <view class="card">
+      <view class="field">
+        <text class="field-label">名称</text>
+        <input class="input" value="{{form.name}}" bindinput="onNameInput" placeholder="例如：生产环境 API" />
+      </view>
+
+      <view wx:if="{{isNew}}" class="field">
+        <text class="field-label">类型</text>
+        <picker mode="selector" range="{{typeOptions}}" value="{{typeIndex}}" bindchange="onTypeChange">
+          <text class="input picker-value">{{typeOptions[typeIndex]}}</text>
+        </picker>
+      </view>
+
+      <view class="field">
+        <text class="field-label">{{form.type === 'dns' ? '主机名' : form.type === 'domain' ? '域名' : '目标 URL'}}</text>
+        <input class="input" value="{{form.targetUrl}}" bindinput="onTargetUrlInput" placeholder="{{targetPlaceholder}}" />
+      </view>
+
+      <view class="field">
+        <text class="field-label">检测间隔（秒）</text>
+        <picker mode="selector" range="{{intervalOptions}}" value="{{intervalIndex}}" bindchange="onIntervalChange">
+          <text class="input picker-value">{{intervalOptions[intervalIndex]}}</text>
+        </picker>
+      </view>
+
+      <button class="btn-primary" loading="{{saving}}" disabled="{{saving}}" bindtap="onSave">
+        {{isNew ? '创建监控' : '保存修改'}}
+      </button>
+    </view>
+  </block>
+</view>

@@ -65,6 +65,41 @@ Page({
       });
   },
 
+  editMonitor: function () {
+    wx.navigateTo({ url: '/pages/monitor-edit/edit?id=' + this.data.id });
+  },
+
+  togglePause: function () {
+    var self = this;
+    var monitor = self.data.monitor;
+    var isPaused = monitor.status === 'paused';
+    var action = isPaused ? api.resumeMonitor : api.pauseMonitor;
+    action(this.data.id).then(function () {
+      self.loadAll(self.data.id);
+      wx.showToast({ title: isPaused ? '监控已恢复' : '监控已暂停', icon: 'success' });
+    }).catch(function (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    });
+  },
+
+  deleteMonitor: function () {
+    var self = this;
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除「' + (self.data.monitor && self.data.monitor.name) + '」吗？此操作不可撤销。',
+      success: function (res) {
+        if (res.confirm) {
+          api.deleteMonitor(self.data.id).then(function () {
+            wx.showToast({ title: '监控已删除', icon: 'success' });
+            wx.navigateBack();
+          }).catch(function (err) {
+            wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+          });
+        }
+      },
+    });
+  },
+
   copyBadgeMarkdown: function () {
     const token = this.data.monitor && this.data.monitor.publicBadgeToken;
     if (!token) return;

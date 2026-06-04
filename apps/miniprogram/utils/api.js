@@ -216,6 +216,20 @@ function deleteMonitor(id) {
   });
 }
 
+function updateMonitor(id, data) {
+  return request(orgPath('/monitors/' + id), {
+    method: 'PATCH',
+    data: data,
+  });
+}
+
+function createMonitor(data) {
+  return request(orgPath('/monitors'), {
+    method: 'POST',
+    data: data,
+  });
+}
+
 function getIncidents(status) {
   let path = orgPath('/incidents');
   if (status && status !== 'all') {
@@ -336,6 +350,8 @@ module.exports = {
   pauseMonitor,
   resumeMonitor,
   deleteMonitor,
+  updateMonitor,
+  createMonitor,
   getIncidents,
   getMe,
   updateProfile,
