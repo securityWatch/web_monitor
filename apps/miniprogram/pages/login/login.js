@@ -78,47 +78,37 @@ Page({
     const self = this;
     if (self.data.phoneLoading || self.data.wechatLoading || self.data.loading) return;
 
-    // User denied the authorization
-    if (e.detail.errMsg && e.detail.errMsg.indexOf('fail') >= 0) {
-      self.setData({ error: '需要授权手机号才能登录，请使用微信快捷登录' });
-      return;
-    }
-
     const phoneCode = e.detail.code;
 
-    // No code returned — phone auth may not be available on this device
-    if (!phoneCode) {
-      self.setData({ error: '手机号登录暂不可用，请使用微信快捷登录' });
+    // If we have a phone code, use it (regardless of errMsg — some WeChat versions
+    // return both a code and a fail errMsg)
+    if (phoneCode) {
+      self.setData({ phoneLoading: true, error: '' });
+      wx.login({
+        success: function (loginRes) {
+          if (!loginRes.code) {
+            self.setData({ phoneLoading: false, error: '微信登录失败，请重试' });
+            return;
+          }
+          api.wechatPhoneLogin(phoneCode, loginRes.code, '')
+            .then(function (data) {
+              const app = getApp();
+              app.setSession(data);
+              wx.switchTab({ url: '/pages/monitors/index' });
+            })
+            .catch(function (err) {
+              self.setData({ phoneLoading: false, error: err.message || '手机号登录失败' });
+            });
+        },
+        fail: function () {
+          self.setData({ phoneLoading: false, error: '无法连接微信，请稍后重试' });
+        },
+      });
       return;
     }
 
-    self.setData({ phoneLoading: true, error: '' });
-
-    // Get wx.login code for openID
-    wx.login({
-      success: function (loginRes) {
-        if (!loginRes.code) {
-          self.setData({ phoneLoading: false, error: '微信登录失败，请重试' });
-          return;
-        }
-        api
-          .wechatPhoneLogin(phoneCode, loginRes.code, '')
-          .then(function (data) {
-            const app = getApp();
-            app.setSession(data);
-            wx.switchTab({ url: '/pages/monitors/index' });
-          })
-          .catch(function (err) {
-            self.setData({
-              phoneLoading: false,
-              error: err.message || '手机号登录失败',
-            });
-          });
-      },
-      fail: function () {
-        self.setData({ phoneLoading: false, error: '无法连接微信，请稍后重试' });
-      },
-    });
+    // No phone code — fallback silently to regular WeChat login
+    self.doWechatLogin('', '');
   },
 
   onSubmit() {

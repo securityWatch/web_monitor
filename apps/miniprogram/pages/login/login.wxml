@@ -35,8 +35,6 @@
       <view class="wechat-section">
         <button
           class="btn-phone"
-          loading="{{phoneLoading}}"
-          disabled="{{phoneLoading || wechatLoading || loading}}"
           open-type="getPhoneNumber"
           bindgetphonenumber="onGetPhoneNumber"
         >
