@@ -1136,6 +1136,7 @@
     "notifyProduct": "产品更新",
     "notifySsl": "SSL 到期提醒",
     "saved": "设置已保存",
+    "passwordError": "当前密码错误或新密码不符合要求（至少 8 位，需包含字母和数字）",
     "billingTitle": "账单与套餐",
     "billingDesc": "创始会员价可用",
     "currentPlan": "当前套餐",

@@ -55,12 +55,16 @@ export default function SettingsPage() {
   };
 
   const changePassword = async () => {
-    await apiFetch('/api/v1/me/password/change', {
-      method: 'POST',
-      body: JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.newPass }),
-    });
-    setMsg(t('saved'));
-    setPasswords({ current: '', newPass: '' });
+    try {
+      await apiFetch('/api/v1/me/password/change', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.newPass }),
+      });
+      setMsg(t('saved'));
+      setPasswords({ current: '', newPass: '' });
+    } catch {
+      setMsg(t('passwordError'));
+    }
   };
 
   const saveNotify = async () => {

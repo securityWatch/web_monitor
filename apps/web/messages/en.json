@@ -1128,6 +1128,7 @@
     "notifyProduct": "Product updates",
     "notifySsl": "SSL expiry reminders",
     "saved": "Settings saved",
+    "passwordError": "Incorrect current password or weak new password (minimum 8 characters with letters and digits).",
     "billingTitle": "Billing & plans",
     "billingDesc": "Founding Member pricing available",
     "currentPlan": "Current plan",
