@@ -1,0 +1,44 @@
+---
+description: Publish desensitized code to securityWatch/web_monitor open-source repo
+alwaysApply: true
+---
+
+# Open-source mirror — web_monitor
+
+The public open-source release lives at **[securityWatch/web_monitor](https://github.com/securityWatch/web_monitor)**.
+
+## When to sync
+
+After features/fixes are merged in **this** (private) repo and you want the OSS mirror updated:
+
+```bash
+node scripts/sync-web-monitor-oss.js
+```
+
+The script:
+
+1. Clones this repo to `../web_monitor-oss-staging` (does not alter private working tree)
+2. Runs `scripts/oss-desensitize.js` (production IP/domain/WeChat AppID → placeholders)
+3. Applies `templates/oss/.cursor/rules/` into the OSS tree
+4. Commits and pushes to `https://github.com/securityWatch/web_monitor.git`
+
+## Desensitization rules (never skip)
+
+| Private value | OSS placeholder |
+|---|---|
+| `49.234.112.108` | `YOUR_SERVER_IP` |
+| `gkao.com.cn` / `www.gkao.com.cn` | `example.pulsewatch.io` / `www.example.pulsewatch.io` |
+| WeChat mini AppID in repo | `your-wechat-mini-program-appid` |
+| Passwords / `.env` / `环境信息` | **omit** — never in either repo |
+
+## Agent workflow
+
+- **Private repo**: may use production deploy per `pulsewatch.mdc` (real host from env / `环境信息`)
+- **OSS repo**: only edit via sync script or direct clone of `web_monitor`; never copy raw production config into GitHub
+- Adding new hardcoded hosts/domains in private code → extend `GLOBAL_REPLACEMENTS` in `scripts/oss-desensitize.js` before next sync
+
+## Do not
+
+- Push `环境信息`, `.env`, or `deploy/_*.js` to web_monitor
+- Force-push `main` on web_monitor without explicit user request
+- Replace private `pulsewatch.mdc` production deploy section with placeholders in **this** repo (desensitize only in the OSS clone)

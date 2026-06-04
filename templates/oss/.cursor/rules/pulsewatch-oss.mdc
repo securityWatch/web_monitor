@@ -1,0 +1,47 @@
+---
+description: PulseWatch OSS coding conventions (no private production deploy)
+alwaysApply: true
+---
+
+# PulseWatch OSS Conventions
+
+Same product stack as the private PulseWatch repo, but **this tree must stay desensitized**.
+
+## Stack
+
+- **Backend**: Go (`apps/api/`) — Gin, pgx, JWT, in-process scheduler
+- **Frontend**: Next.js 15 (`apps/web/`) — Tailwind 4, next-intl, `[locale]` App Router
+- **Database**: PostgreSQL only — time-series in partitioned `check_results`
+- **Mini program**: `apps/miniprogram/` — configure `config/env.js` and WeChat AppID locally
+
+## i18n
+
+- Locales: `en`, `zh` — keys in `messages/en.json` and `messages/zh.json`
+
+## Security
+
+- Never commit `环境信息`, `.env`, or real passwords
+- Example hosts: `YOUR_SERVER_IP`, `example.pulsewatch.io` — replace in your own `.env` only
+
+## Deploy (self-host)
+
+```bash
+export DEPLOY_HOST=your.server.ip
+export DEPLOY_PASSWORD=your-ssh-password
+export APP_DOMAINS=your.domain.com
+export NEXT_PUBLIC_SITE_URL=https://your.domain.com
+cd deploy && node deploy.js   # first time
+cd deploy && node redeploy-api.js
+cd deploy && node redeploy-web.js
+```
+
+## Monitors CRUD
+
+- Create: `/monitors/new` → POST
+- Edit: `/monitors/[id]/edit` → PATCH
+- Detail: `/monitors/[id]`
+
+## Product UI
+
+- Premium dark-mode SaaS; English keys + next-intl translations
+- Marketing/landing changes: update `landing` namespace in message JSON and `landing-page.tsx` when shipping user-facing features
