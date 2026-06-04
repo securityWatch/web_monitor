@@ -1,0 +1,75 @@
+<view class="container">
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+
+  <block wx:elif="{{stats}}">
+    <view class="greeting">
+      <text class="greeting-text">{{greeting}}, {{userName}}</text>
+      <text wx:if="{{stats.downCount > 0}}" class="alert-banner">{{stats.downCount}} 个监控故障中</text>
+      <text wx:else class="all-ok">全部监控运行正常</text>
+    </view>
+
+    <view class="kpi-grid">
+      <view class="kpi-card {{stats.downCount > 0 ? 'kpi-danger' : ''}}">
+        <text class="kpi-value">{{stats.totalMonitors}}</text>
+        <text class="kpi-label">监控总数</text>
+        <text class="kpi-sub">正常 {{stats.upCount}} · 暂停 {{stats.pausedCount}}</text>
+      </view>
+      <view class="kpi-card {{stats.downCount > 0 ? 'kpi-danger' : ''}}">
+        <text class="kpi-value {{stats.downCount > 0 ? 'value-danger' : ''}}">{{stats.downCount}}</text>
+        <text class="kpi-label">故障监控</text>
+        <text class="kpi-sub">{{stats.downCount > 0 ? '需关注' : '全部正常'}}</text>
+      </view>
+      <view class="kpi-card">
+        <text class="kpi-value">{{stats.uptime24h}}%</text>
+        <text class="kpi-label">24h 可用率</text>
+        <text class="kpi-sub">{{stats.totalChecks24h}} 次检测</text>
+      </view>
+      <view class="kpi-card {{stats.openIncidents > 0 ? 'kpi-warn' : ''}}">
+        <text class="kpi-value {{stats.openIncidents > 0 ? 'value-warn' : ''}}">{{stats.openIncidents}}</text>
+        <text class="kpi-label">未处理事件</text>
+        <text class="kpi-sub">{{stats.errorRate24h}}% 错误率</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <text class="section-title">响应时间趋势（24h）</text>
+      <view wx:if="{{chartData.length === 0}}" class="empty-inline">暂无数据</view>
+      <view wx:else class="chart-container">
+        <view wx:for="{{chartData}}" wx:key="time" class="chart-bar-wrap">
+          <view class="chart-bar" style="height:{{item.pct}}%">
+            <text class="chart-ms">{{item.ms}}ms</text>
+          </view>
+          <text class="chart-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-row">
+        <text class="section-title">最近事件</text>
+      </view>
+      <view wx:if="{{incidents.length === 0}}" class="empty-inline">暂无事件</view>
+      <view wx:for="{{incidents}}" wx:key="id" class="incident-row" data-id="{{item.id}}" bindtap="openIncident">
+        <view class="incident-left">
+          <view class="incident-dot {{item.status === 'open' ? 'dot-open' : 'dot-resolved'}}"></view>
+          <view class="incident-info">
+            <text class="incident-name">{{item.monitorName}}</text>
+            <text class="incident-time">{{item.startedText}}</text>
+          </view>
+        </view>
+        <text class="badge {{item.status === 'open' ? 'badge-open' : 'badge-resolved'}}">{{item.statusLabel}}</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <text class="section-title">最近失败检测</text>
+      <view wx:if="{{recentFailures.length === 0}}" class="empty-inline">近期无失败</view>
+      <view wx:for="{{recentFailures}}" wx:key="monitorId" class="fail-row">
+        <text class="fail-name">{{item.monitorName}}</text>
+        <text class="fail-time">{{item.checkedAt ? formatTime(item.checkedAt) : ''}}</text>
+        <text wx:if="{{item.statusCode}}" class="fail-code">HTTP {{item.statusCode}}</text>
+      </view>
+    </view>
+  </block>
+</view>

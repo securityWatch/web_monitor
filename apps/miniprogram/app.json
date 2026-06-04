@@ -2,11 +2,13 @@
   "pages": [
     "pages/login/login",
     "pages/register/register",
+    "pages/dashboard/index",
     "pages/monitors/index",
     "pages/monitor-detail/detail",
     "pages/monitor-edit/edit",
     "pages/incidents/index",
     "pages/incident-detail/detail",
+    "pages/status-pages/index",
     "pages/settings/index"
   ],
   "window": {
@@ -24,12 +26,20 @@
     "borderStyle": "black",
     "list": [
       {
+        "pagePath": "pages/dashboard/index",
+        "text": "仪表"
+      },
+      {
         "pagePath": "pages/monitors/index",
         "text": "监控"
       },
       {
         "pagePath": "pages/incidents/index",
         "text": "事件"
+      },
+      {
+        "pagePath": "pages/status-pages/index",
+        "text": "状态页"
       },
       {
         "pagePath": "pages/settings/index",

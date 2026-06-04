@@ -2,8 +2,10 @@ Component({
   data: {
     selected: 0,
     list: [
+      { pagePath: '/pages/dashboard/index', text: '仪表', icon: '◉' },
       { pagePath: '/pages/monitors/index', text: '监控', icon: '◎' },
       { pagePath: '/pages/incidents/index', text: '事件', icon: '!' },
+      { pagePath: '/pages/status-pages/index', text: '状态页', icon: '◈' },
       { pagePath: '/pages/settings/index', text: '设置', icon: '⚙' },
     ],
   },

@@ -1,0 +1,77 @@
+<view class="container">
+  <view class="header-row">
+    <text class="title">状态页</text>
+    <button class="btn-add" bindtap="openCreate">+ 新建</button>
+  </view>
+
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{pages.length === 0}}" class="empty">
+    <text>暂无状态页</text>
+    <text class="empty-sub">创建公开状态页，展示服务健康状况</text>
+  </view>
+
+  <block wx:else>
+    <view wx:for="{{pages}}" wx:key="id" class="card page-card" data-id="{{item.id}}" bindtap="openDetail">
+      <view class="page-row">
+        <view class="page-info">
+          <text class="page-name">{{item.name}}</text>
+          <text wx:if="{{item.isPublic}}" class="pill pill-up">公开</text>
+          <text wx:else class="pill">不公开</text>
+        </view>
+        <text wx:if="{{item.slug}}" class="page-slug">/status/{{item.slug}}</text>
+        <text wx:if="{{item.customDomain}}" class="page-domain">{{item.customDomain}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- Detail modal inline (create/edit form) -->
+  <view wx:if="{{showForm}}" class="modal-overlay" bindtap="closeForm">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="card">
+        <text class="form-title">{{formMode === 'create' ? '创建状态页' : '编辑状态页'}}</text>
+        <view class="field">
+          <text class="field-label">名称</text>
+          <input class="input" value="{{form.name}}" bindinput="onFormName" placeholder="例如：生产状态页" />
+        </view>
+        <view class="field">
+          <text class="field-label">公开</text>
+          <switch checked="{{form.isPublic}}" bindchange="onFormPublic" />
+        </view>
+        <view class="field">
+          <text class="field-label">自定义域名（可选）</text>
+          <input class="input" value="{{form.customDomain}}" bindinput="onFormDomain" placeholder="status.yourdomain.com" />
+        </view>
+        <view class="form-actions">
+          <button class="btn-primary" loading="{{saving}}" disabled="{{saving || !form.name}}" bindtap="saveForm">
+            {{formMode === 'create' ? '创建' : '保存'}}
+          </button>
+          <button class="btn-cancel" bindtap="closeForm">取消</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Announcements modal -->
+  <view wx:if="{{showAnnouncements}}" class="modal-overlay" bindtap="closeAnnouncements">
+    <view class="modal-content modal-scroll" catchtap="stopPropagation">
+      <view class="card">
+        <view class="section-row">
+          <text class="section-title">公告 · {{announcePageName}}</text>
+          <text class="close-btn" bindtap="closeAnnouncements">✕</text>
+        </view>
+        <view class="field">
+          <text class="field-label">新公告</text>
+          <textarea class="textarea" value="{{announceContent}}" bindinput="onAnnounceContent" placeholder="公告内容…" maxlength="500" />
+          <button class="btn-primary btn-sm" loading="{{announceSaving}}" disabled="{{announceSaving || !announceContent.trim()}}" bindtap="createAnnouncement">发布公告</button>
+        </view>
+        <view wx:for="{{announcements}}" wx:key="id" class="announce-row">
+          <text class="announce-text">{{item.content || item.message || ''}}</text>
+          <text class="announce-time">{{item.createdAt ? formatTime(item.createdAt) : ''}}</text>
+          <button class="btn-delete-sm" data-id="{{item.id}}" bindtap="deleteAnnouncement">删除</button>
+        </view>
+        <view wx:if="{{announcements.length === 0}}" class="empty-inline">暂无公告</view>
+      </view>
+    </view>
+  </view>
+</view>
