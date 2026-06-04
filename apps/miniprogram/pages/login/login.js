@@ -18,14 +18,11 @@ Page({
       return;
     }
     const self = this;
-    api
-      .getWechatStatus()
-      .then(function (res) {
-        self.setData({ wechatEnabled: !!(res && res.enabled) });
-      })
-      .catch(function () {
-        self.setData({ wechatEnabled: false });
-      });
+    api.getWechatStatus().then(function (res) {
+      self.setData({ wechatEnabled: !!(res && res.enabled) });
+    }).catch(function () {
+      self.setData({ wechatEnabled: false });
+    });
   },
 
   onEmailInput(e) {
@@ -41,19 +38,8 @@ Page({
   },
 
   getUserProfile() {
-    const self = this;
-    wx.getUserProfile({
-      desc: '用于完善账号资料',
-      success: function (res) {
-        self.setData({
-          userInfo: res.userInfo,
-        });
-        self.doWechatLogin(res.userInfo.nickName, res.userInfo.avatarUrl);
-      },
-      fail: function () {
-        self.doWechatLogin('', '');
-      },
-    });
+    // wx.getUserProfile deprecated in newer WeChat — use wx.login directly
+    this.doWechatLogin('', '');
   },
 
   doWechatLogin(displayName, avatarUrl) {
@@ -92,19 +78,17 @@ Page({
     const self = this;
     if (self.data.phoneLoading || self.data.wechatLoading || self.data.loading) return;
 
-    const phoneCode = e.detail.code;
-
     // User denied the authorization
     if (e.detail.errMsg && e.detail.errMsg.indexOf('fail') >= 0) {
-      self.setData({ error: '手机号授权被拒绝，可使用微信快捷登录' });
+      self.setData({ error: '需要授权手机号才能登录，请使用微信快捷登录' });
       return;
     }
 
-    // No code returned (old WeChat lib or system issue) — fallback to normal WeChat login
+    const phoneCode = e.detail.code;
+
+    // No code returned — phone auth may not be available on this device
     if (!phoneCode) {
-      self.setData({ error: '' });
-      // Auto-fallback: use wx.login directly
-      self.doWechatLogin('', '');
+      self.setData({ error: '手机号登录暂不可用，请使用微信快捷登录' });
       return;
     }
 
