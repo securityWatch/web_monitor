@@ -24,7 +24,7 @@ alwaysApply: true
 1. **自检**：不 stage `环境信息`、`.env`、密钥、`apps/web/.next/`、其它构建产物
 2. **`git add`**：只加与本任务相关的文件
 3. **`git commit`**：说明 **为什么**（完整句子，非单行关键词）
-4. **`git push`**：见下方分支策略 — **禁止** 长期停留在「已 commit 未 push」
+4. **`npm run publish:main`**（或 `git push origin main` + **`npm run sync:oss`**）：见下方分支策略 — **禁止** 长期停留在「已 commit 未 push」；push 后 **必须** 同步开源镜像（除非 `SKIP_OSS_SYNC=1`）
 
 推送失败：对 **同一远程分支** 至少重试 **3 次**（间隔递增）；仍失败则报告 **commit hash** 与错误，便于用户手动 push。**禁止** `git push --force` 到 `main`。
 
@@ -34,7 +34,7 @@ alwaysApply: true
 
 | 场景 | 分支 | 推送命令 |
 |------|------|----------|
-| 常规开发（默认） | `main` | `git push origin main` |
+| 常规开发（默认） | `main` | `npm run publish:main` |
 
 - **禁止** 新建 `cursor/*` 或其它 feature 分支（除非用户明确要求）
 - **禁止** force push `main`

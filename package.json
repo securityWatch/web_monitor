@@ -15,9 +15,14 @@
     "test:integration": "cd apps/api && go test ./internal/handlers/...",
     "start:web": "npm run start -w @pulsewatch/web",
     "miniprogram:validate": "node scripts/validate-miniprogram.js",
-    "deploy:api": "cd deploy && npm run api",
-    "deploy:web": "cd deploy && npm run web",
-    "deploy:all": "cd deploy && npm run all"
+    "deploy": "node scripts/deploy-oneclick.js",
+    "deploy:first": "node scripts/deploy-oneclick.js --first",
+    "deploy:api": "node scripts/deploy-oneclick.js --api",
+    "deploy:web": "node scripts/deploy-oneclick.js --web",
+    "deploy:all": "node scripts/deploy-oneclick.js",
+    "sync:oss": "node scripts/sync-web-monitor-oss.js",
+    "publish:main": "node scripts/publish-main.js",
+    "hooks:install": "node scripts/install-git-hooks.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

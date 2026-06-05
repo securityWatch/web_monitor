@@ -112,9 +112,17 @@ After deploy, confirm success before push:
 
 If deploy or verification fails, fix and redeploy — do not push broken code.
 
-### 6. Auto push to GitHub (required)
+### 6. Auto push + OSS mirror sync (required)
 
-见 [git-auto-commit-push.mdc](git-auto-commit-push.mdc)。`main` 上：`git push origin main`；功能分支上 push 当前分支。运行时变更须在 deploy/verify 后 push。
+见 [git-auto-commit-push.mdc](git-auto-commit-push.mdc)。`main` 上优先：
+
+```bash
+npm run publish:main
+```
+
+等价于 `git push origin main` + `npm run sync:oss`（脱敏后推送到 [securityWatch/web_monitor](https://github.com/securityWatch/web_monitor)）。用户明确 opt-out 时用 `SKIP_OSS_SYNC=1 npm run publish:main`。运行时变更须在 deploy/verify 后执行。
+
+一键生产部署：`npm run deploy`（见 `scripts/deploy-oneclick.js`、 [README.zh-CN.md](../README.zh-CN.md)）。
 
 ### Skip only when
 

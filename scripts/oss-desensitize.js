@@ -187,6 +187,12 @@ function patchOssReadme(root) {
     '> **Self-host**: clone this repo, copy `.env.example` → `.env`, follow [DEPLOYMENT.md](./DEPLOYMENT.md).'
   );
   r = r.replace(/cd monitor\b/g, 'cd web_monitor');
+  if (!r.includes('README.zh-CN.md')) {
+    r = r.replace(
+      /(\*\*PulseWatch\*\* is an)/,
+      '**English** | [中文文档](./README.zh-CN.md)\n\n$1'
+    );
+  }
 
   const deploySection = `## Deployment
 
@@ -302,6 +308,12 @@ function copyOssSecurityDoc(root) {
   fs.copyFileSync(src, path.join(root, 'SECURITY.md'));
 }
 
+function copyOssReadmeZh(root) {
+  const src = path.join(__dirname, '..', 'templates', 'oss', 'README.zh-CN.md');
+  if (!fs.existsSync(src)) return;
+  fs.copyFileSync(src, path.join(root, 'README.zh-CN.md'));
+}
+
 function copyOssTemplates(root) {
   // Always copy from private-repo templates (not the staging tree) so global replacements
   // do not rewrite "mafei2021/monitor" inside OSS-only Cursor rules.
@@ -337,6 +349,7 @@ function main(root = process.cwd()) {
   removeSensitiveArtifacts(root);
   copyOssDeploymentDoc(root);
   copyOssSecurityDoc(root);
+  copyOssReadmeZh(root);
   copyOssTemplates(root);
   console.log(`[oss-desensitize] Processed ${files.length} files under ${root}`);
 }

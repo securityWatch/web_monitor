@@ -18,7 +18,7 @@ This repository is the **public** mirror: [securityWatch/web_monitor](https://gi
 Sync from private tree:
 
 ```bash
-node scripts/sync-web-monitor-oss.js
+npm run sync:oss
 ```
 
 That script clones → runs `scripts/oss-desensitize.js` → pushes here. **Do not** hand-edit production IPs/domains into this repo.

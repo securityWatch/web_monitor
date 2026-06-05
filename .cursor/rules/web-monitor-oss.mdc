@@ -12,7 +12,9 @@ The public open-source release lives at **[securityWatch/web_monitor](https://gi
 After features/fixes are merged in **this** (private) repo and you want the OSS mirror updated:
 
 ```bash
-node scripts/sync-web-monitor-oss.js
+npm run sync:oss
+# 或推送私有 main 后自动同步：
+npm run publish:main
 ```
 
 The script:

@@ -1,5 +1,7 @@
 # PulseWatch
 
+**English** | [中文文档](./README.zh-CN.md)
+
 [![PulseWatch](https://gkao.com.cn/api/v1/public/badge/your_token.svg)](https://gkao.com.cn)
 
 **PulseWatch** is an open-core website monitoring SaaS platform with a commercial-friendly free tier. Monitor websites, APIs, SSL certificates, DNS records, and more — with alerts via email, webhook, Slack, DingTalk, Feishu, and WeCom.
@@ -94,19 +96,23 @@ npm run test:integration
 
 ## Deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment instructions.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) and [README.zh-CN.md](./README.zh-CN.md) for details.
 
-Key requirements for deployment:
-- Server: Ubuntu 22.04+, systemd, Nginx
-- SSL: Let's Encrypt or Cloudflare origin certificate
-- The `DEPLOY_PASSWORD` environment variable must be set for automated deployment scripts
+Set `DEPLOY_PASSWORD` (and `PG_PASSWORD` for first install) in the shell or local `环境信息` (never commit).
+
+| Scenario | Command |
+|----------|---------|
+| **Routine release (API + Web)** | `npm run deploy` |
+| **First-time install** | `npm run deploy:first` |
+| **API only** | `npm run deploy:api` |
+| **Web only** | `npm run deploy:web` |
+| **Deploy + sync OSS mirror** | `npm run deploy -- --sync-oss` |
 
 ```bash
-# Deploy API
-cd deploy && DEPLOY_PASSWORD=<password> node redeploy-api.js
-
-# Deploy web
-cd deploy && DEPLOY_PASSWORD=<password> NEXT_PUBLIC_SITE_URL=https://your.domain node redeploy-web.js
+export DEPLOY_HOST=49.234.112.108
+export DEPLOY_PASSWORD=<password>
+export PG_PASSWORD=<postgres-password>   # first install only
+npm run deploy
 ```
 
 ## Project Structure
@@ -143,13 +149,15 @@ tests/                  # E2E tests
 
 The public, desensitized tree is published at **[securityWatch/web_monitor](https://github.com/securityWatch/web_monitor)**.
 
-From this (private) repo after releases:
+After pushing to private `main`, sync the desensitized mirror automatically:
 
 ```bash
-node scripts/sync-web-monitor-oss.js
+npm run publish:main    # git push origin main + sync web_monitor
+npm run sync:oss        # sync only
+SKIP_OSS_SYNC=1 npm run publish:main   # push without OSS
 ```
 
-That clones to `../web_monitor-oss-staging`, runs `scripts/oss-desensitize.js` (production IP/domain/AppID → placeholders), overlays OSS Cursor rules, and pushes to GitHub. See `.cursor/rules/web-monitor-oss.mdc`.
+See `.cursor/rules/web-monitor-oss.mdc`.
 
 ## Contributing
 
