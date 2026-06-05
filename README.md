@@ -6,7 +6,7 @@
 
 **PulseWatch** is an open-core website monitoring SaaS platform with a commercial-friendly free tier. Monitor websites, APIs, SSL certificates, DNS records, and more — with alerts via email, webhook, Slack, DingTalk, Feishu, and WeCom.
 
-> **Live demo**: [https://gkao.com.cn](https://gkao.com.cn)
+> **Live demo**: [https://www.gkao.com.cn/](https://www.gkao.com.cn/)
 
 ---
 

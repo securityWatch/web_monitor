@@ -6,7 +6,7 @@
 
 **PulseWatch** 是一款开源友好的网站监控 SaaS 平台，提供免费套餐。可监控网站、API、SSL 证书、DNS 等，并通过邮件、Webhook、Slack、钉钉、飞书、企业微信等渠道告警。
 
-> **在线演示**：[https://gkao.com.cn](https://gkao.com.cn)
+> **体验地址**：[https://www.gkao.com.cn/](https://www.gkao.com.cn/)
 
 ---
 
