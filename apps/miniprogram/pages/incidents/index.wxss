@@ -8,13 +8,13 @@
   padding: 10rpx 24rpx;
   border-radius: 999rpx;
   font-size: 24rpx;
-  background: #1a1a1a;
-  color: #94a3b8;
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .filter-btn.active {
-  background: rgba(52, 211, 153, 0.15);
-  color: #34d399;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
 }
 
 .row-top {
@@ -30,13 +30,13 @@
   gap: 20rpx;
   margin-top: 12rpx;
   font-size: 22rpx;
-  color: #64748b;
+  color: #9ca3af;
 }
 
 .message {
   display: block;
   margin-top: 12rpx;
   font-size: 24rpx;
-  color: #cbd5e1;
+  color: #4b5563;
   line-height: 1.5;
 }

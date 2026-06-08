@@ -6,8 +6,8 @@
   height: calc(100rpx + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   display: flex;
-  background: #0a0a0a;
-  border-top: 1rpx solid #262626;
+  background: #ffffff;
+  border-top: 1rpx solid #e5e7eb;
   z-index: 999;
 }
 
@@ -17,11 +17,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: #9ca3af;
 }
 
 .tab-item.active {
-  color: #34d399;
+  color: #10b981;
 }
 
 .tab-icon {

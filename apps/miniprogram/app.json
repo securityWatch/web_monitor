@@ -14,18 +14,18 @@
     "pages/settings/index"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#0a0a0a",
+    "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTitleText": "PulseWatch",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#0a0a0a",
-    "backgroundTextStyle": "light"
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f7fa",
+    "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#64748b",
-    "selectedColor": "#34d399",
-    "backgroundColor": "#0a0a0a",
-    "borderStyle": "black",
+    "color": "#9ca3af",
+    "selectedColor": "#10b981",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/dashboard/index",
