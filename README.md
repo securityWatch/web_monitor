@@ -2,11 +2,11 @@
 
 **English** | [中文文档](./README.zh-CN.md)
 
-[![PulseWatch](https://gkao.com.cn/api/v1/public/badge/your_token.svg)](https://gkao.com.cn)
+[![PulseWatch](https://example.pulsewatch.io/api/v1/public/badge/your_token.svg)](https://github.com/securityWatch/web_monitor)
 
 **PulseWatch** is an open-core website monitoring SaaS platform with a commercial-friendly free tier. Monitor websites, APIs, SSL certificates, DNS records, and more — with alerts via email, webhook, Slack, DingTalk, Feishu, and WeCom.
 
-> **Live demo**: [https://www.gkao.com.cn/](https://www.gkao.com.cn/)
+> **Self-host**: clone this repo, copy `.env.example` → `.env`, follow [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ---
 
@@ -67,8 +67,8 @@
 
 ```bash
 # Clone
-git clone https://github.com/mafei2021/monitor.git
-cd monitor
+git clone https://github.com/securityWatch/web_monitor.git
+cd web_monitor
 
 # Setup environment
 cp .env.example .env
@@ -96,24 +96,32 @@ npm run test:integration
 
 ## Deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) and [README.zh-CN.md](./README.zh-CN.md) for details.
+Full guide: **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
 
-Set `DEPLOY_PASSWORD` (and `PG_PASSWORD` for first install) in the shell or local `环境信息` (never commit).
-
-| Scenario | Command |
-|----------|---------|
-| **Routine release (API + Web)** | `npm run deploy` |
-| **First-time install** | `npm run deploy:first` |
-| **API only** | `npm run deploy:api` |
-| **Web only** | `npm run deploy:web` |
-| **Deploy + sync OSS mirror** | `npm run deploy -- --sync-oss` |
+### Quick production deploy
 
 ```bash
-export DEPLOY_HOST=49.234.112.108
-export DEPLOY_PASSWORD=<password>
-export PG_PASSWORD=<postgres-password>   # first install only
-npm run deploy
+export DEPLOY_HOST=YOUR_SERVER_IP
+export DEPLOY_USER=ubuntu
+export DEPLOY_PASSWORD=your-ssh-password
+export PG_PASSWORD=your-postgres-password
+export APP_DOMAINS=example.pulsewatch.io
+export NEXT_PUBLIC_SITE_URL=https://example.pulsewatch.io
+
+cd deploy && node deploy.js          # first install
+cd deploy && node redeploy-api.js    # API only
+cd deploy && node redeploy-web.js    # Web only
 ```
+
+### Optional: HTTPS and custom domain
+
+```bash
+cd deploy && APP_DOMAINS=your.domain node apply-domain.js
+cd deploy && APP_DOMAINS=your.domain node setup-https.js
+```
+
+Before publishing a fork, run `node scripts/oss-verify-secrets.js` from the repo root.
+
 
 ## Project Structure
 
@@ -145,19 +153,6 @@ scripts/                # Utility scripts
 tests/                  # E2E tests
 ```
 
-## Open source mirror
-
-The public, desensitized tree is published at **[securityWatch/web_monitor](https://github.com/securityWatch/web_monitor)**.
-
-After pushing to private `main`, sync the desensitized mirror automatically:
-
-```bash
-npm run publish:main    # git push origin main + sync web_monitor
-npm run sync:oss        # sync only
-SKIP_OSS_SYNC=1 npm run publish:main   # push without OSS
-```
-
-See `.cursor/rules/web-monitor-oss.mdc`.
 
 ## Contributing
 
@@ -170,3 +165,10 @@ Contributions are welcome. Please ensure:
 ## License
 
 See [LICENSE](./LICENSE) file.
+
+## Security
+
+- **No secrets in Git** — use `.env` (see `.env.example`). Never commit passwords, JWT secrets, webhook URLs, or WeChat AppSecret.
+- **Pre-push check** — `node scripts/oss-verify-secrets.js` scans for known production hosts and leaked tokens.
+- **Rotate defaults** — change `JWT_SECRET`, `JWT_REFRESH_SECRET`, and `PROBE_SECRET` before going live.
+

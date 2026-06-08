@@ -48,7 +48,7 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.5.5",
-  "appid": "wxdaf77fdfdeaab4cf",
+  "appid": "your-wechat-mini-program-appid",
   "projectname": "pulsewatch-miniprogram",
   "condition": {},
   "editorSetting": {

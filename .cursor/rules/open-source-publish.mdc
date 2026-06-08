@@ -1,0 +1,51 @@
+---
+description: PulseWatch open-source repo (web_monitor) — public mirror, no production secrets
+alwaysApply: true
+---
+
+# web_monitor — Open Source Publication
+
+This repository is the **public** mirror: [securityWatch/web_monitor](https://github.com/securityWatch/web_monitor).
+
+## Relationship to private PulseWatch
+
+| | Private (development) | This repo (OSS) |
+|---|---|---|
+| GitHub | Internal / `mafei2021/monitor` (or local) | `securityWatch/web_monitor` |
+| Hosts / domains | Real production values in deploy env | Placeholders only (`YOUR_SERVER_IP`, `example.pulsewatch.io`) |
+| Secrets | `.env`, `环境信息` (never committed) | **Never** commit credentials |
+
+Sync from private tree:
+
+```bash
+npm run sync:oss
+```
+
+That script clones → runs `scripts/oss-desensitize.js` → pushes here. **Do not** hand-edit production IPs/domains into this repo.
+
+## Security (mandatory)
+
+- Never commit `.env`, `环境信息`, API keys, SSH passwords, WeChat AppSecret, webhooks, or cert private keys
+- `DEPLOY_PASSWORD`, `WECHAT_MINI_APP_SECRET`, `JWT_SECRET`, etc. come from environment only
+- Use `.env.example` for shape; use `CHANGE_ME` / empty placeholders
+
+## Stack (unchanged)
+
+- Go API (`apps/api/`), Next.js 15 (`apps/web/`), PostgreSQL, optional WeChat mini program (`apps/miniprogram/`)
+- PostgreSQL only — no ClickHouse
+
+## Deployment (self-host)
+
+- Set `DEPLOY_HOST`, `DEPLOY_PASSWORD`, `APP_DOMAINS`, `NEXT_PUBLIC_SITE_URL` before running `deploy/*.js`
+- See `DEPLOYMENT.md` and `README.md` for generic install steps
+- **No** automatic push to a vendor-specific production IP from this repo
+
+## Contributing
+
+- PRs welcome on `main`
+- UI strings: `apps/web/messages/en.json` and `zh.json`
+- Run `npm run test:unit` before substantial API changes
+
+## When syncing from private
+
+After meaningful releases in the private repo, run `sync-web-monitor-oss.js` from **that** repo so this mirror stays aligned and desensitized.

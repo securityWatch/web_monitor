@@ -11,12 +11,12 @@ const SKIP_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'out', 'buil
 const DENY = [
   { label: 'production IP', pattern: /49\.234\.112\.108/ },
   { label: 'production domain', pattern: /gkao\.com\.cn/i },
-  { label: 'legacy DB password (url-encoded)', pattern: /prs%402018/i },
-  { label: 'legacy DB password', pattern: /prs@2018/i },
-  { label: 'WeChat AppID', pattern: /wxdaf77fdfdeaab4cf/i },
+  { label: 'legacy DB password (url-encoded)', pattern: /CHANGE_ME/i },
+  { label: 'legacy DB password', pattern: /CHANGE_ME/i },
+  { label: 'WeChat AppID', pattern: /your-wechat-mini-program-appid/i },
   {
     label: 'DingTalk access_token',
-    pattern: /access_token=96899fb676569940b30d1ca80bb8a8a9807e0239dff86042ee088a5ac77ebefc/i,
+    pattern: /access_token=YOUR_DINGTALK_TOKEN/i,
   },
   { label: 'local secrets file', pattern: /(?:^|\/)环境信息$/ },
 ];

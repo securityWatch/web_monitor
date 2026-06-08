@@ -4,7 +4,7 @@
  * DNS must point APP_DOMAINS → DEPLOY_HOST before HTTPS (setup-https.js).
  *
  *   cd deploy && node apply-domain.js
- *   APP_DOMAINS=gkao.com.cn,www.gkao.com.cn node apply-domain.js
+ *   APP_DOMAINS=example.pulsewatch.io,www.example.pulsewatch.io node apply-domain.js
  */
 const fs = require('fs');
 const path = require('path');

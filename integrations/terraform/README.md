@@ -49,7 +49,7 @@ resource "null_resource" "monitor" {
 
 ```bash
 cd integrations/terraform/provider
-export PULSEWATCH_API_URL=http://49.234.112.108
+export PULSEWATCH_API_URL=http://YOUR_SERVER_IP
 export PULSEWATCH_API_KEY=pw_xxx
 export PULSEWATCH_ORG_ID=your-org-uuid
 go run .

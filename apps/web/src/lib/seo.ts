@@ -6,7 +6,7 @@ export function getSiteUrl(): string {
   const raw =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
-    'http://49.234.112.108';
+    'http://localhost:3000';
   return raw.replace(/\/$/, '');
 }
 

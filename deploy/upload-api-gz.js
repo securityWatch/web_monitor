@@ -34,4 +34,4 @@ c.on('ready', () => {
   });
 });
 c.on('error', (e) => { console.error(e); process.exit(1); });
-c.connect({ host: '49.234.112.108', username: 'ubuntu', password: PASSWORD, readyTimeout: 30000 });
+c.connect({ host: 'YOUR_SERVER_IP', username: 'ubuntu', password: PASSWORD, readyTimeout: 30000 });

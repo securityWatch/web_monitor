@@ -1,15 +1,15 @@
 # PulseWatch — 域名与 HTTPS 上线
 
-生产 IP：`49.234.112.108`。默认域名配置见 `deploy/lib/config.js`（`APP_DOMAINS=gkao.com.cn,www.gkao.com.cn`）。
+生产 IP：`YOUR_SERVER_IP`。默认域名配置见 `deploy/lib/config.js`（`APP_DOMAINS=example.pulsewatch.io,www.example.pulsewatch.io`）。
 
 ## 当前状态检查
 
-`gkao.com.cn` 若仍解析到 **Cloudflare**（104.x / 172.x），有两种常见模式：
+`example.pulsewatch.io` 若仍解析到 **Cloudflare**（104.x / 172.x），有两种常见模式：
 
 | 模式 | DNS | 源站证书 | 脚本 |
 |------|-----|----------|------|
-| **Cloudflare 代理（橙云）** | 保持 CF IP | 源站已有 `/etc/nginx/ssl/gkao.com.cn/`（`pulsewatch.conf`） | 勿同时启用 `sites-enabled/pulsewatch` 与 `pulsewatch.conf`（会 duplicate `default_server`） |
-| **直连源站 + Let's Encrypt** | A 记录 → `49.234.112.108`（可灰云） | `setup-https.js` 签发 certbot | `apply-domain.js` → `setup-https.js` |
+| **Cloudflare 代理（橙云）** | 保持 CF IP | 源站已有 `/etc/nginx/ssl/example.pulsewatch.io/`（`pulsewatch.conf`） | 勿同时启用 `sites-enabled/pulsewatch` 与 `pulsewatch.conf`（会 duplicate `default_server`） |
+| **直连源站 + Let's Encrypt** | A 记录 → `YOUR_SERVER_IP`（可灰云） | `setup-https.js` 签发 certbot | `apply-domain.js` → `setup-https.js` |
 
 `apply-domain.js` / `setup-https.js` 安装配置时会 **自动移除** `sites-enabled/pulsewatch.conf`，避免与 `pulsewatch` 重复。
 
@@ -17,8 +17,8 @@
 
 | 记录 | 值 | 说明 |
 |------|-----|------|
-| `A` `@` | `49.234.112.108` | 根域 |
-| `A` `www` | `49.234.112.108` | 可选 www |
+| `A` `@` | `YOUR_SERVER_IP` | 根域 |
+| `A` `www` | `YOUR_SERVER_IP` | 可选 www |
 
 **Cloudflare 用户：**
 
@@ -43,12 +43,12 @@ node apply-domain.js
 
 ## 步骤 3 — HTTPS（Let's Encrypt）
 
-DNS 已指向 `49.234.112.108` 后：
+DNS 已指向 `YOUR_SERVER_IP` 后：
 
 ```bash
 cd deploy
 set CERTBOT_EMAIL=your@email.com
-set NEXT_PUBLIC_SITE_URL=https://gkao.com.cn
+set NEXT_PUBLIC_SITE_URL=https://example.pulsewatch.io
 node setup-https.js
 ```
 

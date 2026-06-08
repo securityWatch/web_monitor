@@ -1,6 +1,6 @@
 const { Client } = require('ssh2');
 const PASSWORD = process.env.DEPLOY_PASSWORD;
-const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
+const HOST = process.env.DEPLOY_HOST || 'YOUR_SERVER_IP';
 const APP = '/opt/pulsewatch';
 const webService = `[Unit]
 Description=PulseWatch Web

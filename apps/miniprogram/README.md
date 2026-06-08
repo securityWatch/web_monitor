@@ -51,7 +51,7 @@ apps/miniprogram/
 **注意：**
 
 - 微信小程序正式版 **不允许** 使用裸 IP 或 HTTP，需为 API 配置 HTTPS 域名并在后台白名单
-- 当前 `config/env.js` 指向 `https://gkao.com.cn`（生产 HTTPS 域名）
+- 当前 `config/env.js` 指向 `https://example.pulsewatch.io`（生产 HTTPS 域名）
 
 ## 切换 API Base URL
 

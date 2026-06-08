@@ -15,7 +15,7 @@ export default function middleware(request: NextRequest) {
     isAppHost(host) ||
     host === 'localhost' ||
     host === '127.0.0.1' ||
-    host === '49.234.112.108';
+    host === 'YOUR_SERVER_IP';
 
   if (!isPrimaryHost && (pathname === '/' || pathname === '/en' || pathname === '/zh')) {
     const locale = pathname === '/zh' ? 'zh' : 'en';

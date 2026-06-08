@@ -43,17 +43,17 @@ const TEXT_EXT = new Set([
 
 /** Longer tokens first to avoid partial replacements */
 const GLOBAL_REPLACEMENTS = [
-  ['www.gkao.com.cn', 'www.example.pulsewatch.io'],
-  ['gkao.com.cn', 'example.pulsewatch.io'],
-  ['49.234.112.108', 'YOUR_SERVER_IP'],
-  ['prs%402018', 'CHANGE_ME'],
-  ['prs@2018', 'CHANGE_ME'],
-  ['wxdaf77fdfdeaab4cf', 'your-wechat-mini-program-appid'],
+  ['www.example.pulsewatch.io', 'www.example.pulsewatch.io'],
+  ['example.pulsewatch.io', 'example.pulsewatch.io'],
+  ['YOUR_SERVER_IP', 'YOUR_SERVER_IP'],
+  ['CHANGE_ME', 'CHANGE_ME'],
+  ['CHANGE_ME', 'CHANGE_ME'],
+  ['your-wechat-mini-program-appid', 'your-wechat-mini-program-appid'],
   [
-    'access_token=96899fb676569940b30d1ca80bb8a8a9807e0239dff86042ee088a5ac77ebefc',
+    'access_token=YOUR_DINGTALK_TOKEN',
     'access_token=YOUR_DINGTALK_TOKEN',
   ],
-  ['mafei2021/monitor', 'securityWatch/web_monitor'],
+  ['securityWatch/web_monitor', 'securityWatch/web_monitor'],
 ];
 
 function shouldProcessFile(rel) {
@@ -316,7 +316,7 @@ function copyOssReadmeZh(root) {
 
 function copyOssTemplates(root) {
   // Always copy from private-repo templates (not the staging tree) so global replacements
-  // do not rewrite "mafei2021/monitor" inside OSS-only Cursor rules.
+  // do not rewrite "securityWatch/web_monitor" inside OSS-only Cursor rules.
   const templatesDir = path.join(__dirname, '..', 'templates', 'oss');
   const ossCursor = path.join(templatesDir, '.cursor', 'rules');
   if (!fs.existsSync(ossCursor)) {

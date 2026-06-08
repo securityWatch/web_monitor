@@ -17,7 +17,7 @@
 | **3. 集成测试**（API 变更） | `npm run test:integration` |
 | **4. 本地冒烟** | API：`curl -s http://localhost:8080/health`；Web：`npm run dev -w apps/web` |
 | **5. 部署** | API：`cd deploy && node redeploy-api.js`；Web：`cd deploy && node redeploy-web.js`；两者都改则先 API 后 Web |
-| **6. 生产验证** | `curl -s http://49.234.112.108/health` → `status: ok`；`http://49.234.112.108/en` → 200；针对变更页面/端点 curl 或浏览器 |
+| **6. 生产验证** | `curl -s http://YOUR_SERVER_IP/health` → `status: ok`；`http://YOUR_SERVER_IP/en` → 200；针对变更页面/端点 curl 或浏览器 |
 | **7. 提交** | 用户明确要求时 `git commit`；默认文档/功能完成后由 Agent 按任务说明决定 |
 | **8. 推送** | 用户明确要求或项目规则要求时 `git push origin main` |
 
@@ -327,10 +327,10 @@ Do not start P5-N+1 in the same task.
 ## 4. 生产验证清单（每次部署后）
 
 ```bash
-curl -s http://49.234.112.108/health
-curl -s -o /dev/null -w "%{http_code}" http://49.234.112.108/en
+curl -s http://YOUR_SERVER_IP/health
+curl -s -o /dev/null -w "%{http_code}" http://YOUR_SERVER_IP/en
 # 登录后（需 token）：
-# curl -H "Authorization: Bearer $TOKEN" http://49.234.112.108/api/v1/me
+# curl -H "Authorization: Bearer $TOKEN" http://YOUR_SERVER_IP/api/v1/me
 ```
 
 | 功能域 | 验证 URL / 动作 |

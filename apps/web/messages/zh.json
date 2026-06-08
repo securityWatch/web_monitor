@@ -765,8 +765,8 @@
         "date": "2026-06-02",
         "p1": "可用性徽章是一个能展示服务在线/下线状态及 24 小时可用率的微型 SVG 图片。开发者将其嵌入 GitHub README，让用户无需登录 PulseWatch 即可一目了然地了解服务健康状况。",
         "p2": "每个 PulseWatch 监控创建时会自动生成唯一的徽章令牌。找到令牌后，可在 /tools/badge-generator 预览并复制嵌入代码。",
-        "p3": "支持两种格式：Markdown（![PulseWatch](https://gkao.com.cn/api/v1/public/badge/令牌.svg)）和 HTML（<img src=\"...\"/>）。徽章会随监控检测结果自动更新。",
-        "p4": "徽章同时也是免费反向链接：每个展示徽章的公开仓库都在向开发者推荐 gkao.com.cn。为开源项目 API 添加监控，在 README 中分享徽章吧。"
+        "p3": "支持两种格式：Markdown（![PulseWatch](https://example.pulsewatch.io/api/v1/public/badge/令牌.svg)）和 HTML（<img src=\"...\"/>）。徽章会随监控检测结果自动更新。",
+        "p4": "徽章同时也是免费反向链接：每个展示徽章的公开仓库都在向开发者推荐 example.pulsewatch.io。为开源项目 API 添加监控，在 README 中分享徽章吧。"
       }
     }
   },

@@ -8,7 +8,7 @@ const { execSync } = require('child_process');
 const { buildCorsOrigins } = require('./lib/cors-origins');
 const { databaseUrlFromEnv } = require('./lib/database-url');
 
-const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
+const HOST = process.env.DEPLOY_HOST || 'YOUR_SERVER_IP';
 const USER = process.env.DEPLOY_USER || 'ubuntu';
 const PASSWORD = process.env.DEPLOY_PASSWORD;
 const APP_DIR = '/opt/pulsewatch';
