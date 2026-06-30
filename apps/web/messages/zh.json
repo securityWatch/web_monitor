@@ -87,7 +87,10 @@
     "monitorStatus": "状态",
     "monitorInterval": "间隔",
     "monitorResponse": "响应",
-    "monitorCreated": "创建时间"
+    "monitorCreated": "创建时间",
+    "loadError": "加载用户失败",
+    "retry": "重试",
+    "notAdminHint": "你的账号可能没有管理员权限，请尝试退出后重新登录。"
   },
   "onCall": {
     "title": "值班",

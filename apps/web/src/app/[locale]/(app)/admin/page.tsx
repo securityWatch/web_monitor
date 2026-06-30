@@ -23,14 +23,19 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
+    setError(null);
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     apiFetch<{ users: AdminUser[] }>(`/api/v1/admin/users?${params}`)
       .then((d) => setUsers(d.users))
-      .catch(console.error)
+      .catch((err) => {
+        console.error('Admin API error:', err);
+        setError(err.message || 'Unknown error');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -55,11 +60,31 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="card border border-red-800/50 bg-red-900/20 p-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-red-400">{t('loadError')}</p>
+              <p className="text-xs text-red-300/70">{error}</p>
+              {error.includes('FORBIDDEN') && (
+                <p className="text-xs text-red-300/70">{t('notAdminHint')}</p>
+              )}
+            </div>
+            <button
+              onClick={load}
+              className="rounded-md bg-red-800/50 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-700/50 hover:text-red-200"
+            >
+              {t('retry')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="card flex items-center justify-center py-16">
           <p className="text-zinc-500">{tc('loading')}</p>
         </div>
-      ) : users.length === 0 ? (
+      ) : error ? null : users.length === 0 ? (
         <div className="card flex items-center justify-center py-16">
           <p className="text-zinc-500">{t('noUsers')}</p>
         </div>

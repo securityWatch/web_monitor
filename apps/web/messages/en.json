@@ -87,7 +87,10 @@
     "monitorStatus": "Status",
     "monitorInterval": "Interval",
     "monitorResponse": "Response",
-    "monitorCreated": "Created"
+    "monitorCreated": "Created",
+    "loadError": "Failed to load users",
+    "retry": "Retry",
+    "notAdminHint": "Your account may not have admin access. Try logging out and back in."
   },
   "onCall": {
     "title": "On-call",
