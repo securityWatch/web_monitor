@@ -33,6 +33,7 @@ export interface AuthData {
     notifyWeekly?: boolean;
     notifyProduct?: boolean;
     notifySsl?: boolean;
+    isAdmin?: boolean;
   };
   organization: Organization;
   requiresTotp?: boolean;

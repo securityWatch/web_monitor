@@ -6,7 +6,7 @@ import { LanguageToggle } from '@/components/language-toggle';
 import { CommandPalette } from '@/components/command-palette';
 import { clearStoredAuth, getStoredAuth } from '@/lib/api';
 import { OrgSwitcher } from '@/components/org-switcher';
-import { Activity, LayoutDashboard, Globe, AlertTriangle, Settings, Plus, LogOut, Radio } from 'lucide-react';
+import { Activity, LayoutDashboard, Globe, AlertTriangle, Settings, Plus, LogOut, Radio, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -15,12 +15,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = getStoredAuth();
+  const isAdmin = auth?.user?.isAdmin;
 
   const nav = [
     { href: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
     { href: '/monitors', label: t('monitors'), icon: Globe },
     { href: '/incidents', label: t('incidents'), icon: AlertTriangle },
     { href: '/status-pages', label: t('statusPages'), icon: Radio },
+    ...(isAdmin ? [{ href: '/admin', label: t('admin'), icon: Shield }] : []),
     { href: '/settings', label: t('settings'), icon: Settings },
   ];
 

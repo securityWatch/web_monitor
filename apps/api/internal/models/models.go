@@ -19,6 +19,7 @@ type User struct {
 	NotifyWeekly    bool       `json:"notifyWeekly"`
 	NotifyProduct   bool       `json:"notifyProduct"`
 	NotifySSL       bool       `json:"notifySsl"`
+	IsAdmin         bool       `json:"isAdmin"`
 	OnboardingDone  bool       `json:"onboardingDone"`
 	CreatedAt       time.Time  `json:"createdAt"`
 }

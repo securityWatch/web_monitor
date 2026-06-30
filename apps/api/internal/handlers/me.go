@@ -29,10 +29,11 @@ func (h *MeHandler) GetMe(c *gin.Context) {
 	var user models.User
 	err := h.db.QueryRow(ctx, `
 		SELECT id, email, display_name, avatar_url, timezone, locale, email_verified_at,
-		       notify_incidents, COALESCE(notify_daily, false), notify_weekly, notify_product, notify_ssl, onboarding_done, created_at
+		       notify_incidents, COALESCE(notify_daily, false), notify_weekly, notify_product, notify_ssl,
+		       COALESCE(is_admin, false), onboarding_done, created_at
 		FROM users WHERE id = $1
 	`, userID).Scan(&user.ID, &user.Email, &user.DisplayName, &user.AvatarURL, &user.Timezone, &user.Locale,
-		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyDaily, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.OnboardingDone, &user.CreatedAt)
+		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyDaily, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.IsAdmin, &user.OnboardingDone, &user.CreatedAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return

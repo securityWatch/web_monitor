@@ -69,6 +69,7 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 	toolsH := handlers.NewToolsHandler(db)
 	auditH := handlers.NewAuditHandler(db)
 	openAPIH := handlers.NewOpenAPIHandler()
+	adminH := handlers.NewAdminHandler(db)
 	probeDispatch := services.NewProbeDispatch(db)
 	probeH := handlers.NewProbeHandler(probeDispatch, cfg.ProbeSecret)
 	ssoSvc := services.NewSSOService(authSvc, cfg, db)
@@ -220,6 +221,14 @@ func Setup(cfg *config.Config, db *pgxpool.Pool) *gin.Engine {
 				org.DELETE("/api-keys/:keyId", apiKeyH.Delete)
 
 				org.GET("/audit-logs", auditH.List)
+			}
+
+			admin := protected.Group("/admin")
+			admin.Use(adminH.AdminAuth())
+			{
+				admin.GET("/users", adminH.ListUsers)
+				admin.GET("/users/:userId", adminH.GetUser)
+				admin.GET("/users/:userId/monitors", adminH.ListUserMonitors)
 			}
 		}
 	}
