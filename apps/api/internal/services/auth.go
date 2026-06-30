@@ -571,10 +571,11 @@ func (a *AuthService) loadUserOrg(ctx context.Context, userID, orgID string) (mo
 	var user models.User
 	err := a.db.QueryRow(ctx, `
 		SELECT id, email, phone, display_name, avatar_url, timezone, COALESCE(locale, 'en'), email_verified_at,
-		       notify_incidents, COALESCE(notify_daily, false), notify_weekly, notify_product, notify_ssl, COALESCE(onboarding_done, false), created_at
+		       notify_incidents, COALESCE(notify_daily, false), notify_weekly, notify_product, notify_ssl,
+		       COALESCE(is_admin, false), COALESCE(onboarding_done, false), created_at
 		FROM users WHERE id = $1
 	`, userID).Scan(&user.ID, &user.Email, &user.Phone, &user.DisplayName, &user.AvatarURL, &user.Timezone, &user.Locale,
-		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyDaily, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.OnboardingDone, &user.CreatedAt)
+		&user.EmailVerifiedAt, &user.NotifyIncidents, &user.NotifyDaily, &user.NotifyWeekly, &user.NotifyProduct, &user.NotifySSL, &user.IsAdmin, &user.OnboardingDone, &user.CreatedAt)
 	if err != nil {
 		return user, models.Organization{}, err
 	}
