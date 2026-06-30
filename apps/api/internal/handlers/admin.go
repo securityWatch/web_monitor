@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,7 +43,7 @@ type AdminUserRow struct {
 	IsAdmin        bool    `json:"isAdmin"`
 	OrgCount       int     `json:"orgCount"`
 	MonitorCount   int     `json:"monitorCount"`
-	CreatedAt      string  `json:"createdAt"`
+	CreatedAt      time.Time `json:"createdAt"`
 }
 
 // ListUsers 列出所有注册用户
@@ -103,8 +104,8 @@ type AdminUserDetail struct {
 	Email         string          `json:"email"`
 	DisplayName   *string         `json:"displayName"`
 	EmailVerified bool            `json:"emailVerified"`
-	IsAdmin       bool            `json:"isAdmin"`
-	CreatedAt     string          `json:"createdAt"`
+	IsAdmin       bool           `json:"isAdmin"`
+	CreatedAt     time.Time      `json:"createdAt"`
 	Organizations []AdminUserOrg  `json:"organizations"`
 }
 
@@ -161,8 +162,8 @@ type AdminMonitorRow struct {
 	TargetURL       string  `json:"targetUrl"`
 	Status          string  `json:"status"`
 	IntervalSeconds int     `json:"intervalSeconds"`
-	LastResponseMs  *int    `json:"lastResponseMs"`
-	CreatedAt       string  `json:"createdAt"`
+	LastResponseMs  *int      `json:"lastResponseMs"`
+	CreatedAt       time.Time `json:"createdAt"`
 }
 
 // ListUserMonitors 获取用户在某个组织下的监控列表
