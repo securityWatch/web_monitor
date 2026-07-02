@@ -1,207 +1,156 @@
-﻿# PulseWatch 部署文档
+# PulseWatch — Self-Hosted Deployment
 
-> 敏感凭据请勿提交 Git。实际密码见服务�?`/opt/pulsewatch/api/.env` 与本�?`环境信息` 文件�?
+> **Never commit** `.env`, SSH passwords, API keys, or webhook URLs to Git. Use `.env.example` as a template only.
 
-## 服务器信�?
+## Overview
 
-| 项目 | �?|
-|------|-----|
-| IP | `49.234.112.108` |
-| SSH 用户 | `ubuntu` |
-| SSH 密码 | �?`环境信息`（不纳入 Git�?|
-| 应用目录 | `/opt/pulsewatch` |
+| Component | Technology | Default port |
+|-----------|------------|--------------|
+| Web UI | Next.js 15 (standalone) | 3000 (internal) |
+| API + scheduler | Go 1.25 (Gin + pgx) | 4000 (internal) |
+| Reverse proxy | Nginx | **80** / **443** (public) |
+| Database | PostgreSQL 16 | 5432 or **6541** (your install) |
 
-## 对外访问
+Public traffic should hit **Nginx on 80/443** only. Ports 3000 and 4000 are upstream services on localhost.
 
-**对外访问统一使用 80 端口**（Nginx）。用户无需也不应使用 :3000 或 :4000 访问产品；3000/4000 仅本机 systemd 上游，由 Nginx 反代。
+## Prerequisites
 
-> Web 服务请勿设置 HOSTNAME=127.0.0.1（会导致 next-intl 中间件自代理 /en、/zh 返回 500）。生产使用 HOSTNAME=0.0.0.0 绑定本机，对外仍只经 80 入口。
+- Ubuntu 22.04+ (or similar Linux)
+- PostgreSQL 16 with database `pulsewatch`
+- Node.js 22+, Go 1.25+ (`GOTOOLCHAIN=auto` on build machines)
+- Nginx, systemd
 
-## 访问地址
+## 1. Local development
 
-| 服务 | 端口 | URL |
-|------|------|-----|
-| Web（Nginx 反代，推荐） | 80 | http://49.234.112.108/en |
-| Web 中文 | 80 | http://49.234.112.108/zh |
-| Web（直连，仅内网/调试） | 3000 | http://127.0.0.1:3000（勿依赖公网 :3000） |
-| API（经 Nginx） | 80 | http://49.234.112.108/api/v1/... |
-| API Health | 80 | http://49.234.112.108/health |
+```bash
+git clone https://github.com/securityWatch/web_monitor.git
+cd web_monitor
 
-### i18n 路由
+cp .env.example .env
+# Edit DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET
 
-- 英文：http://49.234.112.108/en
-- 中文：http://49.234.112.108/zh
-- 浏览�?`Accept-Language` 首次访问自动跳转；手动切换见页头 EN/中文 按钮（Cookie: `PULSEWATCH_LOCALE`�?
+export GOTOOLCHAIN=auto
+cd apps/api && go run ./cmd/server          # :4000
+cd apps/web && npm install && npm run dev     # :3000 → /en /zh
+```
 
-## Nginx 反向代理
+Health check: `curl -s http://127.0.0.1:4000/health` → `{"status":"ok"}`
 
-- 仓库配置: `deploy/nginx/pulsewatch.conf`（与 `deploy/nginx.conf` 同步）
-- 服务器: `/etc/nginx/sites-available/pulsewatch` → `sites-enabled/pulsewatch`
-- 对外仅 **80**；/ → Web:3000，/api/ → API:4000，/health → API
-- 转发头: Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto；`/` 含 WebSocket
-- 同步: `cd deploy && node apply-nginx.js` 后 `nginx -t && systemctl reload nginx`
-- `NEXT_PUBLIC_API_URL=http://49.234.112.108`（无 :4000）；变更后需 rebuild Web
+## 2. First production deploy (automated)
 
-## 测试账户
+From your **local machine** with SSH access to the server:
 
-可在注册页自行创建。E2E 测试使用随机 `@test.pulsewatch.io` 邮箱�?
+```bash
+export DEPLOY_HOST=YOUR_SERVER_IP          # or DNS name
+export DEPLOY_USER=ubuntu
+export DEPLOY_PASSWORD=your-ssh-password   # required
+export PG_PASSWORD=your-postgres-password    # required for deploy.js
+export APP_DOMAINS=example.pulsewatch.io,www.example.pulsewatch.io
+export NEXT_PUBLIC_SITE_URL=https://example.pulsewatch.io
 
-推荐演示账户（需自行注册一次）�?
+cd deploy && node deploy.js
+```
 
-| 字段 | 建议�?|
-|------|--------|
-| 邮箱 | `demo@pulsewatch.io` |
-| 密码 | `DemoPass123` |
+This will:
 
-## 运行方式（生产）
+1. Cross-compile the Go API for `linux/amd64`
+2. Install Nginx (if missing), create `/opt/pulsewatch`
+3. Write `/opt/pulsewatch/api/.env` with generated JWT secrets
+4. Upload API binary and Next.js standalone bundle
+5. Install systemd units `pulsewatch-api` and `pulsewatch-web`
+6. Apply Nginx site config from `deploy/nginx/pulsewatch.conf`
 
-使用 **systemd 原生部署**（非 Docker）：
+### Verify
 
-| 服务 | 单元�?| 说明 |
-|------|--------|------|
-| Go API + 调度�?| `pulsewatch-api` | `/opt/pulsewatch/api/pulsewatch-api` |
-| Next.js Web | `pulsewatch-web` | `node server.js` @ `web/.next/standalone/apps/web` |
-| 反向代理 | `nginx` | `/etc/nginx/sites-available/pulsewatch` |
+```bash
+curl -s http://YOUR_SERVER_IP/health
+curl -s -o /dev/null -w '%{http_code}\n' http://YOUR_SERVER_IP/en
+```
+
+## 3. Incremental redeploy
+
+| Change | Command |
+|--------|---------|
+| API only | `cd deploy && node redeploy-api.js` |
+| Web only | `cd deploy && NEXT_PUBLIC_SITE_URL=https://your.domain node redeploy-web.js` |
+| Nginx | `cd deploy && node apply-nginx.js` |
+| Custom domain + CORS | `APP_DOMAINS=your.domain node apply-domain.js` |
+| HTTPS (Let's Encrypt) | `APP_DOMAINS=your.domain node setup-https.js` |
+
+All deploy scripts require `DEPLOY_PASSWORD`. API-first deploy also needs `PG_PASSWORD` or `DATABASE_URL` on **first** `deploy.js` run.
+
+## 4. Environment variables
+
+Production files:
+
+- `/opt/pulsewatch/api/.env` — API, DB, JWT, SMTP, WeChat, Stripe, probes
+- `/opt/pulsewatch/web/.env` — `NEXT_PUBLIC_*` for browser and SEO
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET` | Auth tokens — use long random values |
+| `CORS_ORIGINS` | Comma-separated browser origins |
+| `NEXT_PUBLIC_API_URL` | Public API base (no `:4000` when behind Nginx) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL for sitemap / Open Graph |
+| `SMTP_*` | Email alerts (`SMTP_MODE=console` logs only) |
+| `WECHAT_MINI_APP_ID` / `WECHAT_MINI_APP_SECRET` | Mini program login (optional) |
+| `DINGTALK_WEBHOOK_URL` | Ops notifications (optional, set on server only) |
+| `PROBE_DISPATCH` / `PROBE_SECRET` | Multi-region probe workers (optional) |
+
+See `.env.example` for the full list.
+
+## 5. systemd services
 
 ```bash
 sudo systemctl status pulsewatch-api pulsewatch-web nginx
 sudo systemctl restart pulsewatch-api pulsewatch-web
 sudo journalctl -u pulsewatch-api -f
-sudo journalctl -u pulsewatch-web -f
 ```
 
-### 重新部署
+Next.js standalone working directory:
 
-```bash
-# 本地 Windows
-cd deploy && node deploy.js        # 全量部署
-node redeploy-web.js               # 仅前�?
-node run-e2e.js                    # 在服务器�?E2E
+```text
+/opt/pulsewatch/web/.next/standalone/apps/web
 ```
 
-## 环境变量
-
-配置文件�?*`/opt/pulsewatch/api/.env`**�?*`/opt/pulsewatch/web/.env`**
-
-本地开发：复制 `.env.example` �?`.env`
-
-| 变量 | 说明 |
-|------|------|
-| `DATABASE_URL` | `postgresql://postgres:<password>@127.0.0.1:6541/pulsewatch`（`@` 需 URL 编码�?`%40`�?|
-| `JWT_SECRET` / `JWT_REFRESH_SECRET` | JWT 密钥 |
-| `PORT` | API 端口�?000�?|
-| `CORS_ORIGIN` | 前端来源 |
-| `NEXT_PUBLIC_API_URL` | 浏览器用 API 地址 |
-| `SMTP_MODE` | `console` �?`smtp` |
-
-## 数据�?
-
-- PostgreSQL 16，端�?**6541**，库�?**pulsewatch**
-- 连接串格式：`postgresql://postgres:<URL编码密码>@127.0.0.1:6541/pulsewatch`
-- **不使�?ClickHouse**；时序数据存 PostgreSQL 分区�?`check_results`
-
-## 测试
-
-### Go 单元测试
-
-```bash
-cd apps/api && go test ./internal/services/... -v
-```
-
-### Go 集成测试
-
-```bash
-export TEST_DATABASE_URL=postgresql://postgres:<password>@49.234.112.108:6541/pulsewatch
-cd apps/api && go test ./internal/handlers/... -v
-```
-
-### E2E 验收（服务器本地�?
-
-```bash
-API_URL=http://127.0.0.1:4000 WEB_URL=http://127.0.0.1:3000 bash tests/e2e-test.sh
-```
-
-### 测试结果�?026-05-29�?
-
-| 测试�?| 结果 |
-|--------|------|
-| Health check | �?PASS |
-| 注册 + 登录 | �?PASS |
-| JWT refresh | �?PASS |
-| Monitor CRUD | �?PASS |
-| 自动检�?+ 结果存储 | �?PASS�?5s 内） |
-| Dashboard 统计 | �?PASS |
-| 密码修改 | �?PASS |
-| i18n /en /zh 路由 | �?PASS |
-| 删除监控 | �?PASS |
-| 10 并发监控稳定�?| �?PASS |
-| API 限流不崩�?| �?PASS |
-| Go 单元测试 (services) | �?11/11 PASS |
-| 公网 HTTP /en /zh | �?200 |
-
-## 本地开�?
-
-```bash
-cp .env.example .env
-cd apps/api && go run ./cmd/server    # :4000
-cd apps/web && npm run dev            # :3000 �?/en
-```
-
-## 架构
-
-- **Go** �?`apps/api/`（Gin + pgx + JWT + 内嵌调度器）
-- **Next.js 15** �?`apps/web/`（next-intl 中英文、暗�?UI�?
-- **PostgreSQL** �?唯一数据�?
-
-## 故障排查
-
-### pulsewatch-web 启动失败（找不到 server.js�?
-Next.js monorepo standalone 入口�?`web/.next/standalone/apps/web/server.js`，systemd �?`WorkingDirectory` 必须指向该目录：
-
-```bash
-WorkingDirectory=/opt/pulsewatch/web/.next/standalone/apps/web
-```
-
-部署后需复制静态资源：
+If static assets are missing after deploy:
 
 ```bash
 cp -r /opt/pulsewatch/web/.next/static /opt/pulsewatch/web/.next/standalone/apps/web/.next/
 cp -r /opt/pulsewatch/web/public /opt/pulsewatch/web/.next/standalone/apps/web/
 ```
 
-本地可执行：`cd deploy && node fix-web.js`
+## 6. WeChat mini program (optional)
 
-### 公网端口
+1. Register a mini program in [WeChat Open Platform](https://mp.weixin.qq.com/)
+2. Set `WECHAT_MINI_APP_ID` and `WECHAT_MINI_APP_SECRET` in API `.env`
+3. Edit `apps/miniprogram/config/env.js` → your HTTPS API origin
+4. In WeChat Admin → **开发** → **服务器域名**, allow your API domain
+5. Upload with WeChat DevTools (`apps/miniprogram/project.config.json` → your AppID)
 
-- **80**：Nginx 反代 Web �?`/health`、`/api/`（推荐对外访问）
-- **3000 / 4000**：仅服务器本机或内网；云防火墙未开放时公网直连会超时，属正�?
+## 7. Security checklist
 
-## 分布式探针（可选）
+- [ ] Rotate `JWT_SECRET` and `JWT_REFRESH_SECRET` from `.env.example` defaults
+- [ ] Restrict PostgreSQL to localhost
+- [ ] Use HTTPS in production (`setup-https.js` or Cloudflare)
+- [ ] Never commit `DEPLOY_PASSWORD`, `PG_PASSWORD`, or webhook URLs
+- [ ] Review `scripts/oss-verify-secrets.js` patterns before publishing forks
 
-真多区域地理探测需启用调度分发并在各区域运行 worker：
-
-| 变量 | 说明 |
-|------|------|
-| `PROBE_DISPATCH` | API 设为 `true` 时由 worker 拉取任务 |
-| `PROBE_SECRET` | API 与 worker 共享密钥 |
-| `PROBE_REGION` | worker 区域标签（如 `us-east`、`ap-singapore`） |
-
-```bash
-# API .env
-PROBE_DISPATCH=true
-PROBE_SECRET=...
-
-# 各区域 worker（apps/api/cmd/probe-worker）
-PROBE_REGION=ap-singapore go run ./cmd/probe-worker
-```
-
-未启用时，调度器仍在 API 进程内执行检查，区域标签为逻辑分区（非独立 IP）。详见 [docs/GAP-BACKLOG.md](docs/GAP-BACKLOG.md)。
-
-## 快速重部署（推荐）
+## 8. Tests
 
 ```bash
-cd deploy && node redeploy-api.js   # API（gzip + SHA 跳过）
-cd deploy && node redeploy-web.js   # Web（默认 REMOTE_WEB_BUILD=1）
-cd deploy && node redeploy-all.js   # 两者顺序执行
+npm run test:unit
+# Integration (local Postgres):
+npm run test:integration
+# E2E (API + web running):
+API_URL=http://127.0.0.1:4000 WEB_URL=http://127.0.0.1:3000 bash tests/e2e-test.sh
 ```
 
+## Architecture
+
+- **Go** — `apps/api/` (monitors, checks, incidents, alerts, auth)
+- **Next.js** — `apps/web/` (dashboard, monitors, settings, marketing, public tools)
+- **PostgreSQL** — partitioned `check_results` (no ClickHouse)
+
+For feature gaps and roadmap see `docs/GAP-BACKLOG.md` and `docs/IMPLEMENTATION-ROADMAP.md`.

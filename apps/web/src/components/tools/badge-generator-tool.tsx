@@ -12,8 +12,8 @@ export function BadgeGeneratorTool() {
   const t = useTranslations('extraTools.badgeGenerator');
   const [copied, setCopied] = useState<'markdown' | 'html' | null>(null);
 
-  const markdownCode = `![PulseWatch](https://gkao.com.cn/api/v1/public/badge/${DEMO_TOKEN}.svg)`;
-  const htmlCode = `<img src="https://gkao.com.cn/api/v1/public/badge/${DEMO_TOKEN}.svg" alt="PulseWatch uptime badge" />`;
+  const markdownCode = `![PulseWatch](https://example.pulsewatch.io/api/v1/public/badge/${DEMO_TOKEN}.svg)`;
+  const htmlCode = `<img src="https://example.pulsewatch.io/api/v1/public/badge/${DEMO_TOKEN}.svg" alt="PulseWatch uptime badge" />`;
 
   const copyCode = async (format: 'markdown' | 'html') => {
     const code = format === 'markdown' ? markdownCode : htmlCode;
@@ -46,7 +46,7 @@ export function BadgeGeneratorTool() {
               <div className="mt-6">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`https://gkao.com.cn/api/v1/public/badge/${DEMO_TOKEN}.svg`}
+                  src={`https://example.pulsewatch.io/api/v1/public/badge/${DEMO_TOKEN}.svg`}
                   alt="Demo uptime badge"
                   className="h-5"
                 />

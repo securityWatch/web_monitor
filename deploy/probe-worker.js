@@ -3,7 +3,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const HOST = process.env.DEPLOY_HOST || '49.234.112.108';
+const HOST = process.env.DEPLOY_HOST || 'YOUR_SERVER_IP';
 const APP_DIR = '/opt/pulsewatch';
 const ROOT = path.join(__dirname, '..');
 

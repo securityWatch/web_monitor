@@ -12,7 +12,7 @@ variable "pulsewatch_org_id" {
 
 variable "pulsewatch_api_url" {
   type    = string
-  default = "http://49.234.112.108"
+  default = "http://YOUR_SERVER_IP"
 }
 
 resource "null_resource" "pulsewatch_http_monitor" {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REMOTE_HOST="${REMOTE_HOST:-49.234.112.108}"
+REMOTE_HOST="${REMOTE_HOST:-YOUR_SERVER_IP}"
 REMOTE_USER="${REMOTE_USER:-ubuntu}"
 APP_DIR="/opt/pulsewatch"
 

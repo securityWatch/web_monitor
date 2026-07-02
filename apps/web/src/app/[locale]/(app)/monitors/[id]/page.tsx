@@ -399,7 +399,7 @@ export default function MonitorDetailPage() {
               <p className="mb-2 text-sm text-zinc-400">{td('badgePreview')}</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`https://gkao.com.cn/api/v1/public/badge/${monitor.publicBadgeToken}.svg`}
+                src={`https://example.pulsewatch.io/api/v1/public/badge/${monitor.publicBadgeToken}.svg`}
                 alt="Uptime badge"
                 className="h-5"
               />
@@ -409,7 +409,7 @@ export default function MonitorDetailPage() {
                 type="button"
                 className="btn-secondary text-sm"
                 onClick={() => {
-                  const code = `![PulseWatch](https://gkao.com.cn/api/v1/public/badge/${monitor.publicBadgeToken}.svg)`;
+                  const code = `![PulseWatch](https://example.pulsewatch.io/api/v1/public/badge/${monitor.publicBadgeToken}.svg)`;
                   navigator.clipboard.writeText(code);
                   setBadgeCopied('markdown');
                   setTimeout(() => setBadgeCopied(null), 2000);
@@ -421,7 +421,7 @@ export default function MonitorDetailPage() {
                 type="button"
                 className="btn-secondary text-sm"
                 onClick={() => {
-                  const code = `<img src="https://gkao.com.cn/api/v1/public/badge/${monitor.publicBadgeToken}.svg" alt="PulseWatch uptime badge" />`;
+                  const code = `<img src="https://example.pulsewatch.io/api/v1/public/badge/${monitor.publicBadgeToken}.svg" alt="PulseWatch uptime badge" />`;
                   navigator.clipboard.writeText(code);
                   setBadgeCopied('html');
                   setTimeout(() => setBadgeCopied(null), 2000);

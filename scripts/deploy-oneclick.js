@@ -74,7 +74,7 @@ function pickScript(args) {
 }
 
 function verifyPublic() {
-  const host = process.env.DEPLOY_HOST || '49.234.112.108';
+  const host = process.env.DEPLOY_HOST || 'YOUR_SERVER_IP';
   const healthUrl = `http://${host}/health`;
   const webUrl = `http://${host}/en`;
 
@@ -117,7 +117,7 @@ async function main() {
   if (args.first && !process.env.DATABASE_URL) requireEnv(['PG_PASSWORD']);
 
   const script = pickScript(args);
-  console.log(`[deploy] Running ${script} → ${process.env.DEPLOY_HOST || '49.234.112.108'} ...\n`);
+  console.log(`[deploy] Running ${script} → ${process.env.DEPLOY_HOST || 'YOUR_SERVER_IP'} ...\n`);
   runNode(script);
 
   if (!args.skipVerify) {

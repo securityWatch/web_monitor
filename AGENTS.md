@@ -52,8 +52,8 @@ Smoke：`curl -s http://127.0.0.1:4000/health` → `"status":"ok"`；`curl -s -o
 
 ### Deploy / secrets
 
-见 `DEPLOYMENT.md` 与本地 `环境信息`（不入库）。**运行时变更完成后必须自动部署到生产**（`cd deploy && node redeploy-api.js` / `redeploy-web.js`），不要向用户确认是否部署。
+见 `DEPLOYMENT.md` 与本地 `.env`（勿提交 Git）。**自托管**：配置 `DEPLOY_HOST`、`DEPLOY_PASSWORD` 后使用 `deploy/redeploy-api.js` / `redeploy-web.js`。
 
 ### Product conventions
 
-见 `.cursor/rules/pulsewatch.mdc`（栈、i18n、改代码后的提交流程）。
+见 `.cursor/rules/pulsewatch-oss.mdc`（栈、i18n、改代码后的提交流程）。

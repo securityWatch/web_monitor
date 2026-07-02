@@ -4,7 +4,7 @@ This document describes on-page and technical SEO implemented for the marketing 
 
 ## Production note
 
-The live site is at **`https://gkao.com.cn`** (canonical; also reachable via legacy IP). Set canonical URL when binding a custom domain:
+The live site is at **`https://example.pulsewatch.io`** (canonical; also reachable via legacy IP). Set canonical URL when binding a custom domain:
 
 - Set `NEXT_PUBLIC_SITE_URL` to the canonical HTTPS origin (no trailing slash).
 - Follow **[DOMAIN-HTTPS.md](DOMAIN-HTTPS.md)** (`apply-domain.js` → `setup-https.js`).
@@ -29,7 +29,7 @@ BAIDU_SITE_VERIFICATION=your-baidu-token \
 node deploy/patch-seo-verification.js
 
 # Rebuild web so meta tags are baked into HTML
-NEXT_PUBLIC_SITE_URL=https://gkao.com.cn node deploy/redeploy-web.js
+NEXT_PUBLIC_SITE_URL=https://example.pulsewatch.io node deploy/redeploy-web.js
 ```
 
 `deploy/patch-seo-verification.js` writes to `/opt/pulsewatch/build/.env` via SSH (same pattern as `patch-dingtalk.js`).
