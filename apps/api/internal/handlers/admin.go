@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -36,13 +37,14 @@ func (h *AdminHandler) AdminAuth() gin.HandlerFunc {
 }
 
 type AdminUserRow struct {
-	ID             string  `json:"id"`
-	Email          string  `json:"email"`
-	DisplayName    *string `json:"displayName"`
-	EmailVerified  bool    `json:"emailVerified"`
-	IsAdmin        bool    `json:"isAdmin"`
-	OrgCount       int     `json:"orgCount"`
-	MonitorCount   int     `json:"monitorCount"`
+	ID             string    `json:"id"`
+	Email          string    `json:"email"`
+	DisplayName    *string   `json:"displayName"`
+	EmailVerified  bool      `json:"emailVerified"`
+	IsAdmin        bool      `json:"isAdmin"`
+	OrgCount       int       `json:"orgCount"`
+	MonitorCount   int       `json:"monitorCount"`
+	MonitorNames   []string  `json:"monitorNames"`
 	CreatedAt      time.Time `json:"createdAt"`
 }
 
@@ -59,6 +61,12 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 			(SELECT COUNT(*) FROM monitors m
 			 JOIN organization_members om ON om.org_id = m.org_id
 			 WHERE om.user_id = u.id) AS monitor_count,
+			COALESCE((
+				SELECT jsonb_agg(DISTINCT m.name ORDER BY m.name)
+				FROM monitors m
+				JOIN organization_members om ON om.org_id = m.org_id
+				WHERE om.user_id = u.id
+			), '[]'::jsonb) AS monitor_names,
 			u.created_at
 		FROM users u
 	`
@@ -79,8 +87,15 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	var users []AdminUserRow
 	for rows.Next() {
 		var u AdminUserRow
-		if err := rows.Scan(&u.ID, &u.Email, &u.DisplayName, &u.EmailVerified, &u.IsAdmin, &u.OrgCount, &u.MonitorCount, &u.CreatedAt); err != nil {
+		var monitorNamesJSON json.RawMessage
+		if err := rows.Scan(&u.ID, &u.Email, &u.DisplayName, &u.EmailVerified, &u.IsAdmin, &u.OrgCount, &u.MonitorCount, &monitorNamesJSON, &u.CreatedAt); err != nil {
 			continue
+		}
+		if len(monitorNamesJSON) > 0 {
+			json.Unmarshal(monitorNamesJSON, &u.MonitorNames)
+		}
+		if u.MonitorNames == nil {
+			u.MonitorNames = []string{}
 		}
 		users = append(users, u)
 	}

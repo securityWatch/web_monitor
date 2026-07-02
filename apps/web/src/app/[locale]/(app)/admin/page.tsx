@@ -14,6 +14,7 @@ interface AdminUser {
   isAdmin: boolean;
   orgCount: number;
   monitorCount: number;
+  monitorNames: string[];
   createdAt: string;
 }
 
@@ -137,9 +138,24 @@ export default function AdminPage() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-1.5">
+                    <div className="group relative flex items-center gap-1.5">
                       <Activity className="h-4 w-4 text-zinc-500" />
-                      <span>{u.monitorCount}</span>
+                      <span className={u.monitorCount > 0 ? 'cursor-pointer underline decoration-dotted underline-offset-2 decoration-zinc-600' : ''}>
+                        {u.monitorCount}
+                      </span>
+                      {u.monitorCount > 0 && u.monitorNames.length > 0 && (
+                        <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700/50 bg-zinc-900 px-3 py-2 text-xs text-zinc-300 shadow-xl opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100">
+                          <div className="flex flex-col gap-1">
+                            {u.monitorNames.map((name, i) => (
+                              <span key={i} className="flex items-center gap-1.5">
+                                <span className="h-1 w-1 rounded-full bg-blue-500" />
+                                {name}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-zinc-700/50" />
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="p-4 text-zinc-500 text-xs">
